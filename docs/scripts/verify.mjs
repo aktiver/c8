@@ -28,7 +28,20 @@ for (const [file, permalink] of pages) {
   if (!html.includes("<!DOCTYPE html>")) failures.push(file + ": missing HTML document");
   if (!html.includes("| relative_url")) failures.push(file + ": missing base-path-safe URLs");
   if (/(?:_vinext|_next|type=["']module["'])/.test(html)) failures.push(file + ": contains framework runtime output");
+  if (/(?:charSet|fetchPriority|data-nimg|<!-- -->)/.test(html)) failures.push(file + ": contains framework-generated HTML residue");
   if (/href=["']\/(?:deploy|helm|contribute|catalog)?(?:[#"'])/.test(html)) failures.push(file + ": contains a root-hardcoded internal link");
+
+  for (const tag of ["html", "body", "main"]) {
+    const openings = html.match(new RegExp(`<${tag}(?:\\s|>)`, "g"))?.length ?? 0;
+    const closings = html.match(new RegExp(`</${tag}>`, "g"))?.length ?? 0;
+    if (openings !== 1 || closings !== 1) {
+      failures.push(file + `: expected one <${tag}> element, found ${openings} opening and ${closings} closing tags`);
+    }
+  }
+
+  const ids = [...html.matchAll(/\sid=["']([^"']+)["']/g)].map((match) => match[1]);
+  const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index);
+  if (duplicateIds.length) failures.push(file + ": duplicate ids: " + [...new Set(duplicateIds)].join(", "));
 }
 
 const css = await stat("assets/css/site.css");
@@ -41,6 +54,13 @@ try {
   failures.push("custom Pages workflow must be absent for branch deployment");
 } catch {
   // Expected: GitHub Pages owns the regular branch-deployment workflow.
+}
+
+try {
+  await access("../.github/workflows/pages.yml");
+  failures.push("repository-level custom Pages workflow must be absent for branch deployment");
+} catch {
+  // Expected: the package is configured for normal main:/docs branch publishing.
 }
 
 if (process.argv.includes("--built")) {
