@@ -1,0 +1,22 @@
+title: "c8 — Next Generation RDF DB"
+description: >-
+  c8 is an ontology-native, distributed RDF database for governed SPARQL 1.1
+  and OWL 2 DL workloads.
+lang: en-US
+
+url: "https://aktiver.github.io"
+baseurl: "/c8"
+
+permalink: pretty
+timezone: UTC
+markdown: kramdown
+highlighter: rouge
+safe: true
+strict_front_matter: true
+
+exclude:
+  - README.md
+  - scripts
+  - vendor
+  - Gemfile
+  - Gemfile.lock
