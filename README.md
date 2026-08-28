@@ -1,4 +1,4 @@
-# NGKG
+# c8: Next Generation RDF Distributed Semantic Database, Kubernetes Native
 
 NGKG is an ontology-native, distributed HPC knowledge graph database. This repository is built cumulatively from the phase gates in `docs/ENGINEERING_SOURCE.md`: every phase tag contains all prior code, contracts, tests, deployment assets, and verification evidence.
 
