@@ -1,0 +1,33 @@
+apiVersion: release.c8-next-generation.io/v1
+kind: GeneralAvailabilityQualificationPlan
+metadata:
+  releaseVersion: 1.0.0
+spec:
+  execution:
+    evidenceClass: live-production-qualification
+    releaseSubjectBinding: required
+    parallelSafeWork: kueue-indexed-jobs
+    destructiveWork: isolated-serial-provider-lanes
+    semanticPublicationBarrier: exact-zero-failure-dense-merge
+  qualifications:
+    - {id: rc1-acceptance, execution: all-providers}
+    - {id: sparql-correctness, execution: distributed-plus-scalar-equivalence}
+    - {id: cross-domain-owl2-dl, execution: authorized-multihop-context-graph}
+    - {id: reasoning-correctness, execution: distributed-plus-hermit-exact-boundary}
+    - {id: multinode-hpc, execution: indexed-jobs-multiple-nodes-and-cores}
+    - {id: autoscaling, execution: cpu-or-memory-at-80-percent}
+    - {id: kubernetes-matrix, execution: rke-rke2-eks-aks-gke}
+    - {id: cloud-trig-ingestion, execution: s3-azure-blob-gcs}
+    - {id: ha-chaos, execution: serialized-failure-injection}
+    - {id: backup-restore, execution: clean-cluster-restore}
+    - {id: upgrade-rollback, execution: serialized-version-transition}
+    - {id: enterprise-security, execution: negative-and-positive-controls}
+    - {id: query-logs, execution: tenant-safe-resource-accounting}
+    - {id: performance-capacity, execution: correctness-gated-benchmarks}
+    - {id: operational-readiness, execution: slo-alert-trace-runbook-drills}
+    - {id: production-runtime-audit, execution: image-process-lock-audit}
+    - {id: security-license, execution: sbom-cve-secret-license-policy}
+    - {id: reproducible-build, execution: two-isolated-builders}
+    - {id: contract-freeze, execution: rc1-to-ga-drift-review}
+    - {id: artifact-publication, execution: publish-download-reverify}
+  forbiddenPassSources: [static-only, synthetic-only, partial, waived-correctness, waived-security]

@@ -1,0 +1,103 @@
+apiVersion: release.c8-next-generation.io/v1
+kind: KubernetesReleaseQualification
+metadata:
+  phase: 40.13.24
+  name: portable-ha-release-v1
+spec:
+  productionRuntime:
+    implementation: rust
+    version: 1.0.0
+    apacheJenaRuntimeDependency: false
+    hermitRuntimeRole: pinned-exact-owl2dl-qualification-boundary
+  prerequisites:
+    requireCompletePhase40_13_23Certificate: true
+    requireCrossDomainReasonedContextGraph: true
+    semanticMinimumDomains: 3
+    semanticMinimumHops: 2
+    semanticMinimumNodes: 2
+    requireGraphResultOracleEquality: true
+    requireCompleteProofCoverage: true
+  kubernetes:
+    providers: [rke, rke2, eks, aks, gke]
+    minimumWorkerNodes: 3
+    minimumZonesWhenSupported: 2
+    minimumCpuCoresPerWorker: 4
+    minimumMemoryBytesPerWorker: 17179869184
+    cgroupVersion: 2
+    requireHighAvailability: true
+    requireKueueAdmission: true
+    requireTopologySpread: true
+    requirePodAntiAffinity: true
+    autoscalingCpuPercent: 80
+    autoscalingMemoryPercent: 80
+  hpcExecution:
+    completionMode: Indexed
+    densePartitionBarrier: true
+    multiNode: true
+    multiCorePerWorker: true
+    minimumWorkerThreads: 4
+    nativeLibraryThreadsPerWorker: 1
+    allowParallelNonDisruptiveScenarios: true
+    serializeDisruptiveScenarios: true
+    boundedMemoryAndSpill: true
+  requiredGates:
+    - semantic-context-graph
+    - multinode-soak
+    - compute-chaos
+    - network-chaos
+    - storage-chaos
+    - upgrade
+    - rollback
+    - backup-restore
+    - helm
+    - image-provenance
+    - sbom
+    - cve
+    - license
+    - reproducible-build
+    - provider-portability
+  soak:
+    minimumDurationSeconds: 259200
+    requireConcurrentIngestionReasoningTraversalQuery: true
+    requireZeroSemanticMismatches: true
+    requireZeroUncertifiedPartialResponses: true
+  chaos:
+    isolatedQualificationClusterOnly: true
+    explicitApprovalEvidenceRequired: true
+    scenarios: [pod-kill, worker-node-loss, network-partition, postgresql-failover, csi-disruption, corrupt-object, duplicate-delivery]
+    requireEveryInjectedFailureRecovered: true
+    requirePostRecoverySemanticIdentity: true
+  lifecycle:
+    requireInstallFromEmptyCluster: true
+    requireUpgradeFromPreviousQualifiedRelease: true
+    requireRollbackAfterFailedUpgrade: true
+    requireSnapshotPublicationAtomicity: true
+    requireBackupRestoreAcrossFreshCluster: true
+    maximumRecoveryPointSeconds: 300
+    maximumRecoveryTimeSeconds: 3600
+  supplyChain:
+    requireDigestPinnedImages: true
+    requireSignedImagesAndProvenance: true
+    requireSpdxSbom: true
+    requireCycloneDxSbom: true
+    maximumUnwaivedCriticalCves: 0
+    maximumUnwaivedHighCves: 0
+    requireClosedLicensePolicy: true
+    requireTwoIsolatedReproducibleBuilders: true
+    requireIdenticalBinaryImageAndHelmDigests: true
+  providerPortability:
+    bucketMounts:
+      aws: [s3-csi, object-api]
+      azure: [blob-csi, object-api]
+      gcp: [gcs-fuse-csi, object-api]
+    rkeObjectStorage: [s3-compatible-csi, object-api]
+    workloadIdentityRequired: true
+    longLivedCloudCredentialsForbidden: true
+  releasePolicy:
+    retainRawEvidence: true
+    missingOrDuplicatePartitionFails: true
+    syntheticEvidenceCannotQualifyRelease: true
+    staticConfigurationCannotQualifyRelease: true
+    failedScenarioCannotBeExcluded: true
+    ontologyAlignment: forbidden
+    rawDataMapping: forbidden

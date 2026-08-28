@@ -1,0 +1,102 @@
+apiVersion: release.c8-next-generation.io/v1
+kind: ReleaseCandidateFreeze
+metadata:
+  version: 1.0.0-rc.1
+  phase: 1.0.0-RC1
+spec:
+  purpose: final-api-schema-artifact-and-qualification-freeze
+  featureDevelopmentAllowed: false
+  productionRuntime:
+    implementation: rust
+    apacheJenaLinkedEmbeddedOrDeployed: false
+    hermitRole: pinned-exact-owl2dl-qualification-boundary
+  prerequisitePolicy:
+    evidenceClass: live-production-qualification
+    syntheticEvidenceAllowedForPublication: false
+    staticEvidenceAllowedForPublication: false
+    requireSameReleaseSubject: true
+    requireComplete: true
+    maximumFailureCount: 0
+    required:
+      - sparql11
+      - authorized-rdf-dataset
+      - owl2-dl
+      - distributed-reasoning
+      - distributed-query-runtime
+      - atomic-publication
+      - federation
+      - storage-recovery
+      - autoscaling
+      - enterprise-security
+      - standards
+      - performance-capacity
+      - kubernetes-release
+      - semantic-context-graph
+  frozenSurfaces:
+    - open-api
+    - json-schema
+    - crd
+    - helm
+    - environment
+    - database-migration
+    - object-layout
+    - semantic-artifact
+  compatibilityPolicy:
+    changesRequireReviewedRcDefect: true
+    silentBreakingChangesAllowed: false
+    partialMigrationVisibilityAllowed: false
+    uncertifiedSnapshotVisibilityAllowed: false
+  requiredArtifacts:
+    - source-archive
+    - image-index
+    - helm-charts
+    - kubernetes-bundle
+    - crds
+    - migrations
+    - utilities
+    - api-schemas
+    - sbom-spdx
+    - sbom-cyclone-dx
+    - provenance
+    - qualification-evidence
+    - documentation
+    - checksums
+  reproducibility:
+    isolatedBuilders: 2
+    requireIdenticalBinaryImageChartAndBundleDigests: true
+    networkControlled: true
+    dependenciesLocked: true
+    timestampsNormalized: true
+    mutableTagsAllowed: false
+  supplyChain:
+    requireArtifactSignatures: true
+    requireProvenance: true
+    requireSpdx: true
+    requireCycloneDx: true
+    maximumUnapprovedCriticalCves: 0
+    maximumUnapprovedHighCves: 0
+    maximumEmbeddedCredentials: 0
+    requireClosedLicensePolicy: true
+    requireSecretScan: true
+    requireWorkloadIdentity: true
+    requireDefaultDenyNetworkPolicy: true
+    requireNonRootAndRuntimeHardening: true
+  kubernetes:
+    providers: [rke, rke2, eks, aks, gke]
+    requireHighAvailability: true
+    requireMultinodeMulticore: true
+    autoscalingCpuPercent: 80
+    autoscalingMemoryPercent: 80
+    requireScaleFromZeroPools: true
+    requireUpgradeRollbackBackupRestore: true
+    cloudTrigSources: [amazon-s3, azure-blob, google-cloud-storage, s3-compatible]
+  publicationPolicy:
+    requirePublicationCertificate: true
+    blockedByMissingEvidence: true
+    blockedBySyntheticEvidence: true
+    blockedByUnresolvedCriticalOrHighCve: true
+    blockedByReproducibilityMismatch: true
+    blockedByUnsignedArtifact: true
+    blockedByInterfaceDrift: true
+    ontologyAlignment: forbidden
+    rawDataMapping: forbidden

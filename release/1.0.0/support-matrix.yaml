@@ -1,0 +1,44 @@
+apiVersion: release.c8-next-generation.io/v1
+kind: SupportedKubernetesMatrix
+metadata:
+  releaseVersion: 1.0.0
+  status: awaiting-live-qualification
+spec:
+  commonRequirements:
+    minimumWorkerNodes: 3
+    minimumZonesWhenAvailable: 2
+    minimumCpuCoresPerWorker: 4
+    minimumMemoryBytesPerWorker: 17179869184
+    cgroupVersion: 2
+    containerRuntime: containerd
+    autoscalingCpuPercent: 80
+    autoscalingMemoryPercent: 80
+    scaleTrigger: cpu-or-memory
+    components: [metrics-server, prometheus, keda, kueue, hpa, node-autoscaler]
+  providers:
+    - provider: rke
+      qualified: false
+      testedKubernetesVersions: []
+      identity: [oidc, vault, external-secrets]
+      objectStorage: [s3-compatible-csi, object-api]
+    - provider: rke2
+      qualified: false
+      testedKubernetesVersions: []
+      identity: [oidc, vault, external-secrets]
+      objectStorage: [s3-compatible-csi, object-api]
+    - provider: eks
+      qualified: false
+      testedKubernetesVersions: []
+      identity: [eks-pod-identity, irsa]
+      objectStorage: [s3-csi, object-api]
+    - provider: aks
+      qualified: false
+      testedKubernetesVersions: []
+      identity: [azure-workload-identity]
+      objectStorage: [blob-csi, object-api]
+    - provider: gke
+      qualified: false
+      testedKubernetesVersions: []
+      identity: [gke-workload-identity]
+      objectStorage: [gcs-fuse-csi, object-api]
+  publicationRule: every-provider-qualified-with-exact-versions-and-evidence-digest

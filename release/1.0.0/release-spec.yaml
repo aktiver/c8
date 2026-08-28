@@ -1,0 +1,90 @@
+apiVersion: release.c8-next-generation.io/v1
+kind: GeneralAvailabilityRelease
+metadata:
+  version: 1.0.0
+  phase: 1.0.0-GA
+spec:
+  purpose: final-supported-production-release
+  featureDevelopmentAllowed: false
+  sourceCandidate: 1.0.0-rc.1
+  productionRuntime:
+    implementation: rust
+    apacheJenaLinkedEmbeddedOrDeployed: false
+    apacheJenaRole: external-test-only
+    hermitRole: pinned-isolated-exact-owl2dl-qualification-boundary
+  evidencePolicy:
+    liveSameReleaseEvidenceRequired: true
+    staticOrSyntheticPublicationAllowed: false
+    maximumFailureCount: 0
+    silentWaiversAllowed: false
+  requiredQualifications:
+    - rc1-acceptance
+    - sparql-correctness
+    - cross-domain-owl2-dl
+    - reasoning-correctness
+    - multinode-hpc
+    - autoscaling
+    - kubernetes-matrix
+    - cloud-trig-ingestion
+    - ha-chaos
+    - backup-restore
+    - upgrade-rollback
+    - enterprise-security
+    - query-logs
+    - performance-capacity
+    - operational-readiness
+    - production-runtime-audit
+    - security-license
+    - reproducible-build
+    - contract-freeze
+    - artifact-publication
+  correctness:
+    sparql11AllSupportedForms: required
+    distributedEqualsScalarOracle: required
+    owl2DlProfileAndConsistency: required
+    crossDomainReasonedContextGraph: required
+    uncertifiedPartialAnswersAllowed: false
+  hpc:
+    requireMultinode: true
+    requireMulticore: true
+    requireDeterminismAfterRetryAndNodeLoss: true
+    requireBoundedSpillAndCheckpointRecovery: true
+  kubernetes:
+    providers: [rke, rke2, eks, aks, gke]
+    autoscalingCpuPercent: 80
+    autoscalingMemoryPercent: 80
+    scaleOnEitherResource: true
+    requireScaleFromZero: true
+    requireHighAvailability: true
+    cloudTrigSources: [amazon-s3, azure-blob, google-cloud-storage, s3-compatible]
+  releaseBlockingDefects:
+    unresolvedCriticalAllowed: 0
+    unresolvedHighAllowed: 0
+    regressionEvidenceRequiredForFixes: true
+    compatibilityReviewRequired: true
+  security:
+    maximumUnapprovedCriticalCves: 0
+    maximumUnapprovedHighCves: 0
+    maximumEmbeddedCredentials: 0
+    requireWorkloadIdentity: true
+    requireDefaultDenyNetworkPolicy: true
+    requireEncryption: true
+    requireTenantIsolation: true
+    requireSignedArtifacts: true
+  reproducibility:
+    isolatedBuilders: 2
+    exactOutputIdentityRequired: true
+    networkControlled: true
+    dependenciesLocked: true
+    timestampsNormalized: true
+  publication:
+    immutableDigestsRequired: true
+    postUploadSignatureAndChecksumVerificationRequired: true
+    mutableTagsAreAuthoritative: false
+    goNoGoCertificateRequired: true
+    ontologyAlignment: forbidden
+    rawDataMapping: forbidden
+  maintenance:
+    releaseLine: 1.0.x
+    compatibleSecurityAndDefectFixesOnly: true
+    incompatibleFeaturesRequireNewReleaseLine: true
