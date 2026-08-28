@@ -1,0 +1,31 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: ngkg-query-shard}
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: query-shard}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: ngkg-fragment-worker}
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: fragment-worker}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: ngkg-locator}
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: locator}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: ngkg-hydration}
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: hydration}

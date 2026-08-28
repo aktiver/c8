@@ -1,0 +1,70 @@
+{{- if eq .Values.batchScheduling.mode "kueue" }}
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ResourceFlavor
+metadata: {name: ngkg-source-ingestion}
+spec: {nodeLabels: {ngkg.io/workload: source-ingestion}}
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ResourceFlavor
+metadata: {name: ngkg-semantic-projection}
+spec: {nodeLabels: {ngkg.io/workload: semantic-projection}}
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ResourceFlavor
+metadata: {name: ngkg-semantic-artifact-build}
+spec: {nodeLabels: {ngkg.io/workload: semantic-artifact-build}}
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ResourceFlavor
+metadata: {name: ngkg-index-build}
+spec: {nodeLabels: {ngkg.io/workload: index-build}}
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ResourceFlavor
+metadata: {name: ngkg-reasoning}
+spec: {nodeLabels: {ngkg.io/workload: reasoning}}
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ResourceFlavor
+metadata: {name: ngkg-storage-recovery}
+spec: {nodeLabels: {ngkg.io/workload: storage-recovery}}
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ClusterQueue
+metadata: {name: ngkg-batch-cluster}
+spec:
+  namespaceSelector: {}
+  queueingStrategy: BestEffortFIFO
+  resourceGroups:
+    - coveredResources: [cpu, memory]
+      flavors:
+        - name: ngkg-source-ingestion
+          resources:
+            - {name: cpu, nominalQuota: '{{ .Values.batchScheduling.quotas.sourceIngestion.cpu }}'}
+            - {name: memory, nominalQuota: '{{ .Values.batchScheduling.quotas.sourceIngestion.memory }}'}
+        - name: ngkg-semantic-projection
+          resources:
+            - {name: cpu, nominalQuota: '{{ .Values.batchScheduling.quotas.semanticProjection.cpu }}'}
+            - {name: memory, nominalQuota: '{{ .Values.batchScheduling.quotas.semanticProjection.memory }}'}
+        - name: ngkg-index-build
+          resources:
+            - {name: cpu, nominalQuota: '{{ .Values.batchScheduling.quotas.indexBuild.cpu }}'}
+            - {name: memory, nominalQuota: '{{ .Values.batchScheduling.quotas.indexBuild.memory }}'}
+        - name: ngkg-semantic-artifact-build
+          resources:
+            - {name: cpu, nominalQuota: '{{ .Values.batchScheduling.quotas.semanticArtifactBuild.cpu }}'}
+            - {name: memory, nominalQuota: '{{ .Values.batchScheduling.quotas.semanticArtifactBuild.memory }}'}
+        - name: ngkg-reasoning
+          resources:
+            - {name: cpu, nominalQuota: '{{ .Values.batchScheduling.quotas.reasoning.cpu }}'}
+            - {name: memory, nominalQuota: '{{ .Values.batchScheduling.quotas.reasoning.memory }}'}
+        - name: ngkg-storage-recovery
+          resources:
+            - {name: cpu, nominalQuota: '{{ .Values.batchScheduling.quotas.storageRecovery.cpu }}'}
+            - {name: memory, nominalQuota: '{{ .Values.batchScheduling.quotas.storageRecovery.memory }}'}
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: LocalQueue
+metadata: {name: {{ .Values.batchScheduling.localQueue }} }
+spec: {clusterQueue: ngkg-batch-cluster}
+{{- end }}

@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ngkg-storage-recovery-operator
+  labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: storage-recovery-operator}
+spec:
+  replicas: {{ .Values.storageRecovery.operatorReplicas }}
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: storage-recovery-operator}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: storage-recovery-operator}
+    spec:
+      serviceAccountName: ngkg-storage-recovery-operator
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: storage-recovery-operator}
+      containers:
+        - name: operator
+          image: '{{ required "storage recovery operator repository is required" .Values.images.storageRecoveryOperator.repository }}@{{ required "storage recovery operator digest is required" .Values.images.storageRecoveryOperator.digest }}'
+          env:
+            - {name: NGKG_NAMESPACE, valueFrom: {fieldRef: {fieldPath: metadata.namespace}}}
+            - name: NGKG_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: '{{ required "dependencies.databaseSecret is required" .Values.dependencies.databaseSecret }}', key: database-url}}
+            - {name: NGKG_CONTROL_ARTIFACT_BASE_URL, value: '{{ required "artifactStore.baseUrl is required" .Values.artifactStore.baseUrl }}'}
+            - {name: NGKG_STORAGE_RECOVERY_WORKER_IMAGE, value: '{{ required "storage recovery worker repository is required" .Values.images.storageRecoveryWorker.repository }}@{{ required "storage recovery worker digest is required" .Values.images.storageRecoveryWorker.digest }}'}
+            - {name: NGKG_STORAGE_RECOVERY_SERVICE_ACCOUNT, value: '{{ .Values.storageRecovery.serviceAccount }}'}
+            - {name: NGKG_STORAGE_RECOVERY_QUEUE, value: '{{ .Values.storageRecovery.queue }}'}
+            - {name: NGKG_STORAGE_RECOVERY_RESOURCE_PROFILE, value: '{{ .Values.storageRecovery.resourceProfile }}'}
+            - {name: NGKG_STORAGE_RECOVERY_CPU, value: '{{ .Values.storageRecovery.workerCpu }}'}
+            - {name: NGKG_STORAGE_RECOVERY_MEMORY, value: '{{ .Values.storageRecovery.workerMemory }}'}
+            - {name: NGKG_STORAGE_RECOVERY_SCRATCH_SIZE, value: '{{ .Values.storageRecovery.workerScratchSize }}'}
+            - {name: NGKG_STORAGE_RECOVERY_ACTIVE_DEADLINE_SECONDS, value: '{{ .Values.storageRecovery.activeDeadlineSeconds }}'}
+            - {name: NGKG_STORAGE_RECOVERY_TTL_SECONDS_AFTER_FINISHED, value: '{{ .Values.storageRecovery.ttlSecondsAfterFinished }}'}
+            - {name: NGKG_STORAGE_RECOVERY_MAX_PLAN_BYTES, value: '{{ .Values.storageRecovery.maxPlanBytes }}'}
+            - {name: NGKG_STORAGE_RECOVERY_MAX_RESULT_BYTES, value: '{{ .Values.storageRecovery.maxResultBytes }}'}
+            - {name: NGKG_STORAGE_RECOVERY_MAX_TASK_BYTES, value: '{{ .Values.storageRecovery.maxTaskBytes }}'}
+            - {name: NGKG_STORAGE_RECOVERY_TASK_TIMEOUT_SECONDS, value: '{{ .Values.storageRecovery.taskTimeoutSeconds }}'}
+            - {name: NGKG_SINGLE_PUT_MAX_BYTES, value: '{{ .Values.storageRecovery.transfer.singlePutMaxBytes }}'}
+            - {name: NGKG_MULTIPART_BUFFER_BYTES, value: '{{ .Values.storageRecovery.transfer.multipartBufferBytes }}'}
+            - {name: NGKG_MULTIPART_CONCURRENCY, value: '{{ .Values.storageRecovery.transfer.multipartConcurrency }}'}
+            - {name: NGKG_NODE_SATURATION_TARGET_PERCENT, value: '{{ .Values.storageRecovery.nodeSaturationTargetPercent }}'}
+            - {name: NGKG_STORAGE_TARGETS_JSON, value: {{ .Values.storageRecovery.targetsJson | quote }}}
+            - {name: NGKG_OBJECT_STORE_CREDENTIALS_SECRET, value: '{{ .Values.dependencies.objectStoreCredentialsSecret }}'}
+          {{ if .Values.dependencies.objectStoreCredentialsSecret }}
+          envFrom:
+            - secretRef: {name: '{{ .Values.dependencies.objectStoreCredentialsSecret }}'}
+          {{ end }}
+          resources: {{- toYaml .Values.resources.storageRecoveryOperator | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: {drop: [ALL]}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ngkg-storage-recovery-operator
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: storage-recovery-operator}

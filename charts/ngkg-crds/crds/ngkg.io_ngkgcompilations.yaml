@@ -1,0 +1,55 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: ngkgcompilations.ngkg.io
+spec:
+  group: ngkg.io
+  scope: Namespaced
+  names:
+    plural: ngkgcompilations
+    singular: ngkgcompilation
+    kind: NgkgCompilation
+    shortNames: [ngkgc]
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          type: object
+          required: [spec]
+          properties:
+            spec:
+              type: object
+              additionalProperties: false
+              x-kubernetes-validations:
+                - rule: self == oldSelf
+                  message: NgkgCompilation spec is immutable
+              required: [tenantId, datasetId, operationId, bundleObjectKey, bundleSha256, parentSnapshotId, targetSnapshotId, publicationPolicy, resourceProfile]
+              properties:
+                tenantId: {type: string, format: uuid}
+                datasetId: {type: string, format: uuid}
+                operationId: {type: string, format: uuid}
+                bundleObjectKey:
+                  type: string
+                  minLength: 1
+                  maxLength: 1024
+                  pattern: '^[A-Za-z0-9_][A-Za-z0-9._-]{0,254}(/[A-Za-z0-9_][A-Za-z0-9._-]{0,254})*$'
+                bundleSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+                parentSnapshotId: {type: string, format: uuid, nullable: true}
+                targetSnapshotId: {type: string, format: uuid}
+                publicationPolicy: {type: string, enum: [manual-after-certification, automatic-after-certification]}
+                resourceProfile: {type: string, minLength: 1, maxLength: 128}
+            status:
+              type: object
+              additionalProperties: false
+              properties:
+                observedGeneration: {type: integer, format: int64, nullable: true}
+                catalogState:
+                  type: string
+                  nullable: true
+                  enum: [REGISTERED, SOURCE_PLANNED, MAPPING_VALIDATED, PARTITIONED, PROJECTED, IDENTIFIED, SPINE_WRITTEN, INDEXED, REASONED, CERTIFIED, PUBLISHED, FAILED, CANCELLED]
+                jobName: {type: string, nullable: true}
+                condition: {type: string, nullable: true}

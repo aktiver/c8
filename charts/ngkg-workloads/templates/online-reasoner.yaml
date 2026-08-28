@@ -1,0 +1,152 @@
+{{- if .Values.onlineReasoning.enabled }}
+apiVersion: v1
+kind: Service
+metadata: {name: ngkg-direct-reasoners-headless}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: false
+  selector: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: direct-reasoner}
+  ports: [{name: http, port: 32050, targetPort: http}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: ngkg-direct-reasoners}
+spec:
+  selector: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: direct-reasoner}
+  ports: [{name: http, port: 32050, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: ngkg-direct-reasoner}
+spec:
+  serviceName: ngkg-direct-reasoners-headless
+  replicas: {{ .Values.hpcNodeGroups.online_reasoning_num_of_nodes }}
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: direct-reasoner}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ngkg
+        app.kubernetes.io/component: direct-reasoner
+        ngkg.io/network-plane: data
+    spec:
+      serviceAccountName: ngkg-query
+      terminationGracePeriodSeconds: 360
+      nodeSelector: {ngkg.io/workload: online-reasoning}
+      tolerations:
+        - {key: ngkg.io/workload, operator: Equal, value: online-reasoning, effect: NoSchedule}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: direct-reasoner}
+      containers:
+        - name: reasoner
+          image: '{{ required "images.reasoner.repository is required" .Values.images.reasoner.repository }}@{{ required "images.reasoner.digest is required" .Values.images.reasoner.digest }}'
+          ports: [{name: http, containerPort: 32050}]
+          env:
+            - {name: OMP_NUM_THREADS, value: '1'}
+            - {name: OPENBLAS_NUM_THREADS, value: '1'}
+            - {name: MKL_NUM_THREADS, value: '1'}
+            - {name: OMP_DYNAMIC, value: 'FALSE'}
+            - {name: MKL_DYNAMIC, value: 'FALSE'}
+            - {name: OMP_MAX_ACTIVE_LEVELS, value: '1'}
+            - {name: NGKG_RUST_COMPUTE_THREADS, value: '12'}
+            - {name: NGKG_BLOCKING_IO_THREADS, value: '1'}
+            - {name: NGKG_CONTROL_THREADS, value: '1'}
+            - {name: NGKG_NODE_SATURATION_TARGET_PERCENT, value: '{{ .Values.hpcRuntime.nodeSaturationTargetPercent }}'}
+            - {name: NGKG_BIND_ADDR, value: '0.0.0.0:32050'}
+            - {name: NGKG_REASONER_ONTOLOGY_ROOT, value: /var/lib/ngkg/direct/ontology}
+            - {name: NGKG_REASONER_WORK_ROOT, value: /var/lib/ngkg/direct/work}
+            - {name: NGKG_JAVA_EXECUTABLE, value: '{{ .Values.onlineReasoning.javaExecutable }}'}
+            - {name: NGKG_REASONER_ADAPTER_JAR, value: '{{ .Values.onlineReasoning.adapterJar }}'}
+            - {name: NGKG_REASONER_ADAPTER_SHA256, value: '{{ required "onlineReasoning.adapterSha256 is required" .Values.onlineReasoning.adapterSha256 }}'}
+            - {name: NGKG_REASONER_ADAPTER_VERSION, value: '{{ .Values.onlineReasoning.adapterVersion }}'}
+            - {name: NGKG_HERMIT_VERSION, value: '{{ .Values.onlineReasoning.hermitVersion }}'}
+            - {name: NGKG_REASONER_MAX_IN_FLIGHT, value: '{{ .Values.onlineReasoning.maxInFlightPerPod }}'}
+            - {name: NGKG_REASONER_MAX_PENDING, value: '{{ .Values.onlineReasoning.maxPendingPerPod }}'}
+            - name: NGKG_REASONER_SHARED_TOKEN_SHA256
+              valueFrom:
+                secretKeyRef:
+                  name: '{{ required "onlineReasoning.sharedTokenSecret is required" .Values.onlineReasoning.sharedTokenSecret }}'
+                  key: '{{ .Values.onlineReasoning.sharedTokenSha256Key }}'
+            - {name: NGKG_DIRECT_MAX_CANDIDATE_BINDINGS, value: '{{ .Values.onlineReasoning.maxCandidateBindings }}'}
+            - {name: NGKG_DIRECT_MAX_PARTITION_CANDIDATES, value: '{{ .Values.onlineReasoning.maxPartitionCandidates }}'}
+            - {name: NGKG_DIRECT_MAX_EXACT_PARTITIONS, value: '{{ .Values.onlineReasoning.maxExactPartitions }}'}
+            - {name: NGKG_DIRECT_MAX_GROUNDED_AXIOMS_PER_CANDIDATE, value: '{{ .Values.onlineReasoning.maxGroundedAxiomsPerCandidate }}'}
+            - {name: NGKG_DIRECT_MAX_GROUNDED_RDF_BYTES_PER_CANDIDATE, value: '{{ .Values.onlineReasoning.maxGroundedRdfBytesPerCandidate }}'}
+            - {name: NGKG_REASONER_HEAP_MIB_PER_LANE, value: '{{ .Values.onlineReasoning.heapMiBPerLane }}'}
+            - {name: NGKG_REASONER_PARTITION_TIMEOUT_SECONDS, value: '{{ .Values.onlineReasoning.partitionTimeoutSeconds }}'}
+            - {name: NGKG_DIRECT_MAX_CERTIFICATE_BYTES, value: '{{ .Values.onlineReasoning.maxCertificateBytes }}'}
+            - {name: NGKG_DIRECT_MAX_PROOF_SUPPORT_IDS, value: '{{ .Values.onlineReasoning.maxProofSupportIds }}'}
+          resources: {{- toYaml .Values.resources.reasoner | nindent 12 }}
+          startupProbe: {httpGet: {path: /health/ready, port: http}, periodSeconds: 5, failureThreshold: 120}
+          readinessProbe: {httpGet: {path: /health/ready, port: http}, periodSeconds: 5, timeoutSeconds: 2, failureThreshold: 3}
+          livenessProbe: {httpGet: {path: /health/live, port: http}, periodSeconds: 15, timeoutSeconds: 2, failureThreshold: 3}
+          volumeMounts:
+            - {name: direct-workspace, mountPath: /var/lib/ngkg/direct}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: {drop: [ALL]}
+      volumes:
+        - name: direct-workspace
+          persistentVolumeClaim:
+            claimName: '{{ required "onlineReasoning.sharedWorkspaceClaim is required" .Values.onlineReasoning.sharedWorkspaceClaim }}'
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: ngkg-direct-reasoner}
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: direct-reasoner}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: {name: ngkg-direct-reasoner}
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: StatefulSet, name: ngkg-direct-reasoner}
+  minReplicas: {{ .Values.onlineReasoning.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.onlineReasoning.autoscaling.maxReplicas }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 15
+      policies:
+        - {type: Percent, value: 100, periodSeconds: 30}
+        - {type: Pods, value: 4, periodSeconds: 30}
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: {{ .Values.onlineReasoning.autoscaling.scaleDownStabilizationSeconds }}
+      policies: [{type: Pods, value: 1, periodSeconds: 180}]
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: {type: Utilization, averageUtilization: {{ .Values.metrics.cpuUtilizationTargetPercent }}}
+    - type: Resource
+      resource:
+        name: memory
+        target: {type: Utilization, averageUtilization: {{ .Values.metrics.memoryUtilizationTargetPercent }}}
+  {{- if .Values.metrics.workloadAwareAutoscalingEnabled }}
+    - type: Pods
+      pods:
+        metric: {name: ngkg_reasoner_queued_candidate_partitions}
+        target: {type: AverageValue, averageValue: '{{ .Values.onlineReasoning.autoscaling.queuedPartitionsAverageTarget }}'}
+    - type: Pods
+      pods:
+        metric: {name: ngkg_reasoner_estimated_axioms}
+        target: {type: AverageValue, averageValue: '{{ .Values.onlineReasoning.autoscaling.estimatedAxiomsAverageTarget }}'}
+    - type: Pods
+      pods:
+        metric: {name: ngkg_reasoner_oldest_queue_age_milliseconds}
+        target: {type: AverageValue, averageValue: '2000'}
+    - type: Pods
+      pods:
+        metric: {name: ngkg_reasoner_mean_service_latency_milliseconds}
+        target: {type: AverageValue, averageValue: '5000'}
+  {{- end }}
+{{- end }}

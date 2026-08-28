@@ -1,0 +1,18 @@
+autoscaling:
+  parquetHydration:
+    owner: keda
+
+metrics:
+  cpuUtilizationTargetPercent: 80
+  memoryUtilizationTargetPercent: 80
+  workloadAwareAutoscalingEnabled: true
+
+metricsApis:
+  requireResourceMetrics: true
+  requireCustomMetrics: true
+
+batchScheduling:
+  mode: kueue
+
+productionAutoscaling:
+  enabled: true

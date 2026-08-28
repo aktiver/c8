@@ -1,0 +1,6 @@
+metrics:
+  workloadAwareAutoscalingEnabled: true
+
+rke2:
+  customMetricsApi:
+    requireAvailable: true

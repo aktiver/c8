@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-phase40-reference-ceilings
+  labels:
+    app.kubernetes.io/name: ngkg
+    app.kubernetes.io/component: reference-worker
+    ngkg.io/phase: "40.11"
+immutable: true
+data:
+  NGKG_PHASE40_DIRECT_MAX_CANDIDATE_BINDINGS: {{ .Values.phase40.direct.maxCandidateBindings | quote }}
+  NGKG_PHASE40_DIRECT_MAX_PARTITION_CANDIDATES: {{ .Values.phase40.direct.maxPartitionCandidates | quote }}
+  NGKG_PHASE40_DIRECT_MAX_EXACT_PARTITIONS: {{ .Values.phase40.direct.maxExactPartitions | quote }}
+  NGKG_PHASE40_DIRECT_MAX_GROUNDED_AXIOMS_PER_CANDIDATE: {{ .Values.phase40.direct.maxGroundedAxiomsPerCandidate | quote }}
+  NGKG_PHASE40_DIRECT_MAX_GROUNDED_RDF_BYTES_PER_CANDIDATE: {{ .Values.phase40.direct.maxGroundedRdfBytesPerCandidate | quote }}
+  NGKG_PHASE40_DIRECT_REASONER_CONCURRENCY: {{ .Values.phase40.direct.reasonerConcurrency | quote }}
+  NGKG_PHASE40_DIRECT_REASONER_HEAP_MIB_PER_LANE: {{ .Values.phase40.direct.reasonerHeapMiBPerLane | quote }}
+  NGKG_PHASE40_DIRECT_REASONER_TIMEOUT_SECONDS: {{ .Values.phase40.direct.reasonerTimeoutSeconds | quote }}
+  NGKG_PHASE40_DIRECT_MAX_CERTIFICATE_BYTES: {{ .Values.phase40.direct.maxCertificateBytes | quote }}
+  NGKG_PHASE40_DIRECT_MAX_PROOF_SUPPORT_IDS: {{ .Values.phase40.direct.maxProofSupportIds | quote }}

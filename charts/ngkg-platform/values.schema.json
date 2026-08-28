@@ -1,0 +1,989 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "images",
+    "dependencies",
+    "artifactStore",
+    "cloudSourceMounts",
+    "service",
+    "batchScheduling",
+    "api",
+    "phase40",
+    "operator",
+    "distributedOperator",
+    "storageRecovery",
+    "serviceAccounts",
+    "resources"
+  ],
+  "properties": {
+    "images": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "api",
+        "operator",
+        "distributedOperator",
+        "distributedWorker",
+        "referenceWorker",
+        "catalogMigrator",
+        "storageRecoveryOperator",
+        "storageRecoveryWorker"
+      ],
+      "properties": {
+        "api": {
+          "$ref": "#/$defs/image"
+        },
+        "operator": {
+          "$ref": "#/$defs/image"
+        },
+        "distributedOperator": {
+          "$ref": "#/$defs/image"
+        },
+        "distributedWorker": {
+          "$ref": "#/$defs/image"
+        },
+        "referenceWorker": {
+          "$ref": "#/$defs/image"
+        },
+        "catalogMigrator": {
+          "$ref": "#/$defs/image"
+        },
+        "storageRecoveryOperator": {
+          "$ref": "#/$defs/image"
+        },
+        "storageRecoveryWorker": {
+          "$ref": "#/$defs/image"
+        }
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "databaseSecret",
+        "authTokensSecret",
+        "objectStoreCredentialsSecret"
+      ],
+      "properties": {
+        "databaseSecret": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authTokensSecret": {
+          "type": "string",
+          "minLength": 1
+        },
+        "objectStoreCredentialsSecret": {
+          "type": "string"
+        }
+      }
+    },
+    "artifactStore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "baseUrl"
+      ],
+      "properties": {
+        "baseUrl": {
+          "type": "string",
+          "pattern": "^(s3|file)://.+"
+        }
+      }
+    },
+    "cloudSourceMounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["readOnly", "requireDriverDiscovery", "awsS3", "azureBlob", "gcs"],
+      "properties": {
+        "readOnly": {"const": true},
+        "requireDriverDiscovery": {"const": true},
+        "awsS3": {"$ref": "#/$defs/awsS3Mount"},
+        "azureBlob": {"$ref": "#/$defs/azureBlobMount"},
+        "gcs": {"$ref": "#/$defs/gcsMount"}
+      }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "apiPort"
+      ],
+      "properties": {
+        "apiPort": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 65535
+        }
+      }
+    },
+    "batchScheduling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "localQueue"
+      ],
+      "properties": {
+        "localQueue": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 63,
+          "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$"
+        }
+      }
+    },
+    "api": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "replicas",
+        "authTokensFileSha256",
+        "allowedResourceProfiles",
+        "autoscaling",
+        "sourceUpload"
+      ],
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "allowedResourceProfiles": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "autoscaling": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "minReplicas",
+            "maxReplicas",
+            "cpuUtilizationTargetPercent",
+            "memoryUtilizationTargetPercent",
+            "scaleUpStabilizationSeconds",
+            "scaleUpPercent",
+            "scaleUpPeriodSeconds",
+            "scaleDownStabilizationSeconds",
+            "scaleDownPercent",
+            "scaleDownPeriodSeconds"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "minReplicas": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxReplicas": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "cpuUtilizationTargetPercent": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 80
+            },
+            "memoryUtilizationTargetPercent": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 80
+            },
+            "scaleUpStabilizationSeconds": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 3600
+            },
+            "scaleUpPercent": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000
+            },
+            "scaleUpPeriodSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1800
+            },
+            "scaleDownStabilizationSeconds": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 7200
+            },
+            "scaleDownPercent": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "scaleDownPeriodSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1800
+            }
+          }
+        },
+        "sourceUpload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "objectPrefix",
+            "scratchSizeLimit",
+            "maxBytes",
+            "maxQuads",
+            "maxNamedGraphs",
+            "maxInFlight",
+            "singlePutMaxBytes",
+            "multipartBufferBytes",
+            "multipartConcurrency"
+          ],
+          "properties": {
+            "objectPrefix": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "pattern": "^[A-Za-z0-9_][A-Za-z0-9._-]{0,254}(?:/[A-Za-z0-9_][A-Za-z0-9._-]{0,254})*$"
+            },
+            "scratchSizeLimit": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*(Ki|Mi|Gi|Ti)$"
+            },
+            "maxBytes": {
+              "$ref": "#/$defs/positiveString"
+            },
+            "maxQuads": {
+              "$ref": "#/$defs/positiveString"
+            },
+            "maxNamedGraphs": {
+              "$ref": "#/$defs/positiveString"
+            },
+            "maxInFlight": {
+              "$ref": "#/$defs/positiveString"
+            },
+            "singlePutMaxBytes": {
+              "$ref": "#/$defs/positiveString"
+            },
+            "multipartBufferBytes": {
+              "$ref": "#/$defs/positiveString"
+            },
+            "multipartConcurrency": {
+              "$ref": "#/$defs/positiveString"
+            }
+          }
+        },
+        "authTokensFileSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "phase40": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "direct"
+      ],
+      "properties": {
+        "direct": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "maxCandidateBindings",
+            "maxPartitionCandidates",
+            "maxExactPartitions",
+            "maxGroundedAxiomsPerCandidate",
+            "maxGroundedRdfBytesPerCandidate",
+            "reasonerConcurrency",
+            "reasonerHeapMiBPerLane",
+            "reasonerTimeoutSeconds",
+            "maxCertificateBytes",
+            "maxProofSupportIds"
+          ],
+          "properties": {
+            "maxCandidateBindings": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000000
+            },
+            "maxPartitionCandidates": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000000
+            },
+            "maxExactPartitions": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4096
+            },
+            "maxGroundedAxiomsPerCandidate": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "maxGroundedRdfBytesPerCandidate": {
+              "type": "integer",
+              "minimum": 1024,
+              "maximum": 536870912
+            },
+            "reasonerConcurrency": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 32
+            },
+            "reasonerHeapMiBPerLane": {
+              "type": "integer",
+              "minimum": 256,
+              "maximum": 65536
+            },
+            "reasonerTimeoutSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 86400
+            },
+            "maxCertificateBytes": {
+              "type": "integer",
+              "minimum": 1024,
+              "maximum": 2147483648
+            },
+            "maxProofSupportIds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            }
+          }
+        }
+      }
+    },
+    "operator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "replicas",
+        "cloudCompiler",
+        "semanticCompiler",
+        "ontologyQualifier",
+        "offlineReasoner",
+        "snapshotActivation",
+        "reference"
+      ],
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cloudCompiler": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "targetWorkBytes",
+            "maxWorkItems",
+            "maxParallelism",
+            "maxPlanBytes",
+            "maxCompletionManifestBytes",
+            "maxFragmentBytes",
+            "objectConcurrency",
+            "finalizeConcurrency"
+          ],
+          "properties": {
+            "targetWorkBytes": {"$ref": "#/$defs/positiveString"},
+            "maxWorkItems": {"$ref": "#/$defs/positiveString"},
+            "maxParallelism": {"$ref": "#/$defs/positiveString"},
+            "maxPlanBytes": {"$ref": "#/$defs/positiveString"},
+            "maxCompletionManifestBytes": {"$ref": "#/$defs/positiveString"},
+            "maxFragmentBytes": {"$ref": "#/$defs/positiveString"},
+            "objectConcurrency": {"$ref": "#/$defs/positiveString"},
+            "finalizeConcurrency": {"$ref": "#/$defs/positiveString"}
+          }
+        },
+        "semanticCompiler": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scratchSize",
+            "mapMaxParallelism",
+            "partitionMaxParallelism",
+            "maxManifestBytes",
+            "maxFragmentBytes",
+            "maxFragmentQuads",
+            "mapRowsInMemory",
+            "maxRunBytes",
+            "maxDictionaryBytes",
+            "maxInputRuns",
+            "maxPartitionQuads",
+            "parquetRowGroupRows",
+            "maxArtifactBytes",
+            "finalizeConcurrency"
+          ],
+          "properties": {
+            "scratchSize": {"type": "string", "pattern": "^[1-9][0-9]*(Ki|Mi|Gi|Ti)$"},
+            "mapMaxParallelism": {"$ref": "#/$defs/positiveString"},
+            "partitionMaxParallelism": {"$ref": "#/$defs/positiveString"},
+            "maxManifestBytes": {"$ref": "#/$defs/positiveString"},
+            "maxFragmentBytes": {"$ref": "#/$defs/positiveString"},
+            "maxFragmentQuads": {"$ref": "#/$defs/positiveString"},
+            "mapRowsInMemory": {"$ref": "#/$defs/positiveString"},
+            "maxRunBytes": {"$ref": "#/$defs/positiveString"},
+            "maxDictionaryBytes": {"$ref": "#/$defs/positiveString"},
+            "maxInputRuns": {"$ref": "#/$defs/positiveString"},
+            "maxPartitionQuads": {"$ref": "#/$defs/positiveString"},
+            "parquetRowGroupRows": {"$ref": "#/$defs/positiveString"},
+            "maxArtifactBytes": {"$ref": "#/$defs/positiveString"},
+            "finalizeConcurrency": {"$ref": "#/$defs/positiveString"}
+          }
+        },
+        "ontologyQualifier": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "projectMaxParallelism", "maxManifestBytes", "maxPartitionQuads", "projectionRowsInMemory",
+            "maxArtifactBytes", "downloadConcurrency", "reasonerHeapMiB",
+            "reasonerTimeoutSeconds", "maxNamedIndividuals", "maxProperties"
+          ],
+          "properties": {
+            "projectMaxParallelism": {"$ref": "#/$defs/positiveString"},
+            "maxManifestBytes": {"$ref": "#/$defs/positiveString"},
+            "maxPartitionQuads": {"$ref": "#/$defs/positiveString"},
+            "projectionRowsInMemory": {"$ref": "#/$defs/positiveString"},
+            "maxArtifactBytes": {"$ref": "#/$defs/positiveString"},
+            "downloadConcurrency": {"$ref": "#/$defs/positiveString"},
+            "reasonerHeapMiB": {"$ref": "#/$defs/positiveString"},
+            "reasonerTimeoutSeconds": {"$ref": "#/$defs/positiveString"},
+            "maxNamedIndividuals": {"$ref": "#/$defs/positiveString"},
+            "maxProperties": {"$ref": "#/$defs/positiveString"}
+          }
+        },
+        "offlineReasoner": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "workerCpu", "workerMemory", "scratchSize",
+            "partitionMaxParallelism", "logicalPartitions", "maxManifestBytes", "maxArtifactBytes",
+            "maxFinalizerLocalBytes", "maxConsequences", "planRowsInMemory", "maxRunBytes", "parquetRowGroupRows", "finalizeConcurrency"
+          ],
+          "properties": {
+            "workerCpu": {"$ref": "#/$defs/positiveString"},
+            "workerMemory": {"type": "string", "pattern": "^[1-9][0-9]*(Ki|Mi|Gi|Ti)$"},
+            "scratchSize": {"type": "string", "pattern": "^[1-9][0-9]*(Ki|Mi|Gi|Ti)$"},
+            "partitionMaxParallelism": {"$ref": "#/$defs/positiveString"},
+            "logicalPartitions": {"$ref": "#/$defs/positiveString"},
+            "maxManifestBytes": {"$ref": "#/$defs/positiveString"},
+            "maxArtifactBytes": {"$ref": "#/$defs/positiveString"},
+            "maxFinalizerLocalBytes": {"$ref": "#/$defs/positiveString"},
+            "maxConsequences": {"$ref": "#/$defs/positiveString"},
+            "planRowsInMemory": {"$ref": "#/$defs/positiveString"},
+            "maxRunBytes": {"$ref": "#/$defs/positiveString"},
+            "parquetRowGroupRows": {"$ref": "#/$defs/positiveString"},
+            "finalizeConcurrency": {"$ref": "#/$defs/positiveString"}
+          }
+        },
+        "snapshotActivation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["maxManifestBytes", "maxPartitionBytes", "maxQueryDatasetBytes", "verifyConcurrency"],
+          "properties": {
+            "maxManifestBytes": {"$ref": "#/$defs/positiveString"},
+            "maxPartitionBytes": {"$ref": "#/$defs/positiveString"},
+            "maxQueryDatasetBytes": {"$ref": "#/$defs/positiveString"},
+            "verifyConcurrency": {"$ref": "#/$defs/positiveString"}
+          }
+        },
+        "reference": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "resourceProfile",
+            "serviceAccount",
+            "cpu",
+            "memory",
+            "scratchSize",
+            "activeDeadlineSeconds",
+            "ttlSecondsAfterFinished",
+            "javaExecutable",
+            "reasonerAdapterJar",
+            "reasonerAdapterSha256",
+            "reasonerName",
+            "reasonerVersion",
+            "javaToolOptions",
+            "hydrationWorkerThreads",
+            "ceilings",
+            "transfer"
+          ],
+          "properties": {
+            "resourceProfile": {
+              "type": "string",
+              "minLength": 1
+            },
+            "serviceAccount": {
+              "type": "string",
+              "minLength": 1
+            },
+            "cpu": {
+              "type": "string",
+              "minLength": 1
+            },
+            "memory": {
+              "type": "string",
+              "minLength": 1
+            },
+            "scratchSize": {
+              "type": "string",
+              "minLength": 1
+            },
+            "activeDeadlineSeconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "ttlSecondsAfterFinished": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "javaExecutable": {
+              "type": "string",
+              "minLength": 1
+            },
+            "reasonerAdapterJar": {
+              "type": "string",
+              "minLength": 1
+            },
+            "reasonerAdapterSha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "reasonerName": {
+              "type": "string",
+              "minLength": 1
+            },
+            "reasonerVersion": {
+              "type": "string",
+              "minLength": 1
+            },
+            "javaToolOptions": {
+              "type": "string",
+              "minLength": 1
+            },
+            "hydrationWorkerThreads": {
+              "$ref": "#/$defs/positiveString"
+            },
+            "ceilings": {
+              "$ref": "#/$defs/referenceCeilings"
+            },
+            "transfer": {
+              "$ref": "#/$defs/referenceTransfer"
+            }
+          }
+        }
+      }
+    },
+    "distributedOperator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "replicas",
+        "resourceProfile",
+        "serviceAccount",
+        "logicalPartitions",
+        "reducerCount",
+        "maxQuads",
+        "maxObjectBytes",
+        "artifactRowGroupRows",
+        "ttlSecondsAfterFinished",
+        "stages"
+      ],
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "resourceProfile": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "serviceAccount": {
+          "type": "string",
+          "minLength": 1
+        },
+        "logicalPartitions": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        },
+        "reducerCount": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        },
+        "maxQuads": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "maxObjectBytes": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "artifactRowGroupRows": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "ttlSecondsAfterFinished": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "stages": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "plan",
+            "projection",
+            "reducer",
+            "finalize",
+            "artifact_plan",
+            "artifact",
+            "artifact_finalize",
+            "serving_root",
+            "reasoner"
+          ],
+          "properties": {
+            "plan": {
+              "$ref": "#/$defs/distributedStage"
+            },
+            "projection": {
+              "$ref": "#/$defs/distributedStage"
+            },
+            "reducer": {
+              "$ref": "#/$defs/distributedStage"
+            },
+            "finalize": {
+              "$ref": "#/$defs/distributedStage"
+            },
+            "artifact_plan": {
+              "$ref": "#/$defs/distributedStage"
+            },
+            "artifact": {
+              "$ref": "#/$defs/distributedStage"
+            },
+            "artifact_finalize": {
+              "$ref": "#/$defs/distributedStage"
+            },
+            "serving_root": {
+              "$ref": "#/$defs/distributedStage"
+            },
+            "reasoner": {
+              "$ref": "#/$defs/distributedStage"
+            }
+          }
+        }
+      }
+    },
+    "storageRecovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operatorReplicas", "nodeSaturationTargetPercent", "resourceProfile", "serviceAccount", "queue", "primaryTarget",
+        "targetsJson", "apiScratchSize", "workerCpu", "workerMemory", "workerScratchSize",
+        "maxParallelism", "maxInFlightBytes", "maxManifestBytes", "maxArtifactBytes",
+        "maxArtifacts", "maxPlanBytes",
+        "maxResultBytes", "maxTaskBytes", "taskTimeoutSeconds", "activeDeadlineSeconds",
+        "ttlSecondsAfterFinished", "transfer"
+      ],
+      "properties": {
+        "operatorReplicas": {"type": "integer", "minimum": 2},
+        "nodeSaturationTargetPercent": {"const": 80},
+        "resourceProfile": {"type": "string", "minLength": 1, "maxLength": 128},
+        "serviceAccount": {"type": "string", "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$", "maxLength": 63},
+        "queue": {"type": "string", "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$", "maxLength": 63},
+        "primaryTarget": {"type": "string", "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$", "maxLength": 63},
+        "targetsJson": {"type": "string", "minLength": 2, "maxLength": 1048576},
+        "apiScratchSize": {"type": "string", "minLength": 2},
+        "workerCpu": {"$ref": "#/$defs/positiveString"},
+        "workerMemory": {"type": "string", "minLength": 2},
+        "workerScratchSize": {"type": "string", "minLength": 2},
+        "maxParallelism": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "maxInFlightBytes": {"$ref": "#/$defs/positiveString"},
+        "maxManifestBytes": {"$ref": "#/$defs/positiveString"},
+        "maxArtifactBytes": {"$ref": "#/$defs/positiveString"},
+        "maxArtifacts": {"$ref": "#/$defs/positiveString"},
+        "maxPlanBytes": {"$ref": "#/$defs/positiveString"},
+        "maxResultBytes": {"$ref": "#/$defs/positiveString"},
+        "maxTaskBytes": {"$ref": "#/$defs/positiveString"},
+        "taskTimeoutSeconds": {"$ref": "#/$defs/positiveString"},
+        "activeDeadlineSeconds": {"type": "integer", "minimum": 1},
+        "ttlSecondsAfterFinished": {"type": "integer", "minimum": 1},
+        "transfer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["singlePutMaxBytes", "multipartBufferBytes", "multipartConcurrency"],
+          "properties": {
+            "singlePutMaxBytes": {"$ref": "#/$defs/positiveString"},
+            "multipartBufferBytes": {"$ref": "#/$defs/positiveString"},
+            "multipartConcurrency": {"$ref": "#/$defs/positiveString"}
+          }
+        }
+      }
+    },
+    "serviceAccounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "referenceWorker",
+        "distributedWorker"
+      ],
+      "properties": {
+        "referenceWorker": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "annotations",
+            "automountToken"
+          ],
+          "properties": {
+            "annotations": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "automountToken": {
+              "type": "boolean"
+            }
+          }
+        },
+        "distributedWorker": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "annotations",
+            "automountToken"
+          ],
+          "properties": {
+            "annotations": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "automountToken": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "api",
+        "operator",
+        "distributedOperator",
+        "storageRecoveryOperator",
+        "catalogMigrator"
+      ],
+      "properties": {
+        "api": {
+          "type": "object"
+        },
+        "operator": {
+          "type": "object"
+        },
+        "distributedOperator": {
+          "type": "object"
+        },
+        "storageRecoveryOperator": {
+          "type": "object"
+        },
+        "catalogMigrator": {
+          "type": "object"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "awsS3Mount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "csiDriver", "identityMode"],
+      "properties": {
+        "enabled": {"const": true},
+        "csiDriver": {"const": "s3.csi.aws.com"},
+        "identityMode": {"const": "workload-identity"}
+      }
+    },
+    "azureBlobMount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "csiDriver", "identityMode"],
+      "properties": {
+        "enabled": {"const": true},
+        "csiDriver": {"const": "blob.csi.azure.com"},
+        "identityMode": {"const": "workload-identity"}
+      }
+    },
+    "gcsMount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "csiDriver", "identityMode"],
+      "properties": {
+        "enabled": {"const": true},
+        "csiDriver": {"const": "gcsfuse.csi.storage.gke.io"},
+        "identityMode": {"const": "workload-identity"}
+      }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "digest"
+      ],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "positiveString": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*$"
+    },
+    "distributedStage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "queue",
+        "cpu",
+        "memory",
+        "scratch",
+        "maxParallelism",
+        "activeDeadlineSeconds"
+      ],
+      "properties": {
+        "queue": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 63
+        },
+        "cpu": {
+          "type": "string",
+          "minLength": 1
+        },
+        "memory": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scratch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "maxParallelism": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "activeDeadlineSeconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "referenceCeilings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bundleBytes",
+        "stagedObjectBytes",
+        "stagedTotalBytes",
+        "stagedArtifacts",
+        "outputBytes",
+        "outputArtifacts",
+        "inputBytes",
+        "quads",
+        "dictionaryTerms",
+        "reasonerSeconds",
+        "parquetRowGroupRows",
+        "namedIndividuals",
+        "properties",
+        "hydrationRows"
+      ],
+      "properties": {
+        "bundleBytes": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "stagedObjectBytes": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "stagedTotalBytes": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "stagedArtifacts": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "outputBytes": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "outputArtifacts": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "inputBytes": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "quads": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "dictionaryTerms": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "reasonerSeconds": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "parquetRowGroupRows": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "namedIndividuals": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "properties": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "hydrationRows": {
+          "$ref": "#/$defs/positiveString"
+        }
+      }
+    },
+    "referenceTransfer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "downloadConcurrency",
+        "uploadConcurrency",
+        "singlePutMaxBytes",
+        "multipartBufferBytes",
+        "multipartConcurrency"
+      ],
+      "properties": {
+        "downloadConcurrency": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "uploadConcurrency": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "singlePutMaxBytes": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "multipartBufferBytes": {
+          "$ref": "#/$defs/positiveString"
+        },
+        "multipartConcurrency": {
+          "$ref": "#/$defs/positiveString"
+        }
+      }
+    }
+  }
+}

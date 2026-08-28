@@ -1,0 +1,1040 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "platform",
+    "images",
+    "tls",
+    "onlineServing",
+    "phase40",
+    "onlineReasoning",
+    "hpcNodeGroups",
+    "autoscaling",
+    "queryPlane",
+    "resources",
+    "hpcRuntime",
+    "networking",
+    "metrics",
+    "rke2",
+    "metricsApis",
+    "batchScheduling",
+    "nodeProvisioning",
+    "productionAutoscaling"
+  ],
+  "properties": {
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kubernetesDistribution"
+      ],
+      "properties": {
+        "kubernetesDistribution": {
+          "enum": [
+            "generic",
+            "rke",
+            "rke2",
+            "eks",
+            "aks",
+            "gke"
+          ]
+        }
+      }
+    },
+    "images": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "query",
+        "fragment",
+        "locator",
+        "hydration",
+        "reasoner"
+      ],
+      "properties": {
+        "query": {
+          "$ref": "#/$defs/image"
+        },
+        "fragment": {
+          "$ref": "#/$defs/image"
+        },
+        "locator": {
+          "$ref": "#/$defs/image"
+        },
+        "hydration": {
+          "$ref": "#/$defs/image"
+        },
+        "reasoner": {
+          "$ref": "#/$defs/image"
+        }
+      }
+    },
+    "tls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "existingSecret"
+      ],
+      "properties": {
+        "existingSecret": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "onlineServing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "databaseSecret",
+        "databaseMaxConnections",
+        "authTokensSecret",
+        "authTokensFileSha256",
+        "tenantAdmissionSecret",
+        "tenantAdmissionPolicySha256",
+        "maxAdmissionTenants",
+        "federationEnabled",
+        "federationRegistrySecret",
+        "federationRegistryKey",
+        "federationRegistrySha256",
+        "federationCredentialsSecret",
+        "objectStoreCredentialsSecret",
+        "artifactStoreBaseUrl",
+        "cacheSizeLimit",
+        "maxObjectBytes",
+        "maxPayloadCacheBytes",
+        "maxResidentQueryRoutes",
+        "maxResidentFragmentRuntimes",
+        "maxRequestBytes",
+        "maxQueryBytes",
+        "maxQueryResponseBytes",
+        "maxQueryResultRows",
+        "maxQueryGraphTriples",
+        "maxQueryGraphBlankNodes",
+        "queryTimeoutSeconds",
+        "queryLogs",
+        "queryResultCacheSizeLimit",
+        "maxQueryResultCacheBytes",
+        "maxQueryResultCacheEntries",
+        "maxQueryResultCacheEntryBytes",
+        "maxQualifiedEntities",
+        "maxHydrationRows",
+        "maxHydrationResponseBytes",
+        "hydrationWorkerThreads",
+        "maxDistributedFragments",
+        "maxDistributedIntermediateRows",
+        "maxDistributedExchangeBytes",
+        "maxFragmentResponseBytes",
+        "fragmentResponseSpoolSizeLimit",
+        "maxFragmentResponseSpoolBytes",
+        "fragmentArrowBatchRows",
+        "fragmentArrowHttpChunkBytes",
+        "fragmentArrowChannelCapacity",
+        "fragmentExchangeConcurrency",
+        "distributedAlgebraEnabled",
+        "distributedAlgebraReplicas",
+        "partitionNativePathsEnabled",
+        "propertyPathWorkerThreads",
+        "propertyPathMaxScanRows",
+        "shufflePartitions",
+        "maxShuffleRequestBytes",
+        "maxShuffleResponseBytes",
+        "maxShuffleExchangeBytes",
+        "shuffleExchangeConcurrency",
+        "shuffleSpillSizeLimit",
+        "maxShuffleSpillBytes",
+        "maxShuffleOpenFiles",
+        "propertyPathMaxIterations",
+        "propertyPathMaxFrontierItems",
+        "propertyPathMaxVisitedItems",
+        "propertyPathMaxCheckpointBytes",
+        "propertyPathMaxSpillBytes",
+        "propertyPathHotVertexDegree",
+        "propertyPathMaxHotVertexSplits",
+        "shuffleCacheSizeLimit",
+        "maxShuffleCacheBytes",
+        "maxShuffleCacheEntries",
+        "maxShuffleCacheEntryBytes",
+        "workerJoinSpillSizeLimit",
+        "maxWorkerJoinSpillBytes",
+        "maxWorkerJoinSpillBytesPerRequest",
+        "workerJoinBuckets",
+        "maxWorkerJoinOpenFiles",
+        "maxWorkerJoinBuildRows",
+        "maxWorkerJoinProbeRows",
+        "maxWorkerJoinRowBytes",
+        "inMemoryJoinBuildRows",
+        "streamingRequestSpoolSizeLimit",
+        "maxStreamingRequestSpoolBytes",
+        "maxQueryInFlight",
+        "maxFragmentWorkerInFlight",
+        "maxFragmentInFlight",
+        "maxShuffleInFlight",
+        "maxLocatorInFlight",
+        "maxHydrationInFlight",
+        "maxQueryPending",
+        "maxFragmentPending",
+        "maxShufflePending",
+        "maxLocatorPending",
+        "maxHydrationPending",
+        "admissionWaitMilliseconds",
+        "fragmentTimeoutSeconds",
+        "hydrationTimeoutSeconds"
+      ],
+      "properties": {
+        "databaseSecret": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authTokensSecret": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authTokensFileSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "tenantAdmissionSecret": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tenantAdmissionPolicySha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "maxAdmissionTenants": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "federationEnabled": {
+          "type": "boolean"
+        },
+        "federationRegistrySecret": {
+          "type": "string"
+        },
+        "federationRegistryKey": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]+$"
+        },
+        "federationRegistrySha256": {
+          "type": "string",
+          "pattern": "^$|^[0-9a-f]{64}$"
+        },
+        "federationCredentialsSecret": {
+          "type": "string"
+        },
+        "objectStoreCredentialsSecret": {
+          "type": "string"
+        },
+        "artifactStoreBaseUrl": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cacheSizeLimit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "maxObjectBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxPayloadCacheBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxResidentQueryRoutes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxResidentFragmentRuntimes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxRequestBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxQueryBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxQueryResponseBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxQueryResultRows": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxQueryGraphTriples": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxQueryGraphBlankNodes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "queryTimeoutSeconds": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "queryLogs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "storeQueryText",
+            "maxPageSize",
+            "coordinatorCpuMillis",
+            "coordinatorMemoryBytes",
+            "fragmentCpuMillis",
+            "fragmentMemoryBytes",
+            "hydrationCpuMillis",
+            "hydrationMemoryBytes"
+          ],
+          "properties": {
+            "storeQueryText": {"type": "boolean"},
+            "maxPageSize": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+            "coordinatorCpuMillis": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+            "coordinatorMemoryBytes": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+            "fragmentCpuMillis": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+            "fragmentMemoryBytes": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+            "hydrationCpuMillis": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+            "hydrationMemoryBytes": {"type": "string", "pattern": "^[1-9][0-9]*$"}
+          }
+        },
+        "queryResultCacheSizeLimit": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*(Ki|Mi|Gi|Ti)$"
+        },
+        "maxQueryResultCacheBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxQueryResultCacheEntries": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxQueryResultCacheEntryBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxQualifiedEntities": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxHydrationRows": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxHydrationResponseBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "hydrationWorkerThreads": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxDistributedFragments": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxDistributedIntermediateRows": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxDistributedExchangeBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxFragmentResponseBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "fragmentResponseSpoolSizeLimit": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*(Ki|Mi|Gi|Ti)$"
+        },
+        "maxFragmentResponseSpoolBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "fragmentArrowBatchRows": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "fragmentArrowHttpChunkBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "fragmentArrowChannelCapacity": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "fragmentExchangeConcurrency": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "distributedAlgebraEnabled": {
+          "type": "boolean"
+        },
+        "distributedAlgebraReplicas": {
+          "type": "string",
+          "pattern": "^([2-9]|[1-9][0-9]+)$"
+        },
+        "shufflePartitions": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxShuffleRequestBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxShuffleResponseBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxShuffleExchangeBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "shuffleExchangeConcurrency": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "shuffleSpillSizeLimit": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*(Ki|Mi|Gi|Ti)$"
+        },
+        "maxShuffleSpillBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxShuffleOpenFiles": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "partitionNativePathsEnabled": {
+          "type": "boolean"
+        },
+        "propertyPathWorkerThreads": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "propertyPathMaxScanRows": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "propertyPathMaxIterations": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "propertyPathMaxFrontierItems": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "propertyPathMaxVisitedItems": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "propertyPathMaxCheckpointBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "propertyPathMaxSpillBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "propertyPathHotVertexDegree": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "propertyPathMaxHotVertexSplits": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "shuffleCacheSizeLimit": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*(Ki|Mi|Gi|Ti)$"
+        },
+        "maxShuffleCacheBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxShuffleCacheEntries": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxShuffleCacheEntryBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "workerJoinSpillSizeLimit": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*(Ki|Mi|Gi|Ti)$"
+        },
+        "maxWorkerJoinSpillBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxWorkerJoinSpillBytesPerRequest": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "workerJoinBuckets": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxWorkerJoinOpenFiles": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxWorkerJoinBuildRows": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxWorkerJoinProbeRows": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxWorkerJoinRowBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "inMemoryJoinBuildRows": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "streamingRequestSpoolSizeLimit": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*(Ki|Mi|Gi|Ti)$"
+        },
+        "maxStreamingRequestSpoolBytes": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxQueryInFlight": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxFragmentWorkerInFlight": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxFragmentInFlight": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxShuffleInFlight": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxLocatorInFlight": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxHydrationInFlight": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxQueryPending": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxFragmentPending": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxShufflePending": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxLocatorPending": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "maxHydrationPending": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "admissionWaitMilliseconds": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "fragmentTimeoutSeconds": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "hydrationTimeoutSeconds": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "databaseMaxConnections": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        }
+      }
+    },
+    "phase40": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "directAdmission"
+      ],
+      "properties": {
+        "directAdmission": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "maxBgps",
+            "maxTriplesPerBgp",
+            "maxClassificationCpuLanes"
+          ],
+          "properties": {
+            "maxBgps": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65536
+            },
+            "maxTriplesPerBgp": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "maxClassificationCpuLanes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 32
+            }
+          }
+        }
+      }
+    },
+    "onlineReasoning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "prometheusServerAddress",
+        "sharedWorkspaceClaim",
+        "sharedTokenSecret",
+        "sharedTokenSha256Key",
+        "javaExecutable",
+        "adapterJar",
+        "adapterSha256",
+        "adapterVersion",
+        "hermitVersion",
+        "maxInFlightPerPod",
+        "maxPendingPerPod",
+        "maxCandidateBindings",
+        "maxPartitionCandidates",
+        "maxExactPartitions",
+        "maxGroundedAxiomsPerCandidate",
+        "maxGroundedRdfBytesPerCandidate",
+        "heapMiBPerLane",
+        "partitionTimeoutSeconds",
+        "maxCertificateBytes",
+        "maxProofSupportIds",
+        "autoscaling"
+      ],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "prometheusServerAddress": {"type": "string", "pattern": "^https?://[^/]+(?::[0-9]+)?$", "maxLength": 253},
+        "sharedWorkspaceClaim": {"type": "string"},
+        "sharedTokenSecret": {"type": "string"},
+        "sharedTokenSha256Key": {"type": "string", "minLength": 1},
+        "javaExecutable": {"type": "string", "pattern": "^/"},
+        "adapterJar": {"type": "string", "pattern": "^/"},
+        "adapterSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "adapterVersion": {"const": "40.9"},
+        "hermitVersion": {"const": "1.4.5.519"},
+        "maxInFlightPerPod": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "maxPendingPerPod": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "maxCandidateBindings": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "maxPartitionCandidates": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "maxExactPartitions": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "maxGroundedAxiomsPerCandidate": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "maxGroundedRdfBytesPerCandidate": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "heapMiBPerLane": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "partitionTimeoutSeconds": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "maxCertificateBytes": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "maxProofSupportIds": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "autoscaling": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "minReplicas",
+            "maxReplicas",
+            "queuedPartitionsAverageTarget",
+            "estimatedAxiomsAverageTarget",
+            "scaleDownStabilizationSeconds"
+          ],
+          "properties": {
+            "minReplicas": {"type": "integer", "minimum": 2},
+            "maxReplicas": {"type": "integer", "minimum": 2},
+            "queuedPartitionsAverageTarget": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+            "estimatedAxiomsAverageTarget": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+            "scaleDownStabilizationSeconds": {"type": "integer", "minimum": 300}
+          }
+        }
+      }
+    },
+    "hpcNodeGroups": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provisioner",
+        "source_ingestion_num_of_nodes",
+        "semantic_projection_num_of_nodes",
+        "semantic_artifact_build_num_of_nodes",
+        "reasoning_num_of_nodes",
+        "online_reasoning_num_of_nodes",
+        "index_build_num_of_nodes",
+        "sparql_query_processing_num_of_nodes",
+        "sparql_fragment_processing_num_of_nodes",
+        "parquet_hydration_num_of_nodes",
+        "maintenance_export_num_of_nodes",
+        "storage_recovery_num_of_nodes"
+      ],
+      "properties": {
+        "provisioner": {
+          "enum": [
+            "existing",
+            "cluster-autoscaler",
+            "karpenter"
+          ]
+        },
+        "source_ingestion_num_of_nodes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "semantic_projection_num_of_nodes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "semantic_artifact_build_num_of_nodes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reasoning_num_of_nodes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "online_reasoning_num_of_nodes": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "index_build_num_of_nodes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sparql_query_processing_num_of_nodes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sparql_fragment_processing_num_of_nodes": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "parquet_hydration_num_of_nodes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maintenance_export_num_of_nodes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "storage_recovery_num_of_nodes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "autoscaling": {
+      "type": "object"
+    },
+    "queryPlane": {
+      "type": "object"
+    },
+    "resources": {
+      "type": "object"
+    },
+    "hpcRuntime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "guaranteedQos",
+        "nodeSaturationTargetPercent",
+        "cpuManagerPolicyRequired",
+        "topologyManagerPolicyRequired",
+        "memoryManagerPolicyRequired",
+        "nestedParallelism",
+        "localNvme"
+      ],
+      "properties": {
+        "guaranteedQos": {
+          "const": true
+        },
+        "nodeSaturationTargetPercent": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 80
+        },
+        "cpuManagerPolicyRequired": {
+          "const": "static"
+        },
+        "topologyManagerPolicyRequired": {
+          "enum": [
+            "restricted",
+            "single-numa-node"
+          ]
+        },
+        "memoryManagerPolicyRequired": {
+          "const": "Static"
+        },
+        "nestedParallelism": {
+          "const": false
+        },
+        "localNvme": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "requiredForSpill"
+          ],
+          "properties": {
+            "requiredForSpill": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "networking": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "externalApi",
+        "internalExchange",
+        "tlsMode",
+        "defaultDenyNetworkPolicies",
+        "topologyAwareRouting",
+        "fragmentIpFamily",
+        "dependencyCidrs",
+        "federationCidrs"
+      ],
+      "properties": {
+        "externalApi": {
+          "const": "gateway-api"
+        },
+        "internalExchange": {
+          "const": "certified-arrow-ipc-rest"
+        },
+        "tlsMode": {
+          "const": "external-service-mesh-required"
+        },
+        "defaultDenyNetworkPolicies": {
+          "const": true
+        },
+        "topologyAwareRouting": {
+          "type": "boolean"
+        },
+        "fragmentIpFamily": {
+          "enum": [
+            "IPv4",
+            "IPv6"
+          ]
+        },
+        "dependencyCidrs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "federationCidrs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cpuUtilizationTargetPercent",
+        "memoryUtilizationTargetPercent",
+        "workloadAwareAutoscalingEnabled",
+        "queryPendingAverageTarget",
+        "federationPendingCallsAverageTarget",
+        "fragmentPendingAverageTarget",
+        "algebraPendingAverageTarget",
+        "algebraActiveSpillBytesAverageTarget",
+        "propertyPathPendingWorkItemsAverageTarget",
+        "propertyPathActiveFrontierItemsAverageTarget",
+        "propertyPathCheckpointBytesAverageTarget",
+        "hydrationPendingAverageTarget",
+        "reasonerQueuedPartitionsAverageTarget",
+        "reasonerEstimatedAxiomsAverageTarget",
+        "hydrationBytesInFlightTarget",
+        "hydrationQueueDelayTargetSeconds",
+        "queryQueueDelayTargetSeconds"
+      ],
+      "properties": {
+        "cpuUtilizationTargetPercent": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 80
+        },
+        "memoryUtilizationTargetPercent": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 80
+        },
+        "workloadAwareAutoscalingEnabled": {
+          "type": "boolean"
+        },
+        "queryPendingAverageTarget": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "federationPendingCallsAverageTarget": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "fragmentPendingAverageTarget": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "algebraPendingAverageTarget": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "algebraActiveSpillBytesAverageTarget": {
+          "type": "string",
+          "minLength": 1
+        },
+        "propertyPathPendingWorkItemsAverageTarget": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "propertyPathActiveFrontierItemsAverageTarget": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "propertyPathCheckpointBytesAverageTarget": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hydrationPendingAverageTarget": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "reasonerQueuedPartitionsAverageTarget": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "reasonerEstimatedAxiomsAverageTarget": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "hydrationBytesInFlightTarget": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hydrationQueueDelayTargetSeconds": {
+          "type": "string",
+          "minLength": 1
+        },
+        "queryQueueDelayTargetSeconds": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "nodeProvisioning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["installationMode", "provider", "namespace", "workloadName", "credentialSecret", "discoveryResource"],
+      "properties": {
+        "installationMode": {"const": "external"},
+        "provider": {"enum": ["none", "rancher-cluster-autoscaler", "eks-karpenter", "eks-cluster-autoscaler", "aks-managed-cluster-autoscaler", "gke-managed-cluster-autoscaler", "external-cluster-autoscaler"]},
+        "namespace": {"type": "string", "minLength": 1, "maxLength": 63},
+        "workloadName": {"type": "string", "maxLength": 128},
+        "credentialSecret": {"type": "string", "maxLength": 253},
+        "discoveryResource": {"type": "string", "maxLength": 253}
+      }
+    },
+    "metricsApis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requireResourceMetrics", "requireCustomMetrics"],
+      "properties": {
+        "requireResourceMetrics": {"type": "boolean"},
+        "requireCustomMetrics": {"type": "boolean"}
+      }
+    },
+    "productionAutoscaling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "prometheusServerAddress",
+        "cpuTargetPercent",
+        "memoryTargetPercent",
+        "requireMetricsServer",
+        "requireCustomMetrics",
+        "requireKueue",
+        "requireNodeProvisioner",
+        "requireScaleFromZero",
+        "requireDeterministicResults",
+        "scaleDownRequiresZeroCheckpointBytes",
+        "scaleDownRequiresZeroSpillBytes"
+      ],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "prometheusServerAddress": {"type": "string", "pattern": "^https?://\\S+$"},
+        "cpuTargetPercent": {"const": 80},
+        "memoryTargetPercent": {"const": 80},
+        "requireMetricsServer": {"const": true},
+        "requireCustomMetrics": {"const": true},
+        "requireKueue": {"const": true},
+        "requireNodeProvisioner": {"const": true},
+        "requireScaleFromZero": {"const": true},
+        "requireDeterministicResults": {"const": true},
+        "scaleDownRequiresZeroCheckpointBytes": {"const": true},
+        "scaleDownRequiresZeroSpillBytes": {"const": true}
+      }
+    },
+    "rke2": {
+      "type": "object"
+    },
+    "batchScheduling": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "digest"
+      ],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}

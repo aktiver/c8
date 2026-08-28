@@ -1,0 +1,90 @@
+{{- if not (has .Values.distributedOperator.resourceProfile .Values.api.allowedResourceProfiles) }}
+{{- fail "distributedOperator.resourceProfile must appear in api.allowedResourceProfiles" }}
+{{- end }}
+{{- if gt (int .Values.distributedOperator.reducerCount) (int .Values.distributedOperator.logicalPartitions) }}
+{{- fail "distributedOperator.reducerCount cannot exceed logicalPartitions" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ngkg-distributed-operator
+  labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: distributed-operator}
+spec:
+  replicas: {{ .Values.distributedOperator.replicas }}
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: distributed-operator}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: distributed-operator}
+    spec:
+      serviceAccountName: ngkg-distributed-operator
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: operator
+          image: '{{ required "images.distributedOperator.repository is required" .Values.images.distributedOperator.repository }}@{{ required "images.distributedOperator.digest is required" .Values.images.distributedOperator.digest }}'
+          envFrom:
+            - configMapRef:
+                name: '{{ .Release.Name }}-phase40-reference-ceilings'
+                optional: false
+          env:
+            - {name: NGKG_NAMESPACE, valueFrom: {fieldRef: {fieldPath: metadata.namespace}}}
+            - name: NGKG_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: '{{ required "dependencies.databaseSecret is required" .Values.dependencies.databaseSecret }}', key: database-url}}
+            - {name: NGKG_DATABASE_SECRET, value: '{{ .Values.dependencies.databaseSecret }}'}
+            - {name: NGKG_ARTIFACT_BASE_URL, value: '{{ required "artifactStore.baseUrl is required" .Values.artifactStore.baseUrl }}'}
+            - {name: NGKG_OBJECT_STORE_CREDENTIALS_SECRET, value: '{{ .Values.dependencies.objectStoreCredentialsSecret }}'}
+            - {name: NGKG_DISTRIBUTED_RESOURCE_PROFILE, value: '{{ .Values.distributedOperator.resourceProfile }}'}
+            - {name: NGKG_DISTRIBUTED_WORKER_IMAGE, value: '{{ required "distributed worker repository is required" .Values.images.distributedWorker.repository }}@{{ required "distributed worker digest is required" .Values.images.distributedWorker.digest }}'}
+            - {name: NGKG_REFERENCE_WORKER_IMAGE, value: '{{ required "reference worker repository is required" .Values.images.referenceWorker.repository }}@{{ required "reference worker digest is required" .Values.images.referenceWorker.digest }}'}
+            - {name: NGKG_DISTRIBUTED_WORKER_SERVICE_ACCOUNT, value: '{{ .Values.distributedOperator.serviceAccount }}'}
+            - {name: NGKG_REFERENCE_SERVICE_ACCOUNT, value: '{{ .Values.operator.reference.serviceAccount }}'}
+            - {name: NGKG_DISTRIBUTED_AUTOMOUNT_SERVICE_ACCOUNT_TOKEN, value: '{{ .Values.serviceAccounts.distributedWorker.automountToken }}'}
+            - {name: NGKG_REFERENCE_AUTOMOUNT_SERVICE_ACCOUNT_TOKEN, value: '{{ .Values.serviceAccounts.referenceWorker.automountToken }}'}
+            - {name: NGKG_DISTRIBUTED_LOGICAL_PARTITIONS, value: '{{ .Values.distributedOperator.logicalPartitions }}'}
+            - {name: NGKG_DISTRIBUTED_REDUCER_COUNT, value: '{{ .Values.distributedOperator.reducerCount }}'}
+            - {name: NGKG_DISTRIBUTED_MAX_QUADS, value: '{{ .Values.distributedOperator.maxQuads }}'}
+            - {name: NGKG_DISTRIBUTED_MAX_OBJECT_BYTES, value: '{{ .Values.distributedOperator.maxObjectBytes }}'}
+            - {name: NGKG_DISTRIBUTED_ARTIFACT_ROW_GROUP_ROWS, value: '{{ .Values.distributedOperator.artifactRowGroupRows }}'}
+            - {name: NGKG_DISTRIBUTED_TTL_SECONDS_AFTER_FINISHED, value: '{{ .Values.distributedOperator.ttlSecondsAfterFinished }}'}
+            {{- range $name, $stage := .Values.distributedOperator.stages }}
+            - {name: 'NGKG_{{ upper $name }}_QUEUE', value: '{{ $stage.queue }}'}
+            - {name: 'NGKG_{{ upper $name }}_CPU', value: '{{ $stage.cpu }}'}
+            - {name: 'NGKG_{{ upper $name }}_MEMORY', value: '{{ $stage.memory }}'}
+            - {name: 'NGKG_{{ upper $name }}_SCRATCH', value: '{{ $stage.scratch }}'}
+            - {name: 'NGKG_{{ upper $name }}_MAX_PARALLELISM', value: '{{ $stage.maxParallelism }}'}
+            - {name: 'NGKG_{{ upper $name }}_ACTIVE_DEADLINE_SECONDS', value: '{{ $stage.activeDeadlineSeconds }}'}
+            {{- end }}
+            - {name: NGKG_REFERENCE_JAVA_EXECUTABLE, value: '{{ .Values.operator.reference.javaExecutable }}'}
+            - {name: NGKG_REASONER_ADAPTER_JAR, value: '{{ .Values.operator.reference.reasonerAdapterJar }}'}
+            - {name: NGKG_REASONER_ADAPTER_SHA256, value: '{{ required "operator.reference.reasonerAdapterSha256 is required" .Values.operator.reference.reasonerAdapterSha256 }}'}
+            - {name: NGKG_REASONER_NAME, value: '{{ .Values.operator.reference.reasonerName }}'}
+            - {name: NGKG_REASONER_VERSION, value: '{{ .Values.operator.reference.reasonerVersion }}'}
+            - {name: NGKG_REFERENCE_JAVA_TOOL_OPTIONS, value: '{{ .Values.operator.reference.javaToolOptions }}'}
+            - {name: NGKG_CEILING_BUNDLE_BYTES, value: '{{ .Values.operator.reference.ceilings.bundleBytes }}'}
+            - {name: NGKG_CEILING_STAGED_OBJECT_BYTES, value: '{{ .Values.operator.reference.ceilings.stagedObjectBytes }}'}
+            - {name: NGKG_CEILING_STAGED_TOTAL_BYTES, value: '{{ .Values.operator.reference.ceilings.stagedTotalBytes }}'}
+            - {name: NGKG_CEILING_STAGED_ARTIFACTS, value: '{{ .Values.operator.reference.ceilings.stagedArtifacts }}'}
+            - {name: NGKG_CEILING_OUTPUT_BYTES, value: '{{ .Values.operator.reference.ceilings.outputBytes }}'}
+            - {name: NGKG_CEILING_OUTPUT_ARTIFACTS, value: '{{ .Values.operator.reference.ceilings.outputArtifacts }}'}
+            - {name: NGKG_CEILING_INPUT_BYTES, value: '{{ .Values.operator.reference.ceilings.inputBytes }}'}
+            - {name: NGKG_CEILING_QUADS, value: '{{ .Values.operator.reference.ceilings.quads }}'}
+            - {name: NGKG_CEILING_DICTIONARY_TERMS, value: '{{ .Values.operator.reference.ceilings.dictionaryTerms }}'}
+            - {name: NGKG_CEILING_REASONER_SECONDS, value: '{{ .Values.operator.reference.ceilings.reasonerSeconds }}'}
+            - {name: NGKG_CEILING_PARQUET_ROW_GROUP_ROWS, value: '{{ .Values.operator.reference.ceilings.parquetRowGroupRows }}'}
+            - {name: NGKG_CEILING_NAMED_INDIVIDUALS, value: '{{ .Values.operator.reference.ceilings.namedIndividuals }}'}
+            - {name: NGKG_CEILING_PROPERTIES, value: '{{ .Values.operator.reference.ceilings.properties }}'}
+            - {name: NGKG_CEILING_HYDRATION_ROWS, value: '{{ .Values.operator.reference.ceilings.hydrationRows }}'}
+            - {name: NGKG_HYDRATION_WORKER_THREADS, value: '{{ .Values.operator.reference.hydrationWorkerThreads }}'}
+            - {name: NGKG_DOWNLOAD_CONCURRENCY, value: '{{ .Values.operator.reference.transfer.downloadConcurrency }}'}
+            - {name: NGKG_UPLOAD_CONCURRENCY, value: '{{ .Values.operator.reference.transfer.uploadConcurrency }}'}
+            - {name: NGKG_SINGLE_PUT_MAX_BYTES, value: '{{ .Values.operator.reference.transfer.singlePutMaxBytes }}'}
+            - {name: NGKG_MULTIPART_BUFFER_BYTES, value: '{{ .Values.operator.reference.transfer.multipartBufferBytes }}'}
+            - {name: NGKG_MULTIPART_CONCURRENCY, value: '{{ .Values.operator.reference.transfer.multipartConcurrency }}'}
+          resources: {{- toYaml .Values.resources.distributedOperator | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: {drop: [ALL]}

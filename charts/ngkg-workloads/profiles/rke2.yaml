@@ -1,0 +1,15 @@
+platform:
+  kubernetesDistribution: rke2
+hpcNodeGroups:
+  provisioner: cluster-autoscaler
+rke2:
+  metricsServer: {requireAvailable: true}
+  customMetricsApi: {requireAvailable: false}
+  cni: {requireNetworkPolicyEnforcement: true}
+  clusterAutoscaler:
+    installationMode: external
+    provider: rancher
+    namespace: kube-system
+    workloadName: cluster-autoscaler
+    statusConfigMapName: cluster-autoscaler-status
+    existingCloudConfigSecret: rke2-rancher-autoscaler

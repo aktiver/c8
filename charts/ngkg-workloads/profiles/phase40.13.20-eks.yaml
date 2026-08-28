@@ -1,0 +1,8 @@
+platform: {kubernetesDistribution: eks}
+hpcNodeGroups: {provisioner: karpenter}
+nodeProvisioning:
+  provider: eks-karpenter
+  namespace: kube-system
+  workloadName: karpenter
+  credentialSecret: ''
+  discoveryResource: nodepools.karpenter.sh

@@ -1,0 +1,703 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: ngkg-query}
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: ngkg-hydration}
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Service
+metadata: {name: ngkg-query}
+spec:
+  selector: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: query-shard}
+  ports: [{name: http, port: 32010, targetPort: http}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: ngkg-query-shards}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: false
+  selector: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: query-shard}
+  ports: [{name: http, port: 32010, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: ngkg-query-shard}
+spec:
+  serviceName: ngkg-query-shards
+  replicas: {{ mul .Values.hpcNodeGroups.sparql_query_processing_num_of_nodes .Values.queryPlane.workersPerNode }}
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: query-shard}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: query-shard, ngkg.io/network-plane: data}
+      annotations:
+        ngkg.io/auth-tokens-file-sha256: '{{ required "onlineServing.authTokensFileSha256 is required" .Values.onlineServing.authTokensFileSha256 }}'
+        ngkg.io/tenant-admission-policy-sha256: '{{ required "onlineServing.tenantAdmissionPolicySha256 is required" .Values.onlineServing.tenantAdmissionPolicySha256 }}'
+    spec:
+      serviceAccountName: ngkg-query
+      terminationGracePeriodSeconds: 120
+      nodeSelector: {ngkg.io/workload: sparql-query-processing}
+      tolerations:
+        - {key: ngkg.io/workload, operator: Equal, value: sparql-query-processing, effect: NoSchedule}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: query-shard}
+      containers:
+        - name: query
+          image: '{{ required "images.query.repository is required" .Values.images.query.repository }}@{{ required "images.query.digest is required" .Values.images.query.digest }}'
+          args: [query]
+          ports: [{name: http, containerPort: 32010}]
+          env: &queryThreadEnvironment
+            - {name: OMP_NUM_THREADS, value: '1'}
+            - {name: OPENBLAS_NUM_THREADS, value: '1'}
+            - {name: MKL_NUM_THREADS, value: '1'}
+            - {name: OMP_DYNAMIC, value: 'FALSE'}
+            - {name: MKL_DYNAMIC, value: 'FALSE'}
+            - {name: OMP_MAX_ACTIVE_LEVELS, value: '1'}
+            - {name: NGKG_RUST_COMPUTE_THREADS, value: '12'}
+            - {name: NGKG_BLOCKING_IO_THREADS, value: '1'}
+            - {name: NGKG_CONTROL_THREADS, value: '1'}
+            - {name: NGKG_NODE_SATURATION_TARGET_PERCENT, value: '{{ .Values.hpcRuntime.nodeSaturationTargetPercent }}'}
+            - {name: NGKG_BIND_ADDR, value: '0.0.0.0:32010'}
+            - name: NGKG_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: '{{ required "onlineServing.databaseSecret is required" .Values.onlineServing.databaseSecret }}', key: database-url}}
+            - {name: NGKG_DATABASE_MAX_CONNECTIONS, value: '{{ .Values.onlineServing.databaseMaxConnections }}'}
+            - {name: NGKG_ARTIFACT_BASE_URL, value: '{{ required "onlineServing.artifactStoreBaseUrl is required" .Values.onlineServing.artifactStoreBaseUrl }}'}
+            - {name: NGKG_AUTH_TOKENS_FILE, value: /var/run/ngkg/auth/tokens.json}
+            - {name: NGKG_AUTH_TOKENS_FILE_SHA256, value: '{{ required "onlineServing.authTokensFileSha256 is required" .Values.onlineServing.authTokensFileSha256 }}'}
+            - {name: NGKG_TENANT_ADMISSION_POLICY_FILE, value: /var/run/ngkg/admission/tenant-policy.json}
+            - {name: NGKG_TENANT_ADMISSION_POLICY_SHA256, value: '{{ required "onlineServing.tenantAdmissionPolicySha256 is required" .Values.onlineServing.tenantAdmissionPolicySha256 }}'}
+            - {name: NGKG_MAX_ADMISSION_TENANTS, value: '{{ .Values.onlineServing.maxAdmissionTenants }}'}
+            - {name: NGKG_CACHE_ROOT, value: /var/lib/ngkg/cache}
+            - {name: NGKG_MAX_OBJECT_BYTES, value: '{{ .Values.onlineServing.maxObjectBytes }}'}
+            - {name: NGKG_MAX_PAYLOAD_CACHE_BYTES, value: '{{ .Values.onlineServing.maxPayloadCacheBytes }}'}
+            - {name: NGKG_MAX_RESIDENT_QUERY_ROUTES, value: '{{ .Values.onlineServing.maxResidentQueryRoutes }}'}
+            - {name: NGKG_MAX_RESIDENT_FRAGMENT_RUNTIMES, value: '{{ .Values.onlineServing.maxResidentFragmentRuntimes }}'}
+            - {name: NGKG_MAX_REQUEST_BYTES, value: '{{ .Values.onlineServing.maxRequestBytes }}'}
+            - {name: NGKG_MAX_QUERY_BYTES, value: '{{ .Values.onlineServing.maxQueryBytes }}'}
+            - {name: NGKG_MAX_QUERY_RESPONSE_BYTES, value: '{{ .Values.onlineServing.maxQueryResponseBytes }}'}
+            - {name: NGKG_MAX_QUERY_RESULT_ROWS, value: '{{ .Values.onlineServing.maxQueryResultRows }}'}
+            - {name: NGKG_MAX_QUERY_GRAPH_TRIPLES, value: '{{ .Values.onlineServing.maxQueryGraphTriples }}'}
+            - {name: NGKG_MAX_QUERY_GRAPH_BLANK_NODES, value: '{{ .Values.onlineServing.maxQueryGraphBlankNodes }}'}
+            - {name: NGKG_QUERY_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.queryTimeoutSeconds }}'}
+            - {name: NGKG_QUERY_LOG_STORE_QUERY_TEXT, value: '{{ .Values.onlineServing.queryLogs.storeQueryText }}'}
+            - {name: NGKG_QUERY_LOG_MAX_PAGE_SIZE, value: '{{ .Values.onlineServing.queryLogs.maxPageSize }}'}
+            - {name: NGKG_QUERY_LOG_COORDINATOR_CPU_MILLIS, value: '{{ .Values.onlineServing.queryLogs.coordinatorCpuMillis }}'}
+            - {name: NGKG_QUERY_LOG_COORDINATOR_MEMORY_BYTES, value: '{{ .Values.onlineServing.queryLogs.coordinatorMemoryBytes }}'}
+            - {name: NGKG_QUERY_LOG_FRAGMENT_CPU_MILLIS, value: '{{ .Values.onlineServing.queryLogs.fragmentCpuMillis }}'}
+            - {name: NGKG_QUERY_LOG_FRAGMENT_MEMORY_BYTES, value: '{{ .Values.onlineServing.queryLogs.fragmentMemoryBytes }}'}
+            - {name: NGKG_QUERY_LOG_HYDRATION_CPU_MILLIS, value: '{{ .Values.onlineServing.queryLogs.hydrationCpuMillis }}'}
+            - {name: NGKG_QUERY_LOG_HYDRATION_MEMORY_BYTES, value: '{{ .Values.onlineServing.queryLogs.hydrationMemoryBytes }}'}
+            - {name: NGKG_QUERY_RESULT_CACHE_ROOT, value: /var/lib/ngkg/query-result-cache}
+            - {name: NGKG_MAX_QUERY_RESULT_CACHE_BYTES, value: '{{ .Values.onlineServing.maxQueryResultCacheBytes }}'}
+            - {name: NGKG_MAX_QUERY_RESULT_CACHE_ENTRIES, value: '{{ .Values.onlineServing.maxQueryResultCacheEntries }}'}
+            - {name: NGKG_MAX_QUERY_RESULT_CACHE_ENTRY_BYTES, value: '{{ .Values.onlineServing.maxQueryResultCacheEntryBytes }}'}
+            - {name: NGKG_MAX_QUALIFIED_ENTITIES, value: '{{ .Values.onlineServing.maxQualifiedEntities }}'}
+            - {name: NGKG_MAX_HYDRATION_ROWS, value: '{{ .Values.onlineServing.maxHydrationRows }}'}
+            - {name: NGKG_MAX_HYDRATION_RESPONSE_BYTES, value: '{{ .Values.onlineServing.maxHydrationResponseBytes }}'}
+            - {name: NGKG_HYDRATION_WORKER_THREADS, value: '1'}
+            - {name: NGKG_HYDRATION_URL, value: 'http://ngkg-hydration:32030'}
+            - {name: NGKG_FRAGMENT_SERVICE, value: 'ngkg-fragments:32040'}
+          {{- if .Values.onlineServing.federationEnabled }}
+            - {name: NGKG_FEDERATION_REGISTRY_FILE, value: '/var/run/ngkg/federation/{{ .Values.onlineServing.federationRegistryKey }}'}
+            - {name: NGKG_FEDERATION_REGISTRY_SHA256, value: '{{ required "onlineServing.federationRegistrySha256 is required when federation is enabled" .Values.onlineServing.federationRegistrySha256 }}'}
+          {{- end }}
+          {{- if .Values.onlineReasoning.enabled }}
+            - {name: NGKG_ONLINE_DIRECT_ENABLED, value: 'true'}
+            - {name: NGKG_REASONER_WORKER_URLS, value: 'http://ngkg-direct-reasoners:32050'}
+            - name: NGKG_REASONER_SHARED_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: '{{ required "onlineReasoning.sharedTokenSecret is required" .Values.onlineReasoning.sharedTokenSecret }}'
+                  key: '{{ .Values.onlineReasoning.sharedTokenKey }}'
+            - {name: NGKG_REASONER_ONTOLOGY_ROOT, value: /var/lib/ngkg/direct/ontology}
+            - {name: NGKG_REASONER_WORK_ROOT, value: /var/lib/ngkg/direct/work}
+            - {name: NGKG_JAVA_EXECUTABLE, value: '{{ .Values.onlineReasoning.javaExecutable }}'}
+            - {name: NGKG_REASONER_ADAPTER_JAR, value: '{{ .Values.onlineReasoning.adapterJar }}'}
+            - {name: NGKG_REASONER_ADAPTER_SHA256, value: '{{ required "onlineReasoning.adapterSha256 is required" .Values.onlineReasoning.adapterSha256 }}'}
+            - {name: NGKG_REASONER_ADAPTER_VERSION, value: '{{ .Values.onlineReasoning.adapterVersion }}'}
+            - {name: NGKG_HERMIT_VERSION, value: '{{ .Values.onlineReasoning.hermitVersion }}'}
+            - {name: NGKG_REASONER_DISPATCH_CONCURRENCY, value: '{{ .Values.onlineReasoning.dispatchConcurrency }}'}
+            - {name: NGKG_REASONER_DISPATCH_ATTEMPTS, value: '{{ .Values.onlineReasoning.dispatchAttempts }}'}
+            - {name: NGKG_REASONER_MAX_PARTITION_RESPONSE_BYTES, value: '{{ .Values.onlineReasoning.maxPartitionResponseBytes }}'}
+            - {name: NGKG_DIRECT_MAX_CANDIDATE_BINDINGS, value: '{{ .Values.onlineReasoning.maxCandidateBindings }}'}
+            - {name: NGKG_DIRECT_MAX_PARTITION_CANDIDATES, value: '{{ .Values.onlineReasoning.maxPartitionCandidates }}'}
+            - {name: NGKG_DIRECT_MAX_EXACT_PARTITIONS, value: '{{ .Values.onlineReasoning.maxExactPartitions }}'}
+            - {name: NGKG_DIRECT_MAX_GROUNDED_AXIOMS_PER_CANDIDATE, value: '{{ .Values.onlineReasoning.maxGroundedAxiomsPerCandidate }}'}
+            - {name: NGKG_DIRECT_MAX_GROUNDED_RDF_BYTES_PER_CANDIDATE, value: '{{ .Values.onlineReasoning.maxGroundedRdfBytesPerCandidate }}'}
+            - {name: NGKG_REASONER_HEAP_MIB_PER_LANE, value: '{{ .Values.onlineReasoning.heapMiBPerLane }}'}
+            - {name: NGKG_REASONER_PARTITION_TIMEOUT_SECONDS, value: '{{ .Values.onlineReasoning.partitionTimeoutSeconds }}'}
+            - {name: NGKG_DIRECT_MAX_CERTIFICATE_BYTES, value: '{{ .Values.onlineReasoning.maxCertificateBytes }}'}
+            - {name: NGKG_DIRECT_MAX_PROOF_SUPPORT_IDS, value: '{{ .Values.onlineReasoning.maxProofSupportIds }}'}
+          {{- end }}
+            - {name: NGKG_MAX_DISTRIBUTED_FRAGMENTS, value: '{{ .Values.onlineServing.maxDistributedFragments }}'}
+            - {name: NGKG_MAX_DISTRIBUTED_INTERMEDIATE_ROWS, value: '{{ .Values.onlineServing.maxDistributedIntermediateRows }}'}
+            - {name: NGKG_MAX_DISTRIBUTED_EXCHANGE_BYTES, value: '{{ .Values.onlineServing.maxDistributedExchangeBytes }}'}
+            - {name: NGKG_MAX_FRAGMENT_RESPONSE_BYTES, value: '{{ .Values.onlineServing.maxFragmentResponseBytes }}'}
+            - {name: NGKG_FRAGMENT_RESPONSE_SPOOL_ROOT, value: /var/lib/ngkg/fragment-responses}
+            - {name: NGKG_MAX_FRAGMENT_RESPONSE_SPOOL_BYTES, value: '{{ .Values.onlineServing.maxFragmentResponseSpoolBytes }}'}
+            - {name: NGKG_FRAGMENT_ARROW_BATCH_ROWS, value: '{{ .Values.onlineServing.fragmentArrowBatchRows }}'}
+            - {name: NGKG_FRAGMENT_ARROW_HTTP_CHUNK_BYTES, value: '{{ .Values.onlineServing.fragmentArrowHttpChunkBytes }}'}
+            - {name: NGKG_FRAGMENT_ARROW_CHANNEL_CAPACITY, value: '{{ .Values.onlineServing.fragmentArrowChannelCapacity }}'}
+            - {name: NGKG_FRAGMENT_EXCHANGE_CONCURRENCY, value: '{{ .Values.onlineServing.fragmentExchangeConcurrency }}'}
+            - {name: NGKG_DISTRIBUTED_ALGEBRA_ENABLED, value: '{{ .Values.onlineServing.distributedAlgebraEnabled }}'}
+            - {name: NGKG_DISTRIBUTED_ALGEBRA_REPLICAS, value: '{{ .Values.onlineServing.distributedAlgebraReplicas }}'}
+            - {name: NGKG_PARTITION_NATIVE_PATHS_ENABLED, value: '{{ .Values.onlineServing.partitionNativePathsEnabled }}'}
+            - {name: NGKG_PROPERTY_PATH_WORKER_THREADS, value: '{{ .Values.onlineServing.propertyPathWorkerThreads }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_SCAN_ROWS, value: '{{ .Values.onlineServing.propertyPathMaxScanRows }}'}
+            - {name: NGKG_SHUFFLE_PARTITIONS, value: '{{ .Values.onlineServing.shufflePartitions }}'}
+            - {name: NGKG_MAX_SHUFFLE_REQUEST_BYTES, value: '{{ .Values.onlineServing.maxShuffleRequestBytes }}'}
+            - {name: NGKG_MAX_SHUFFLE_RESPONSE_BYTES, value: '{{ .Values.onlineServing.maxShuffleResponseBytes }}'}
+            - {name: NGKG_MAX_SHUFFLE_EXCHANGE_BYTES, value: '{{ .Values.onlineServing.maxShuffleExchangeBytes }}'}
+            - {name: NGKG_SHUFFLE_EXCHANGE_CONCURRENCY, value: '{{ .Values.onlineServing.shuffleExchangeConcurrency }}'}
+            - {name: NGKG_SHUFFLE_SPILL_ROOT, value: /var/lib/ngkg/shuffle}
+            - {name: NGKG_MAX_SHUFFLE_SPILL_BYTES, value: '{{ .Values.onlineServing.maxShuffleSpillBytes }}'}
+            - {name: NGKG_MAX_SHUFFLE_OPEN_FILES, value: '{{ .Values.onlineServing.maxShuffleOpenFiles }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_ITERATIONS, value: '{{ .Values.onlineServing.propertyPathMaxIterations }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_FRONTIER_ITEMS, value: '{{ .Values.onlineServing.propertyPathMaxFrontierItems }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_VISITED_ITEMS, value: '{{ .Values.onlineServing.propertyPathMaxVisitedItems }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_CHECKPOINT_BYTES, value: '{{ .Values.onlineServing.propertyPathMaxCheckpointBytes }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_SPILL_BYTES, value: '{{ .Values.onlineServing.propertyPathMaxSpillBytes }}'}
+            - {name: NGKG_PROPERTY_PATH_HOT_VERTEX_DEGREE, value: '{{ .Values.onlineServing.propertyPathHotVertexDegree }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_HOT_VERTEX_SPLITS, value: '{{ .Values.onlineServing.propertyPathMaxHotVertexSplits }}'}
+            - {name: NGKG_WORKER_JOIN_BUCKETS, value: '{{ .Values.onlineServing.workerJoinBuckets }}'}
+            - {name: NGKG_MAX_WORKER_JOIN_BUILD_ROWS, value: '{{ .Values.onlineServing.maxWorkerJoinBuildRows }}'}
+            - {name: NGKG_MAX_QUERY_IN_FLIGHT, value: '{{ .Values.onlineServing.maxQueryInFlight }}'}
+            - {name: NGKG_MAX_FRAGMENT_WORKER_IN_FLIGHT, value: '{{ .Values.onlineServing.maxFragmentWorkerInFlight }}'}
+            - {name: NGKG_MAX_FRAGMENT_IN_FLIGHT, value: '{{ .Values.onlineServing.maxFragmentInFlight }}'}
+            - {name: NGKG_MAX_SHUFFLE_IN_FLIGHT, value: '{{ .Values.onlineServing.maxShuffleInFlight }}'}
+            - {name: NGKG_MAX_LOCATOR_IN_FLIGHT, value: '{{ .Values.onlineServing.maxLocatorInFlight }}'}
+            - {name: NGKG_MAX_HYDRATION_IN_FLIGHT, value: '{{ .Values.onlineServing.maxHydrationInFlight }}'}
+            - {name: NGKG_MAX_QUERY_PENDING, value: '{{ .Values.onlineServing.maxQueryPending }}'}
+            - {name: NGKG_MAX_FRAGMENT_PENDING, value: '{{ .Values.onlineServing.maxFragmentPending }}'}
+            - {name: NGKG_MAX_SHUFFLE_PENDING, value: '{{ .Values.onlineServing.maxShufflePending }}'}
+            - {name: NGKG_MAX_LOCATOR_PENDING, value: '{{ .Values.onlineServing.maxLocatorPending }}'}
+            - {name: NGKG_MAX_HYDRATION_PENDING, value: '{{ .Values.onlineServing.maxHydrationPending }}'}
+            - {name: NGKG_ADMISSION_WAIT_MILLISECONDS, value: '{{ .Values.onlineServing.admissionWaitMilliseconds }}'}
+            - {name: NGKG_FRAGMENT_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.fragmentTimeoutSeconds }}'}
+            - {name: NGKG_HYDRATION_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.hydrationTimeoutSeconds }}'}
+          envFrom:
+            - configMapRef: {name: ngkg-phase40-online-ceilings}
+          {{- if .Values.onlineServing.objectStoreCredentialsSecret }}
+            - secretRef: {name: '{{ .Values.onlineServing.objectStoreCredentialsSecret }}'}
+          {{- end }}
+          {{- if and .Values.onlineServing.federationEnabled .Values.onlineServing.federationCredentialsSecret }}
+            - secretRef: {name: '{{ .Values.onlineServing.federationCredentialsSecret }}'}
+          {{- end }}
+          resources: {{- toYaml .Values.resources.query | nindent 12 }}
+          startupProbe: {httpGet: {path: /health/ready, port: http}, periodSeconds: 5, failureThreshold: 60}
+          readinessProbe: {httpGet: {path: /health/ready, port: http}, periodSeconds: 5, timeoutSeconds: 2, failureThreshold: 3}
+          livenessProbe: {httpGet: {path: /health/live, port: http}, periodSeconds: 15, timeoutSeconds: 2, failureThreshold: 3}
+          volumeMounts:
+            - {name: tls, mountPath: /var/run/ngkg/tls, readOnly: true}
+            - {name: auth, mountPath: /var/run/ngkg/auth, readOnly: true}
+            - {name: tenant-admission, mountPath: /var/run/ngkg/admission, readOnly: true}
+          {{- if .Values.onlineServing.federationEnabled }}
+            - {name: federation-registry, mountPath: /var/run/ngkg/federation, readOnly: true}
+          {{- end }}
+            - {name: cache, mountPath: /var/lib/ngkg/cache}
+            - {name: shuffle-spill, mountPath: /var/lib/ngkg/shuffle}
+            - {name: fragment-response-spool, mountPath: /var/lib/ngkg/fragment-responses}
+            - {name: query-result-cache, mountPath: /var/lib/ngkg/query-result-cache}
+          {{- if .Values.onlineReasoning.enabled }}
+            - {name: direct-workspace, mountPath: /var/lib/ngkg/direct}
+          {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: {drop: [ALL]}
+      volumes:
+        - name: tls
+          secret: {secretName: '{{ required "tls.existingSecret is required" .Values.tls.existingSecret }}'}
+        - name: auth
+          secret: {secretName: '{{ required "onlineServing.authTokensSecret is required" .Values.onlineServing.authTokensSecret }}'}
+        - name: tenant-admission
+          secret: {secretName: '{{ required "onlineServing.tenantAdmissionSecret is required" .Values.onlineServing.tenantAdmissionSecret }}'}
+      {{- if .Values.onlineServing.federationEnabled }}
+        - name: federation-registry
+          secret:
+            secretName: '{{ required "onlineServing.federationRegistrySecret is required when federation is enabled" .Values.onlineServing.federationRegistrySecret }}'
+            items:
+              - key: '{{ .Values.onlineServing.federationRegistryKey }}'
+                path: '{{ .Values.onlineServing.federationRegistryKey }}'
+      {{- end }}
+        - name: cache
+          emptyDir: {sizeLimit: '{{ .Values.onlineServing.cacheSizeLimit }}'}
+        - name: shuffle-spill
+          emptyDir: {sizeLimit: '{{ .Values.onlineServing.shuffleSpillSizeLimit }}'}
+        - name: fragment-response-spool
+          emptyDir: {sizeLimit: '{{ .Values.onlineServing.fragmentResponseSpoolSizeLimit }}'}
+        - name: query-result-cache
+          emptyDir: {sizeLimit: '{{ .Values.onlineServing.queryResultCacheSizeLimit }}'}
+      {{- if .Values.onlineReasoning.enabled }}
+        - name: direct-workspace
+          persistentVolumeClaim:
+            claimName: '{{ required "onlineReasoning.sharedWorkspaceClaim is required" .Values.onlineReasoning.sharedWorkspaceClaim }}'
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: ngkg-fragments}
+spec:
+  clusterIP: None
+  ipFamilyPolicy: SingleStack
+  ipFamilies: ['{{ .Values.networking.fragmentIpFamily }}']
+  publishNotReadyAddresses: false
+  selector: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: fragment-worker}
+  ports: [{name: http, port: 32040, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: ngkg-fragment-worker}
+spec:
+  serviceName: ngkg-fragments
+  replicas: {{ .Values.hpcNodeGroups.sparql_fragment_processing_num_of_nodes }}
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: fragment-worker}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: fragment-worker, ngkg.io/network-plane: data}
+      annotations:
+        ngkg.io/auth-tokens-file-sha256: '{{ required "onlineServing.authTokensFileSha256 is required" .Values.onlineServing.authTokensFileSha256 }}'
+        ngkg.io/tenant-admission-policy-sha256: '{{ required "onlineServing.tenantAdmissionPolicySha256 is required" .Values.onlineServing.tenantAdmissionPolicySha256 }}'
+    spec:
+      serviceAccountName: ngkg-query
+      terminationGracePeriodSeconds: 120
+      nodeSelector: {ngkg.io/workload: sparql-fragment-processing}
+      tolerations:
+        - {key: ngkg.io/workload, operator: Equal, value: sparql-fragment-processing, effect: NoSchedule}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: fragment-worker}
+      containers:
+        - name: fragment
+          image: '{{ required "images.fragment.repository is required" .Values.images.fragment.repository }}@{{ required "images.fragment.digest is required" .Values.images.fragment.digest }}'
+          args: [fragment]
+          ports: [{name: http, containerPort: 32040}]
+          env:
+            - {name: OMP_NUM_THREADS, value: '1'}
+            - {name: OPENBLAS_NUM_THREADS, value: '1'}
+            - {name: MKL_NUM_THREADS, value: '1'}
+            - {name: OMP_DYNAMIC, value: 'FALSE'}
+            - {name: MKL_DYNAMIC, value: 'FALSE'}
+            - {name: OMP_MAX_ACTIVE_LEVELS, value: '1'}
+            - {name: NGKG_RUST_COMPUTE_THREADS, value: '12'}
+            - {name: NGKG_BLOCKING_IO_THREADS, value: '1'}
+            - {name: NGKG_CONTROL_THREADS, value: '1'}
+            - {name: NGKG_NODE_SATURATION_TARGET_PERCENT, value: '{{ .Values.hpcRuntime.nodeSaturationTargetPercent }}'}
+            - {name: NGKG_BIND_ADDR, value: '0.0.0.0:32040'}
+            - name: NGKG_WORKER_ID
+              valueFrom: {fieldRef: {fieldPath: metadata.name}}
+            - name: NGKG_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: '{{ required "onlineServing.databaseSecret is required" .Values.onlineServing.databaseSecret }}', key: database-url}}
+            - {name: NGKG_DATABASE_MAX_CONNECTIONS, value: '{{ .Values.onlineServing.databaseMaxConnections }}'}
+            - {name: NGKG_ARTIFACT_BASE_URL, value: '{{ required "onlineServing.artifactStoreBaseUrl is required" .Values.onlineServing.artifactStoreBaseUrl }}'}
+            - {name: NGKG_AUTH_TOKENS_FILE, value: /var/run/ngkg/auth/tokens.json}
+            - {name: NGKG_AUTH_TOKENS_FILE_SHA256, value: '{{ required "onlineServing.authTokensFileSha256 is required" .Values.onlineServing.authTokensFileSha256 }}'}
+            - {name: NGKG_TENANT_ADMISSION_POLICY_FILE, value: /var/run/ngkg/admission/tenant-policy.json}
+            - {name: NGKG_TENANT_ADMISSION_POLICY_SHA256, value: '{{ required "onlineServing.tenantAdmissionPolicySha256 is required" .Values.onlineServing.tenantAdmissionPolicySha256 }}'}
+            - {name: NGKG_MAX_ADMISSION_TENANTS, value: '{{ .Values.onlineServing.maxAdmissionTenants }}'}
+            - {name: NGKG_CACHE_ROOT, value: /var/lib/ngkg/cache}
+            - {name: NGKG_MAX_OBJECT_BYTES, value: '{{ .Values.onlineServing.maxObjectBytes }}'}
+            - {name: NGKG_MAX_PAYLOAD_CACHE_BYTES, value: '{{ .Values.onlineServing.maxPayloadCacheBytes }}'}
+            - {name: NGKG_MAX_RESIDENT_QUERY_ROUTES, value: '{{ .Values.onlineServing.maxResidentQueryRoutes }}'}
+            - {name: NGKG_MAX_RESIDENT_FRAGMENT_RUNTIMES, value: '{{ .Values.onlineServing.maxResidentFragmentRuntimes }}'}
+            - {name: NGKG_MAX_REQUEST_BYTES, value: '{{ .Values.onlineServing.maxRequestBytes }}'}
+            - {name: NGKG_MAX_QUERY_BYTES, value: '{{ .Values.onlineServing.maxQueryBytes }}'}
+            - {name: NGKG_MAX_QUERY_RESPONSE_BYTES, value: '{{ .Values.onlineServing.maxQueryResponseBytes }}'}
+            - {name: NGKG_MAX_QUERY_RESULT_ROWS, value: '{{ .Values.onlineServing.maxQueryResultRows }}'}
+            - {name: NGKG_MAX_QUERY_GRAPH_TRIPLES, value: '{{ .Values.onlineServing.maxQueryGraphTriples }}'}
+            - {name: NGKG_MAX_QUERY_GRAPH_BLANK_NODES, value: '{{ .Values.onlineServing.maxQueryGraphBlankNodes }}'}
+            - {name: NGKG_QUERY_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.queryTimeoutSeconds }}'}
+            - {name: NGKG_MAX_QUALIFIED_ENTITIES, value: '{{ .Values.onlineServing.maxQualifiedEntities }}'}
+            - {name: NGKG_MAX_HYDRATION_ROWS, value: '{{ .Values.onlineServing.maxHydrationRows }}'}
+            - {name: NGKG_MAX_HYDRATION_RESPONSE_BYTES, value: '{{ .Values.onlineServing.maxHydrationResponseBytes }}'}
+            - {name: NGKG_HYDRATION_WORKER_THREADS, value: '1'}
+            - {name: NGKG_MAX_DISTRIBUTED_FRAGMENTS, value: '{{ .Values.onlineServing.maxDistributedFragments }}'}
+            - {name: NGKG_MAX_DISTRIBUTED_INTERMEDIATE_ROWS, value: '{{ .Values.onlineServing.maxDistributedIntermediateRows }}'}
+            - {name: NGKG_MAX_DISTRIBUTED_EXCHANGE_BYTES, value: '{{ .Values.onlineServing.maxDistributedExchangeBytes }}'}
+            - {name: NGKG_MAX_FRAGMENT_RESPONSE_BYTES, value: '{{ .Values.onlineServing.maxFragmentResponseBytes }}'}
+            - {name: NGKG_FRAGMENT_ARROW_BATCH_ROWS, value: '{{ .Values.onlineServing.fragmentArrowBatchRows }}'}
+            - {name: NGKG_FRAGMENT_ARROW_HTTP_CHUNK_BYTES, value: '{{ .Values.onlineServing.fragmentArrowHttpChunkBytes }}'}
+            - {name: NGKG_FRAGMENT_ARROW_CHANNEL_CAPACITY, value: '{{ .Values.onlineServing.fragmentArrowChannelCapacity }}'}
+            - {name: NGKG_FRAGMENT_EXCHANGE_CONCURRENCY, value: '{{ .Values.onlineServing.fragmentExchangeConcurrency }}'}
+            - {name: NGKG_DISTRIBUTED_ALGEBRA_ENABLED, value: '{{ .Values.onlineServing.distributedAlgebraEnabled }}'}
+            - {name: NGKG_DISTRIBUTED_ALGEBRA_REPLICAS, value: '{{ .Values.onlineServing.distributedAlgebraReplicas }}'}
+            - {name: NGKG_PARTITION_NATIVE_PATHS_ENABLED, value: '{{ .Values.onlineServing.partitionNativePathsEnabled }}'}
+            - {name: NGKG_PROPERTY_PATH_WORKER_THREADS, value: '{{ .Values.onlineServing.propertyPathWorkerThreads }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_SCAN_ROWS, value: '{{ .Values.onlineServing.propertyPathMaxScanRows }}'}
+            - {name: NGKG_SHUFFLE_PARTITIONS, value: '{{ .Values.onlineServing.shufflePartitions }}'}
+            - {name: NGKG_MAX_SHUFFLE_REQUEST_BYTES, value: '{{ .Values.onlineServing.maxShuffleRequestBytes }}'}
+            - {name: NGKG_MAX_SHUFFLE_RESPONSE_BYTES, value: '{{ .Values.onlineServing.maxShuffleResponseBytes }}'}
+            - {name: NGKG_MAX_SHUFFLE_EXCHANGE_BYTES, value: '{{ .Values.onlineServing.maxShuffleExchangeBytes }}'}
+            - {name: NGKG_SHUFFLE_EXCHANGE_CONCURRENCY, value: '{{ .Values.onlineServing.shuffleExchangeConcurrency }}'}
+            - {name: NGKG_MAX_SHUFFLE_SPILL_BYTES, value: '{{ .Values.onlineServing.maxShuffleSpillBytes }}'}
+            - {name: NGKG_MAX_SHUFFLE_OPEN_FILES, value: '{{ .Values.onlineServing.maxShuffleOpenFiles }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_ITERATIONS, value: '{{ .Values.onlineServing.propertyPathMaxIterations }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_FRONTIER_ITEMS, value: '{{ .Values.onlineServing.propertyPathMaxFrontierItems }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_VISITED_ITEMS, value: '{{ .Values.onlineServing.propertyPathMaxVisitedItems }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_CHECKPOINT_BYTES, value: '{{ .Values.onlineServing.propertyPathMaxCheckpointBytes }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_SPILL_BYTES, value: '{{ .Values.onlineServing.propertyPathMaxSpillBytes }}'}
+            - {name: NGKG_PROPERTY_PATH_HOT_VERTEX_DEGREE, value: '{{ .Values.onlineServing.propertyPathHotVertexDegree }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_HOT_VERTEX_SPLITS, value: '{{ .Values.onlineServing.propertyPathMaxHotVertexSplits }}'}
+            - {name: NGKG_SHUFFLE_CACHE_ROOT, value: /var/lib/ngkg/shuffle-cache}
+            - {name: NGKG_MAX_SHUFFLE_CACHE_BYTES, value: '{{ .Values.onlineServing.maxShuffleCacheBytes }}'}
+            - {name: NGKG_MAX_SHUFFLE_CACHE_ENTRIES, value: '{{ .Values.onlineServing.maxShuffleCacheEntries }}'}
+            - {name: NGKG_MAX_SHUFFLE_CACHE_ENTRY_BYTES, value: '{{ .Values.onlineServing.maxShuffleCacheEntryBytes }}'}
+            - {name: NGKG_WORKER_JOIN_SPILL_ROOT, value: /var/lib/ngkg/worker-join}
+            - {name: NGKG_MAX_WORKER_JOIN_SPILL_BYTES, value: '{{ .Values.onlineServing.maxWorkerJoinSpillBytes }}'}
+            - {name: NGKG_MAX_WORKER_JOIN_SPILL_BYTES_PER_REQUEST, value: '{{ .Values.onlineServing.maxWorkerJoinSpillBytesPerRequest }}'}
+            - {name: NGKG_WORKER_JOIN_BUCKETS, value: '{{ .Values.onlineServing.workerJoinBuckets }}'}
+            - {name: NGKG_MAX_WORKER_JOIN_OPEN_FILES, value: '{{ .Values.onlineServing.maxWorkerJoinOpenFiles }}'}
+            - {name: NGKG_MAX_WORKER_JOIN_BUILD_ROWS, value: '{{ .Values.onlineServing.maxWorkerJoinBuildRows }}'}
+            - {name: NGKG_MAX_WORKER_JOIN_PROBE_ROWS, value: '{{ .Values.onlineServing.maxWorkerJoinProbeRows }}'}
+            - {name: NGKG_MAX_WORKER_JOIN_ROW_BYTES, value: '{{ .Values.onlineServing.maxWorkerJoinRowBytes }}'}
+            - {name: NGKG_IN_MEMORY_JOIN_BUILD_ROWS, value: '{{ .Values.onlineServing.inMemoryJoinBuildRows }}'}
+            - {name: NGKG_STREAMING_REQUEST_SPOOL_ROOT, value: /var/lib/ngkg/request-spool}
+            - {name: NGKG_MAX_STREAMING_REQUEST_SPOOL_BYTES, value: '{{ .Values.onlineServing.maxStreamingRequestSpoolBytes }}'}
+            - {name: NGKG_MAX_QUERY_IN_FLIGHT, value: '{{ .Values.onlineServing.maxQueryInFlight }}'}
+            - {name: NGKG_MAX_FRAGMENT_WORKER_IN_FLIGHT, value: '{{ .Values.onlineServing.maxFragmentWorkerInFlight }}'}
+            - {name: NGKG_MAX_FRAGMENT_IN_FLIGHT, value: '{{ .Values.onlineServing.maxFragmentInFlight }}'}
+            - {name: NGKG_MAX_SHUFFLE_IN_FLIGHT, value: '{{ .Values.onlineServing.maxShuffleInFlight }}'}
+            - {name: NGKG_MAX_LOCATOR_IN_FLIGHT, value: '{{ .Values.onlineServing.maxLocatorInFlight }}'}
+            - {name: NGKG_MAX_HYDRATION_IN_FLIGHT, value: '{{ .Values.onlineServing.maxHydrationInFlight }}'}
+            - {name: NGKG_MAX_QUERY_PENDING, value: '{{ .Values.onlineServing.maxQueryPending }}'}
+            - {name: NGKG_MAX_FRAGMENT_PENDING, value: '{{ .Values.onlineServing.maxFragmentPending }}'}
+            - {name: NGKG_MAX_SHUFFLE_PENDING, value: '{{ .Values.onlineServing.maxShufflePending }}'}
+            - {name: NGKG_MAX_LOCATOR_PENDING, value: '{{ .Values.onlineServing.maxLocatorPending }}'}
+            - {name: NGKG_MAX_HYDRATION_PENDING, value: '{{ .Values.onlineServing.maxHydrationPending }}'}
+            - {name: NGKG_ADMISSION_WAIT_MILLISECONDS, value: '{{ .Values.onlineServing.admissionWaitMilliseconds }}'}
+            - {name: NGKG_FRAGMENT_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.fragmentTimeoutSeconds }}'}
+            - {name: NGKG_HYDRATION_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.hydrationTimeoutSeconds }}'}
+          envFrom:
+            - configMapRef: {name: ngkg-phase40-online-ceilings}
+          {{- if .Values.onlineServing.objectStoreCredentialsSecret }}
+            - secretRef: {name: '{{ .Values.onlineServing.objectStoreCredentialsSecret }}'}
+          {{- end }}
+          resources: {{- toYaml .Values.resources.fragment | nindent 12 }}
+          startupProbe: {httpGet: {path: /health/ready, port: http}, periodSeconds: 5, failureThreshold: 60}
+          readinessProbe: {httpGet: {path: /health/ready, port: http}, periodSeconds: 5, timeoutSeconds: 2, failureThreshold: 3}
+          livenessProbe: {httpGet: {path: /health/live, port: http}, periodSeconds: 15, timeoutSeconds: 2, failureThreshold: 3}
+          volumeMounts:
+            - {name: tls, mountPath: /var/run/ngkg/tls, readOnly: true}
+            - {name: auth, mountPath: /var/run/ngkg/auth, readOnly: true}
+            - {name: tenant-admission, mountPath: /var/run/ngkg/admission, readOnly: true}
+            - {name: cache, mountPath: /var/lib/ngkg/cache}
+            - {name: shuffle-cache, mountPath: /var/lib/ngkg/shuffle-cache}
+            - {name: worker-join-spill, mountPath: /var/lib/ngkg/worker-join}
+            - {name: streaming-request-spool, mountPath: /var/lib/ngkg/request-spool}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: {drop: [ALL]}
+      volumes:
+        - name: tls
+          secret: {secretName: '{{ required "tls.existingSecret is required" .Values.tls.existingSecret }}'}
+        - name: auth
+          secret: {secretName: '{{ required "onlineServing.authTokensSecret is required" .Values.onlineServing.authTokensSecret }}'}
+        - name: tenant-admission
+          secret: {secretName: '{{ required "onlineServing.tenantAdmissionSecret is required" .Values.onlineServing.tenantAdmissionSecret }}'}
+        - name: cache
+          emptyDir: {sizeLimit: '{{ .Values.onlineServing.cacheSizeLimit }}'}
+        - name: shuffle-cache
+          emptyDir: {sizeLimit: '{{ .Values.onlineServing.shuffleCacheSizeLimit }}'}
+        - name: worker-join-spill
+          emptyDir: {sizeLimit: '{{ .Values.onlineServing.workerJoinSpillSizeLimit }}'}
+        - name: streaming-request-spool
+          emptyDir: {sizeLimit: '{{ .Values.onlineServing.streamingRequestSpoolSizeLimit }}'}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: ngkg-locator}
+spec:
+  clusterIP: None
+  selector: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: locator}
+  ports: [{name: http, port: 32020, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: ngkg-locator}
+spec:
+  serviceName: ngkg-locator
+  replicas: {{ max 3 .Values.queryPlane.locatorReplicaFactor }}
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: locator}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: locator, ngkg.io/network-plane: data}
+      annotations:
+        ngkg.io/auth-tokens-file-sha256: '{{ required "onlineServing.authTokensFileSha256 is required" .Values.onlineServing.authTokensFileSha256 }}'
+        ngkg.io/tenant-admission-policy-sha256: '{{ required "onlineServing.tenantAdmissionPolicySha256 is required" .Values.onlineServing.tenantAdmissionPolicySha256 }}'
+    spec:
+      serviceAccountName: ngkg-query
+      terminationGracePeriodSeconds: 120
+      nodeSelector: {ngkg.io/workload: sparql-query-processing}
+      tolerations:
+        - {key: ngkg.io/workload, operator: Equal, value: sparql-query-processing, effect: NoSchedule}
+      containers:
+        - name: locator
+          image: '{{ required "images.locator.repository is required" .Values.images.locator.repository }}@{{ required "images.locator.digest is required" .Values.images.locator.digest }}'
+          args: [locator]
+          ports: [{name: http, containerPort: 32020}]
+          env:
+            - {name: OMP_NUM_THREADS, value: '1'}
+            - {name: OPENBLAS_NUM_THREADS, value: '1'}
+            - {name: MKL_NUM_THREADS, value: '1'}
+            - {name: OMP_MAX_ACTIVE_LEVELS, value: '1'}
+            - {name: NGKG_RUST_COMPUTE_THREADS, value: '4'}
+            - {name: NGKG_BLOCKING_IO_THREADS, value: '1'}
+            - {name: NGKG_CONTROL_THREADS, value: '1'}
+            - {name: NGKG_NODE_SATURATION_TARGET_PERCENT, value: '{{ .Values.hpcRuntime.nodeSaturationTargetPercent }}'}
+            - {name: NGKG_LOCATOR_MMAP_MODE, value: anonymous-read-only}
+            - {name: NGKG_BIND_ADDR, value: '0.0.0.0:32020'}
+            - name: NGKG_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: '{{ required "onlineServing.databaseSecret is required" .Values.onlineServing.databaseSecret }}', key: database-url}}
+            - {name: NGKG_DATABASE_MAX_CONNECTIONS, value: '{{ .Values.onlineServing.databaseMaxConnections }}'}
+            - {name: NGKG_ARTIFACT_BASE_URL, value: '{{ required "onlineServing.artifactStoreBaseUrl is required" .Values.onlineServing.artifactStoreBaseUrl }}'}
+            - {name: NGKG_AUTH_TOKENS_FILE, value: /var/run/ngkg/auth/tokens.json}
+            - {name: NGKG_AUTH_TOKENS_FILE_SHA256, value: '{{ required "onlineServing.authTokensFileSha256 is required" .Values.onlineServing.authTokensFileSha256 }}'}
+            - {name: NGKG_TENANT_ADMISSION_POLICY_FILE, value: /var/run/ngkg/admission/tenant-policy.json}
+            - {name: NGKG_TENANT_ADMISSION_POLICY_SHA256, value: '{{ required "onlineServing.tenantAdmissionPolicySha256 is required" .Values.onlineServing.tenantAdmissionPolicySha256 }}'}
+            - {name: NGKG_MAX_ADMISSION_TENANTS, value: '{{ .Values.onlineServing.maxAdmissionTenants }}'}
+            - {name: NGKG_CACHE_ROOT, value: /var/lib/ngkg/cache}
+            - {name: NGKG_MAX_OBJECT_BYTES, value: '{{ .Values.onlineServing.maxObjectBytes }}'}
+            - {name: NGKG_MAX_PAYLOAD_CACHE_BYTES, value: '{{ .Values.onlineServing.maxPayloadCacheBytes }}'}
+            - {name: NGKG_MAX_RESIDENT_QUERY_ROUTES, value: '{{ .Values.onlineServing.maxResidentQueryRoutes }}'}
+            - {name: NGKG_MAX_RESIDENT_FRAGMENT_RUNTIMES, value: '{{ .Values.onlineServing.maxResidentFragmentRuntimes }}'}
+            - {name: NGKG_MAX_REQUEST_BYTES, value: '{{ .Values.onlineServing.maxRequestBytes }}'}
+            - {name: NGKG_MAX_QUERY_BYTES, value: '{{ .Values.onlineServing.maxQueryBytes }}'}
+            - {name: NGKG_MAX_QUERY_RESPONSE_BYTES, value: '{{ .Values.onlineServing.maxQueryResponseBytes }}'}
+            - {name: NGKG_MAX_QUERY_RESULT_ROWS, value: '{{ .Values.onlineServing.maxQueryResultRows }}'}
+            - {name: NGKG_MAX_QUERY_GRAPH_TRIPLES, value: '{{ .Values.onlineServing.maxQueryGraphTriples }}'}
+            - {name: NGKG_MAX_QUERY_GRAPH_BLANK_NODES, value: '{{ .Values.onlineServing.maxQueryGraphBlankNodes }}'}
+            - {name: NGKG_QUERY_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.queryTimeoutSeconds }}'}
+            - {name: NGKG_MAX_QUALIFIED_ENTITIES, value: '{{ .Values.onlineServing.maxQualifiedEntities }}'}
+            - {name: NGKG_MAX_HYDRATION_ROWS, value: '{{ .Values.onlineServing.maxHydrationRows }}'}
+            - {name: NGKG_MAX_HYDRATION_RESPONSE_BYTES, value: '{{ .Values.onlineServing.maxHydrationResponseBytes }}'}
+            - {name: NGKG_HYDRATION_WORKER_THREADS, value: '1'}
+            - {name: NGKG_MAX_DISTRIBUTED_FRAGMENTS, value: '{{ .Values.onlineServing.maxDistributedFragments }}'}
+            - {name: NGKG_MAX_DISTRIBUTED_INTERMEDIATE_ROWS, value: '{{ .Values.onlineServing.maxDistributedIntermediateRows }}'}
+            - {name: NGKG_MAX_DISTRIBUTED_EXCHANGE_BYTES, value: '{{ .Values.onlineServing.maxDistributedExchangeBytes }}'}
+            - {name: NGKG_MAX_FRAGMENT_RESPONSE_BYTES, value: '{{ .Values.onlineServing.maxFragmentResponseBytes }}'}
+            - {name: NGKG_FRAGMENT_ARROW_BATCH_ROWS, value: '{{ .Values.onlineServing.fragmentArrowBatchRows }}'}
+            - {name: NGKG_FRAGMENT_ARROW_HTTP_CHUNK_BYTES, value: '{{ .Values.onlineServing.fragmentArrowHttpChunkBytes }}'}
+            - {name: NGKG_FRAGMENT_ARROW_CHANNEL_CAPACITY, value: '{{ .Values.onlineServing.fragmentArrowChannelCapacity }}'}
+            - {name: NGKG_FRAGMENT_EXCHANGE_CONCURRENCY, value: '{{ .Values.onlineServing.fragmentExchangeConcurrency }}'}
+            - {name: NGKG_DISTRIBUTED_ALGEBRA_ENABLED, value: '{{ .Values.onlineServing.distributedAlgebraEnabled }}'}
+            - {name: NGKG_DISTRIBUTED_ALGEBRA_REPLICAS, value: '{{ .Values.onlineServing.distributedAlgebraReplicas }}'}
+            - {name: NGKG_PARTITION_NATIVE_PATHS_ENABLED, value: '{{ .Values.onlineServing.partitionNativePathsEnabled }}'}
+            - {name: NGKG_PROPERTY_PATH_WORKER_THREADS, value: '{{ .Values.onlineServing.propertyPathWorkerThreads }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_SCAN_ROWS, value: '{{ .Values.onlineServing.propertyPathMaxScanRows }}'}
+            - {name: NGKG_SHUFFLE_PARTITIONS, value: '{{ .Values.onlineServing.shufflePartitions }}'}
+            - {name: NGKG_MAX_SHUFFLE_REQUEST_BYTES, value: '{{ .Values.onlineServing.maxShuffleRequestBytes }}'}
+            - {name: NGKG_MAX_SHUFFLE_RESPONSE_BYTES, value: '{{ .Values.onlineServing.maxShuffleResponseBytes }}'}
+            - {name: NGKG_MAX_SHUFFLE_EXCHANGE_BYTES, value: '{{ .Values.onlineServing.maxShuffleExchangeBytes }}'}
+            - {name: NGKG_SHUFFLE_EXCHANGE_CONCURRENCY, value: '{{ .Values.onlineServing.shuffleExchangeConcurrency }}'}
+            - {name: NGKG_MAX_SHUFFLE_SPILL_BYTES, value: '{{ .Values.onlineServing.maxShuffleSpillBytes }}'}
+            - {name: NGKG_MAX_SHUFFLE_OPEN_FILES, value: '{{ .Values.onlineServing.maxShuffleOpenFiles }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_ITERATIONS, value: '{{ .Values.onlineServing.propertyPathMaxIterations }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_FRONTIER_ITEMS, value: '{{ .Values.onlineServing.propertyPathMaxFrontierItems }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_VISITED_ITEMS, value: '{{ .Values.onlineServing.propertyPathMaxVisitedItems }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_CHECKPOINT_BYTES, value: '{{ .Values.onlineServing.propertyPathMaxCheckpointBytes }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_SPILL_BYTES, value: '{{ .Values.onlineServing.propertyPathMaxSpillBytes }}'}
+            - {name: NGKG_PROPERTY_PATH_HOT_VERTEX_DEGREE, value: '{{ .Values.onlineServing.propertyPathHotVertexDegree }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_HOT_VERTEX_SPLITS, value: '{{ .Values.onlineServing.propertyPathMaxHotVertexSplits }}'}
+            - {name: NGKG_MAX_QUERY_IN_FLIGHT, value: '{{ .Values.onlineServing.maxQueryInFlight }}'}
+            - {name: NGKG_MAX_FRAGMENT_WORKER_IN_FLIGHT, value: '{{ .Values.onlineServing.maxFragmentWorkerInFlight }}'}
+            - {name: NGKG_MAX_FRAGMENT_IN_FLIGHT, value: '{{ .Values.onlineServing.maxFragmentInFlight }}'}
+            - {name: NGKG_MAX_SHUFFLE_IN_FLIGHT, value: '{{ .Values.onlineServing.maxShuffleInFlight }}'}
+            - {name: NGKG_MAX_LOCATOR_IN_FLIGHT, value: '{{ .Values.onlineServing.maxLocatorInFlight }}'}
+            - {name: NGKG_MAX_HYDRATION_IN_FLIGHT, value: '{{ .Values.onlineServing.maxHydrationInFlight }}'}
+            - {name: NGKG_MAX_QUERY_PENDING, value: '{{ .Values.onlineServing.maxQueryPending }}'}
+            - {name: NGKG_MAX_FRAGMENT_PENDING, value: '{{ .Values.onlineServing.maxFragmentPending }}'}
+            - {name: NGKG_MAX_SHUFFLE_PENDING, value: '{{ .Values.onlineServing.maxShufflePending }}'}
+            - {name: NGKG_MAX_LOCATOR_PENDING, value: '{{ .Values.onlineServing.maxLocatorPending }}'}
+            - {name: NGKG_MAX_HYDRATION_PENDING, value: '{{ .Values.onlineServing.maxHydrationPending }}'}
+            - {name: NGKG_ADMISSION_WAIT_MILLISECONDS, value: '{{ .Values.onlineServing.admissionWaitMilliseconds }}'}
+            - {name: NGKG_FRAGMENT_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.fragmentTimeoutSeconds }}'}
+            - {name: NGKG_HYDRATION_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.hydrationTimeoutSeconds }}'}
+          envFrom:
+            - configMapRef: {name: ngkg-phase40-online-ceilings}
+          {{- if .Values.onlineServing.objectStoreCredentialsSecret }}
+            - secretRef: {name: '{{ .Values.onlineServing.objectStoreCredentialsSecret }}'}
+          {{- end }}
+          resources: {{- toYaml .Values.resources.locator | nindent 12 }}
+          startupProbe: {httpGet: {path: /health/ready, port: http}, periodSeconds: 5, failureThreshold: 60}
+          readinessProbe: {httpGet: {path: /health/ready, port: http}, periodSeconds: 5, timeoutSeconds: 2, failureThreshold: 3}
+          livenessProbe: {httpGet: {path: /health/live, port: http}, periodSeconds: 15, timeoutSeconds: 2, failureThreshold: 3}
+          volumeMounts:
+            - {name: tls, mountPath: /var/run/ngkg/tls, readOnly: true}
+            - {name: auth, mountPath: /var/run/ngkg/auth, readOnly: true}
+            - {name: tenant-admission, mountPath: /var/run/ngkg/admission, readOnly: true}
+            - {name: locator-cache, mountPath: /var/lib/ngkg/cache}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: {drop: [ALL]}
+      volumes:
+        - name: tls
+          secret: {secretName: '{{ required "tls.existingSecret is required" .Values.tls.existingSecret }}'}
+        - name: auth
+          secret: {secretName: '{{ required "onlineServing.authTokensSecret is required" .Values.onlineServing.authTokensSecret }}'}
+        - name: tenant-admission
+          secret: {secretName: '{{ required "onlineServing.tenantAdmissionSecret is required" .Values.onlineServing.tenantAdmissionSecret }}'}
+        - name: locator-cache
+          emptyDir: {sizeLimit: '{{ .Values.onlineServing.cacheSizeLimit }}'}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: ngkg-hydration}
+spec:
+  selector: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: hydration}
+  ports: [{name: http, port: 32030, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: ngkg-hydration}
+spec:
+  replicas: {{ .Values.hpcNodeGroups.parquet_hydration_num_of_nodes }}
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: hydration}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: hydration, ngkg.io/network-plane: data}
+      annotations:
+        ngkg.io/auth-tokens-file-sha256: '{{ required "onlineServing.authTokensFileSha256 is required" .Values.onlineServing.authTokensFileSha256 }}'
+        ngkg.io/tenant-admission-policy-sha256: '{{ required "onlineServing.tenantAdmissionPolicySha256 is required" .Values.onlineServing.tenantAdmissionPolicySha256 }}'
+    spec:
+      serviceAccountName: ngkg-hydration
+      nodeSelector: {ngkg.io/workload: parquet-hydration}
+      tolerations:
+        - {key: ngkg.io/workload, operator: Equal, value: parquet-hydration, effect: NoSchedule}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: hydration}
+      containers:
+        - name: hydration
+          image: '{{ required "images.hydration.repository is required" .Values.images.hydration.repository }}@{{ required "images.hydration.digest is required" .Values.images.hydration.digest }}'
+          args: [hydration]
+          ports: [{name: http, containerPort: 32030}]
+          env:
+            - {name: OMP_NUM_THREADS, value: '1'}
+            - {name: OPENBLAS_NUM_THREADS, value: '1'}
+            - {name: MKL_NUM_THREADS, value: '1'}
+            - {name: OMP_MAX_ACTIVE_LEVELS, value: '1'}
+            - {name: NGKG_RUST_COMPUTE_THREADS, value: '4'}
+            - {name: NGKG_BLOCKING_IO_THREADS, value: '1'}
+            - {name: NGKG_CONTROL_THREADS, value: '1'}
+            - {name: NGKG_NODE_SATURATION_TARGET_PERCENT, value: '{{ .Values.hpcRuntime.nodeSaturationTargetPercent }}'}
+            - {name: NGKG_HYDRATION_WORKER_THREADS, value: '{{ .Values.onlineServing.hydrationWorkerThreads }}'}
+            - {name: NGKG_LOCATOR_MMAP_MODE, value: anonymous-read-only}
+            - {name: NGKG_BIND_ADDR, value: '0.0.0.0:32030'}
+            - name: NGKG_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: '{{ required "onlineServing.databaseSecret is required" .Values.onlineServing.databaseSecret }}', key: database-url}}
+            - {name: NGKG_DATABASE_MAX_CONNECTIONS, value: '{{ .Values.onlineServing.databaseMaxConnections }}'}
+            - {name: NGKG_ARTIFACT_BASE_URL, value: '{{ required "onlineServing.artifactStoreBaseUrl is required" .Values.onlineServing.artifactStoreBaseUrl }}'}
+            - {name: NGKG_AUTH_TOKENS_FILE, value: /var/run/ngkg/auth/tokens.json}
+            - {name: NGKG_AUTH_TOKENS_FILE_SHA256, value: '{{ required "onlineServing.authTokensFileSha256 is required" .Values.onlineServing.authTokensFileSha256 }}'}
+            - {name: NGKG_TENANT_ADMISSION_POLICY_FILE, value: /var/run/ngkg/admission/tenant-policy.json}
+            - {name: NGKG_TENANT_ADMISSION_POLICY_SHA256, value: '{{ required "onlineServing.tenantAdmissionPolicySha256 is required" .Values.onlineServing.tenantAdmissionPolicySha256 }}'}
+            - {name: NGKG_MAX_ADMISSION_TENANTS, value: '{{ .Values.onlineServing.maxAdmissionTenants }}'}
+            - {name: NGKG_CACHE_ROOT, value: /var/lib/ngkg/cache}
+            - {name: NGKG_MAX_OBJECT_BYTES, value: '{{ .Values.onlineServing.maxObjectBytes }}'}
+            - {name: NGKG_MAX_PAYLOAD_CACHE_BYTES, value: '{{ .Values.onlineServing.maxPayloadCacheBytes }}'}
+            - {name: NGKG_MAX_RESIDENT_QUERY_ROUTES, value: '{{ .Values.onlineServing.maxResidentQueryRoutes }}'}
+            - {name: NGKG_MAX_RESIDENT_FRAGMENT_RUNTIMES, value: '{{ .Values.onlineServing.maxResidentFragmentRuntimes }}'}
+            - {name: NGKG_MAX_REQUEST_BYTES, value: '{{ .Values.onlineServing.maxRequestBytes }}'}
+            - {name: NGKG_MAX_QUERY_BYTES, value: '{{ .Values.onlineServing.maxQueryBytes }}'}
+            - {name: NGKG_MAX_QUERY_RESPONSE_BYTES, value: '{{ .Values.onlineServing.maxQueryResponseBytes }}'}
+            - {name: NGKG_MAX_QUERY_RESULT_ROWS, value: '{{ .Values.onlineServing.maxQueryResultRows }}'}
+            - {name: NGKG_MAX_QUERY_GRAPH_TRIPLES, value: '{{ .Values.onlineServing.maxQueryGraphTriples }}'}
+            - {name: NGKG_MAX_QUERY_GRAPH_BLANK_NODES, value: '{{ .Values.onlineServing.maxQueryGraphBlankNodes }}'}
+            - {name: NGKG_QUERY_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.queryTimeoutSeconds }}'}
+            - {name: NGKG_MAX_QUALIFIED_ENTITIES, value: '{{ .Values.onlineServing.maxQualifiedEntities }}'}
+            - {name: NGKG_MAX_HYDRATION_ROWS, value: '{{ .Values.onlineServing.maxHydrationRows }}'}
+            - {name: NGKG_MAX_HYDRATION_RESPONSE_BYTES, value: '{{ .Values.onlineServing.maxHydrationResponseBytes }}'}
+            - {name: NGKG_MAX_DISTRIBUTED_FRAGMENTS, value: '{{ .Values.onlineServing.maxDistributedFragments }}'}
+            - {name: NGKG_MAX_DISTRIBUTED_INTERMEDIATE_ROWS, value: '{{ .Values.onlineServing.maxDistributedIntermediateRows }}'}
+            - {name: NGKG_MAX_DISTRIBUTED_EXCHANGE_BYTES, value: '{{ .Values.onlineServing.maxDistributedExchangeBytes }}'}
+            - {name: NGKG_MAX_FRAGMENT_RESPONSE_BYTES, value: '{{ .Values.onlineServing.maxFragmentResponseBytes }}'}
+            - {name: NGKG_FRAGMENT_ARROW_BATCH_ROWS, value: '{{ .Values.onlineServing.fragmentArrowBatchRows }}'}
+            - {name: NGKG_FRAGMENT_ARROW_HTTP_CHUNK_BYTES, value: '{{ .Values.onlineServing.fragmentArrowHttpChunkBytes }}'}
+            - {name: NGKG_FRAGMENT_ARROW_CHANNEL_CAPACITY, value: '{{ .Values.onlineServing.fragmentArrowChannelCapacity }}'}
+            - {name: NGKG_FRAGMENT_EXCHANGE_CONCURRENCY, value: '{{ .Values.onlineServing.fragmentExchangeConcurrency }}'}
+            - {name: NGKG_DISTRIBUTED_ALGEBRA_ENABLED, value: '{{ .Values.onlineServing.distributedAlgebraEnabled }}'}
+            - {name: NGKG_DISTRIBUTED_ALGEBRA_REPLICAS, value: '{{ .Values.onlineServing.distributedAlgebraReplicas }}'}
+            - {name: NGKG_PARTITION_NATIVE_PATHS_ENABLED, value: '{{ .Values.onlineServing.partitionNativePathsEnabled }}'}
+            - {name: NGKG_PROPERTY_PATH_WORKER_THREADS, value: '{{ .Values.onlineServing.propertyPathWorkerThreads }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_SCAN_ROWS, value: '{{ .Values.onlineServing.propertyPathMaxScanRows }}'}
+            - {name: NGKG_SHUFFLE_PARTITIONS, value: '{{ .Values.onlineServing.shufflePartitions }}'}
+            - {name: NGKG_MAX_SHUFFLE_REQUEST_BYTES, value: '{{ .Values.onlineServing.maxShuffleRequestBytes }}'}
+            - {name: NGKG_MAX_SHUFFLE_RESPONSE_BYTES, value: '{{ .Values.onlineServing.maxShuffleResponseBytes }}'}
+            - {name: NGKG_MAX_SHUFFLE_EXCHANGE_BYTES, value: '{{ .Values.onlineServing.maxShuffleExchangeBytes }}'}
+            - {name: NGKG_SHUFFLE_EXCHANGE_CONCURRENCY, value: '{{ .Values.onlineServing.shuffleExchangeConcurrency }}'}
+            - {name: NGKG_MAX_SHUFFLE_SPILL_BYTES, value: '{{ .Values.onlineServing.maxShuffleSpillBytes }}'}
+            - {name: NGKG_MAX_SHUFFLE_OPEN_FILES, value: '{{ .Values.onlineServing.maxShuffleOpenFiles }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_ITERATIONS, value: '{{ .Values.onlineServing.propertyPathMaxIterations }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_FRONTIER_ITEMS, value: '{{ .Values.onlineServing.propertyPathMaxFrontierItems }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_VISITED_ITEMS, value: '{{ .Values.onlineServing.propertyPathMaxVisitedItems }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_CHECKPOINT_BYTES, value: '{{ .Values.onlineServing.propertyPathMaxCheckpointBytes }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_SPILL_BYTES, value: '{{ .Values.onlineServing.propertyPathMaxSpillBytes }}'}
+            - {name: NGKG_PROPERTY_PATH_HOT_VERTEX_DEGREE, value: '{{ .Values.onlineServing.propertyPathHotVertexDegree }}'}
+            - {name: NGKG_PROPERTY_PATH_MAX_HOT_VERTEX_SPLITS, value: '{{ .Values.onlineServing.propertyPathMaxHotVertexSplits }}'}
+            - {name: NGKG_MAX_QUERY_IN_FLIGHT, value: '{{ .Values.onlineServing.maxQueryInFlight }}'}
+            - {name: NGKG_MAX_FRAGMENT_WORKER_IN_FLIGHT, value: '{{ .Values.onlineServing.maxFragmentWorkerInFlight }}'}
+            - {name: NGKG_MAX_FRAGMENT_IN_FLIGHT, value: '{{ .Values.onlineServing.maxFragmentInFlight }}'}
+            - {name: NGKG_MAX_SHUFFLE_IN_FLIGHT, value: '{{ .Values.onlineServing.maxShuffleInFlight }}'}
+            - {name: NGKG_MAX_LOCATOR_IN_FLIGHT, value: '{{ .Values.onlineServing.maxLocatorInFlight }}'}
+            - {name: NGKG_MAX_HYDRATION_IN_FLIGHT, value: '{{ .Values.onlineServing.maxHydrationInFlight }}'}
+            - {name: NGKG_MAX_QUERY_PENDING, value: '{{ .Values.onlineServing.maxQueryPending }}'}
+            - {name: NGKG_MAX_FRAGMENT_PENDING, value: '{{ .Values.onlineServing.maxFragmentPending }}'}
+            - {name: NGKG_MAX_SHUFFLE_PENDING, value: '{{ .Values.onlineServing.maxShufflePending }}'}
+            - {name: NGKG_MAX_LOCATOR_PENDING, value: '{{ .Values.onlineServing.maxLocatorPending }}'}
+            - {name: NGKG_MAX_HYDRATION_PENDING, value: '{{ .Values.onlineServing.maxHydrationPending }}'}
+            - {name: NGKG_ADMISSION_WAIT_MILLISECONDS, value: '{{ .Values.onlineServing.admissionWaitMilliseconds }}'}
+            - {name: NGKG_FRAGMENT_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.fragmentTimeoutSeconds }}'}
+            - {name: NGKG_HYDRATION_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.hydrationTimeoutSeconds }}'}
+          envFrom:
+            - configMapRef: {name: ngkg-phase40-online-ceilings}
+          {{- if .Values.onlineServing.objectStoreCredentialsSecret }}
+            - secretRef: {name: '{{ .Values.onlineServing.objectStoreCredentialsSecret }}'}
+          {{- end }}
+          resources: {{- toYaml .Values.resources.hydration | nindent 12 }}
+          startupProbe: {httpGet: {path: /health/ready, port: http}, periodSeconds: 5, failureThreshold: 60}
+          readinessProbe: {httpGet: {path: /health/ready, port: http}, periodSeconds: 5, timeoutSeconds: 2, failureThreshold: 3}
+          livenessProbe: {httpGet: {path: /health/live, port: http}, periodSeconds: 15, timeoutSeconds: 2, failureThreshold: 3}
+          volumeMounts:
+            - {name: tls, mountPath: /var/run/ngkg/tls, readOnly: true}
+            - {name: auth, mountPath: /var/run/ngkg/auth, readOnly: true}
+            - {name: tenant-admission, mountPath: /var/run/ngkg/admission, readOnly: true}
+            - {name: payload-cache, mountPath: /var/lib/ngkg/cache}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: {drop: [ALL]}
+      volumes:
+        - name: tls
+          secret: {secretName: '{{ required "tls.existingSecret is required" .Values.tls.existingSecret }}'}
+        - name: auth
+          secret: {secretName: '{{ required "onlineServing.authTokensSecret is required" .Values.onlineServing.authTokensSecret }}'}
+        - name: tenant-admission
+          secret: {secretName: '{{ required "onlineServing.tenantAdmissionSecret is required" .Values.onlineServing.tenantAdmissionSecret }}'}
+        - name: payload-cache
+          emptyDir: {sizeLimit: '{{ .Values.onlineServing.cacheSizeLimit }}'}

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ngkg-phase40-online-ceilings
+  labels:
+    app.kubernetes.io/name: ngkg
+    app.kubernetes.io/component: phase40-online-ceilings
+    ngkg.io/phase: "40.12"
+immutable: true
+data:
+  NGKG_PHASE40_DIRECT_ADMISSION_MAX_BGPS: {{ .Values.phase40.directAdmission.maxBgps | quote }}
+  NGKG_PHASE40_DIRECT_ADMISSION_MAX_TRIPLES_PER_BGP: {{ .Values.phase40.directAdmission.maxTriplesPerBgp | quote }}
+  NGKG_PHASE40_DIRECT_ADMISSION_MAX_CLASSIFICATION_CPU_LANES: {{ .Values.phase40.directAdmission.maxClassificationCpuLanes | quote }}

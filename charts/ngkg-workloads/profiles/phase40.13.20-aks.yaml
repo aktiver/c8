@@ -1,0 +1,8 @@
+platform: {kubernetesDistribution: aks}
+hpcNodeGroups: {provisioner: cluster-autoscaler}
+nodeProvisioning:
+  provider: aks-managed-cluster-autoscaler
+  namespace: kube-system
+  workloadName: cluster-autoscaler
+  credentialSecret: ''
+  discoveryResource: agentpools.managedClusters.azure.com

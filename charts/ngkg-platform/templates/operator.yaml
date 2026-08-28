@@ -1,0 +1,127 @@
+{{- if not (has .Values.operator.reference.resourceProfile .Values.api.allowedResourceProfiles) }}
+{{- fail "operator.reference.resourceProfile must appear in api.allowedResourceProfiles" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ngkg-operator
+  labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: operator}
+spec:
+  replicas: {{ .Values.operator.replicas }}
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: operator}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: operator}
+    spec:
+      serviceAccountName: ngkg-operator
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: operator
+          image: '{{ required "images.operator.repository is required" .Values.images.operator.repository }}@{{ required "images.operator.digest is required" .Values.images.operator.digest }}'
+          envFrom:
+            - configMapRef:
+                name: '{{ .Release.Name }}-phase40-reference-ceilings'
+                optional: false
+          env:
+            - {name: NGKG_NAMESPACE, valueFrom: {fieldRef: {fieldPath: metadata.namespace}}}
+            - name: NGKG_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: '{{ required "dependencies.databaseSecret is required" .Values.dependencies.databaseSecret }}', key: database-url}}
+            - {name: NGKG_DATABASE_SECRET, value: '{{ required "dependencies.databaseSecret is required" .Values.dependencies.databaseSecret }}'}
+            - {name: NGKG_ARTIFACT_BASE_URL, value: '{{ required "artifactStore.baseUrl is required" .Values.artifactStore.baseUrl }}'}
+            - {name: NGKG_OBJECT_STORE_CREDENTIALS_SECRET, value: '{{ .Values.dependencies.objectStoreCredentialsSecret }}'}
+            - {name: NGKG_REQUIRE_SOURCE_CSI_DRIVER_DISCOVERY, value: '{{ .Values.cloudSourceMounts.requireDriverDiscovery }}'}
+            - {name: NGKG_AWS_S3_CSI_DRIVER, value: '{{ .Values.cloudSourceMounts.awsS3.csiDriver }}'}
+            - {name: NGKG_AZURE_BLOB_CSI_DRIVER, value: '{{ .Values.cloudSourceMounts.azureBlob.csiDriver }}'}
+            - {name: NGKG_GCS_CSI_DRIVER, value: '{{ .Values.cloudSourceMounts.gcs.csiDriver }}'}
+            - {name: NGKG_REFERENCE_WORKER_IMAGE, value: '{{ required "reference worker repository is required" .Values.images.referenceWorker.repository }}@{{ required "reference worker digest is required" .Values.images.referenceWorker.digest }}'}
+            - {name: NGKG_REFERENCE_SERVICE_ACCOUNT, value: '{{ .Values.operator.reference.serviceAccount }}'}
+            - {name: NGKG_REFERENCE_RESOURCE_PROFILE, value: '{{ .Values.operator.reference.resourceProfile }}'}
+            - {name: NGKG_REFERENCE_QUEUE, value: '{{ .Values.batchScheduling.localQueue }}'}
+            - {name: NGKG_REFERENCE_CPU, value: '{{ .Values.operator.reference.cpu }}'}
+            - {name: NGKG_REFERENCE_MEMORY, value: '{{ .Values.operator.reference.memory }}'}
+            - {name: NGKG_REFERENCE_SCRATCH_SIZE, value: '{{ .Values.operator.reference.scratchSize }}'}
+            - {name: NGKG_REFERENCE_ACTIVE_DEADLINE_SECONDS, value: '{{ .Values.operator.reference.activeDeadlineSeconds }}'}
+            - {name: NGKG_REFERENCE_TTL_SECONDS_AFTER_FINISHED, value: '{{ .Values.operator.reference.ttlSecondsAfterFinished }}'}
+            - {name: NGKG_REFERENCE_JAVA_EXECUTABLE, value: '{{ .Values.operator.reference.javaExecutable }}'}
+            - {name: NGKG_REASONER_ADAPTER_JAR, value: '{{ .Values.operator.reference.reasonerAdapterJar }}'}
+            - {name: NGKG_REASONER_ADAPTER_SHA256, value: '{{ required "operator.reference.reasonerAdapterSha256 is required" .Values.operator.reference.reasonerAdapterSha256 }}'}
+            - {name: NGKG_REASONER_NAME, value: '{{ .Values.operator.reference.reasonerName }}'}
+            - {name: NGKG_REASONER_VERSION, value: '{{ .Values.operator.reference.reasonerVersion }}'}
+            - {name: NGKG_REFERENCE_JAVA_TOOL_OPTIONS, value: '{{ .Values.operator.reference.javaToolOptions }}'}
+            - {name: NGKG_REFERENCE_AUTOMOUNT_SERVICE_ACCOUNT_TOKEN, value: '{{ .Values.serviceAccounts.referenceWorker.automountToken }}'}
+            - {name: NGKG_CEILING_BUNDLE_BYTES, value: '{{ .Values.operator.reference.ceilings.bundleBytes }}'}
+            - {name: NGKG_CEILING_STAGED_OBJECT_BYTES, value: '{{ .Values.operator.reference.ceilings.stagedObjectBytes }}'}
+            - {name: NGKG_CEILING_STAGED_TOTAL_BYTES, value: '{{ .Values.operator.reference.ceilings.stagedTotalBytes }}'}
+            - {name: NGKG_CEILING_STAGED_ARTIFACTS, value: '{{ .Values.operator.reference.ceilings.stagedArtifacts }}'}
+            - {name: NGKG_CEILING_OUTPUT_BYTES, value: '{{ .Values.operator.reference.ceilings.outputBytes }}'}
+            - {name: NGKG_CEILING_OUTPUT_ARTIFACTS, value: '{{ .Values.operator.reference.ceilings.outputArtifacts }}'}
+            - {name: NGKG_CEILING_INPUT_BYTES, value: '{{ .Values.operator.reference.ceilings.inputBytes }}'}
+            - {name: NGKG_CEILING_QUADS, value: '{{ .Values.operator.reference.ceilings.quads }}'}
+            - {name: NGKG_CEILING_DICTIONARY_TERMS, value: '{{ .Values.operator.reference.ceilings.dictionaryTerms }}'}
+            - {name: NGKG_CEILING_REASONER_SECONDS, value: '{{ .Values.operator.reference.ceilings.reasonerSeconds }}'}
+            - {name: NGKG_CEILING_PARQUET_ROW_GROUP_ROWS, value: '{{ .Values.operator.reference.ceilings.parquetRowGroupRows }}'}
+            - {name: NGKG_CEILING_NAMED_INDIVIDUALS, value: '{{ .Values.operator.reference.ceilings.namedIndividuals }}'}
+            - {name: NGKG_CEILING_PROPERTIES, value: '{{ .Values.operator.reference.ceilings.properties }}'}
+            - {name: NGKG_DOWNLOAD_CONCURRENCY, value: '{{ .Values.operator.reference.transfer.downloadConcurrency }}'}
+            - {name: NGKG_UPLOAD_CONCURRENCY, value: '{{ .Values.operator.reference.transfer.uploadConcurrency }}'}
+            - {name: NGKG_SINGLE_PUT_MAX_BYTES, value: '{{ .Values.operator.reference.transfer.singlePutMaxBytes }}'}
+            - {name: NGKG_MULTIPART_BUFFER_BYTES, value: '{{ .Values.operator.reference.transfer.multipartBufferBytes }}'}
+            - {name: NGKG_MULTIPART_CONCURRENCY, value: '{{ .Values.operator.reference.transfer.multipartConcurrency }}'}
+            - {name: NGKG_CLOUD_DECODE_TARGET_WORK_BYTES, value: '{{ .Values.operator.cloudCompiler.targetWorkBytes }}'}
+            - {name: NGKG_CLOUD_DECODE_MAX_WORK_ITEMS, value: '{{ .Values.operator.cloudCompiler.maxWorkItems }}'}
+            - {name: NGKG_CLOUD_DECODE_MAX_PARALLELISM, value: '{{ .Values.operator.cloudCompiler.maxParallelism }}'}
+            - {name: NGKG_CLOUD_DECODE_MAX_PLAN_BYTES, value: '{{ .Values.operator.cloudCompiler.maxPlanBytes }}'}
+            - {name: NGKG_CLOUD_DECODE_MAX_COMPLETION_MANIFEST_BYTES, value: '{{ .Values.operator.cloudCompiler.maxCompletionManifestBytes }}'}
+            - {name: NGKG_CLOUD_DECODE_MAX_FRAGMENT_BYTES, value: '{{ .Values.operator.cloudCompiler.maxFragmentBytes }}'}
+            - {name: NGKG_CLOUD_DECODE_OBJECT_CONCURRENCY, value: '{{ .Values.operator.cloudCompiler.objectConcurrency }}'}
+            - {name: NGKG_CLOUD_DECODE_FINALIZE_CONCURRENCY, value: '{{ .Values.operator.cloudCompiler.finalizeConcurrency }}'}
+            - {name: NGKG_SEMANTIC_MAP_MAX_PARALLELISM, value: '{{ .Values.operator.semanticCompiler.mapMaxParallelism }}'}
+            - {name: NGKG_SEMANTIC_SCRATCH_SIZE, value: '{{ .Values.operator.semanticCompiler.scratchSize }}'}
+            - {name: NGKG_SEMANTIC_PARTITION_MAX_PARALLELISM, value: '{{ .Values.operator.semanticCompiler.partitionMaxParallelism }}'}
+            - {name: NGKG_SEMANTIC_MAX_MANIFEST_BYTES, value: '{{ .Values.operator.semanticCompiler.maxManifestBytes }}'}
+            - {name: NGKG_SEMANTIC_MAX_FRAGMENT_BYTES, value: '{{ .Values.operator.semanticCompiler.maxFragmentBytes }}'}
+            - {name: NGKG_SEMANTIC_MAX_FRAGMENT_QUADS, value: '{{ .Values.operator.semanticCompiler.maxFragmentQuads }}'}
+            - {name: NGKG_SEMANTIC_MAP_ROWS_IN_MEMORY, value: '{{ .Values.operator.semanticCompiler.mapRowsInMemory }}'}
+            - {name: NGKG_SEMANTIC_MAX_RUN_BYTES, value: '{{ .Values.operator.semanticCompiler.maxRunBytes }}'}
+            - {name: NGKG_SEMANTIC_MAX_DICTIONARY_BYTES, value: '{{ .Values.operator.semanticCompiler.maxDictionaryBytes }}'}
+            - {name: NGKG_SEMANTIC_MAX_INPUT_RUNS, value: '{{ .Values.operator.semanticCompiler.maxInputRuns }}'}
+            - {name: NGKG_SEMANTIC_MAX_PARTITION_QUADS, value: '{{ .Values.operator.semanticCompiler.maxPartitionQuads }}'}
+            - {name: NGKG_SEMANTIC_PARQUET_ROW_GROUP_ROWS, value: '{{ .Values.operator.semanticCompiler.parquetRowGroupRows }}'}
+            - {name: NGKG_SEMANTIC_MAX_ARTIFACT_BYTES, value: '{{ .Values.operator.semanticCompiler.maxArtifactBytes }}'}
+            - {name: NGKG_SEMANTIC_FINALIZE_CONCURRENCY, value: '{{ .Values.operator.semanticCompiler.finalizeConcurrency }}'}
+            - {name: NGKG_ONTOLOGY_PROJECT_MAX_PARALLELISM, value: '{{ .Values.operator.ontologyQualifier.projectMaxParallelism }}'}
+            - {name: NGKG_ONTOLOGY_MAX_MANIFEST_BYTES, value: '{{ .Values.operator.ontologyQualifier.maxManifestBytes }}'}
+            - {name: NGKG_ONTOLOGY_MAX_PARTITION_QUADS, value: '{{ .Values.operator.ontologyQualifier.maxPartitionQuads }}'}
+            - {name: NGKG_ONTOLOGY_PROJECTION_ROWS_IN_MEMORY, value: '{{ .Values.operator.ontologyQualifier.projectionRowsInMemory }}'}
+            - {name: NGKG_ONTOLOGY_MAX_ARTIFACT_BYTES, value: '{{ .Values.operator.ontologyQualifier.maxArtifactBytes }}'}
+            - {name: NGKG_ONTOLOGY_DOWNLOAD_CONCURRENCY, value: '{{ .Values.operator.ontologyQualifier.downloadConcurrency }}'}
+            - {name: NGKG_ONTOLOGY_REASONER_HEAP_MIB, value: '{{ .Values.operator.ontologyQualifier.reasonerHeapMiB }}'}
+            - {name: NGKG_ONTOLOGY_REASONER_TIMEOUT_SECONDS, value: '{{ .Values.operator.ontologyQualifier.reasonerTimeoutSeconds }}'}
+            - {name: NGKG_ONTOLOGY_MAX_NAMED_INDIVIDUALS, value: '{{ .Values.operator.ontologyQualifier.maxNamedIndividuals }}'}
+            - {name: NGKG_ONTOLOGY_MAX_PROPERTIES, value: '{{ .Values.operator.ontologyQualifier.maxProperties }}'}
+            - {name: NGKG_OFFLINE_PARTITION_MAX_PARALLELISM, value: '{{ .Values.operator.offlineReasoner.partitionMaxParallelism }}'}
+            - {name: NGKG_OFFLINE_WORKER_CPU, value: '{{ .Values.operator.offlineReasoner.workerCpu }}'}
+            - {name: NGKG_OFFLINE_WORKER_MEMORY, value: '{{ .Values.operator.offlineReasoner.workerMemory }}'}
+            - {name: NGKG_OFFLINE_SCRATCH_SIZE, value: '{{ .Values.operator.offlineReasoner.scratchSize }}'}
+            - {name: NGKG_OFFLINE_LOGICAL_PARTITIONS, value: '{{ .Values.operator.offlineReasoner.logicalPartitions }}'}
+            - {name: NGKG_OFFLINE_MAX_MANIFEST_BYTES, value: '{{ .Values.operator.offlineReasoner.maxManifestBytes }}'}
+            - {name: NGKG_OFFLINE_MAX_ARTIFACT_BYTES, value: '{{ .Values.operator.offlineReasoner.maxArtifactBytes }}'}
+            - {name: NGKG_OFFLINE_MAX_FINALIZER_LOCAL_BYTES, value: '{{ .Values.operator.offlineReasoner.maxFinalizerLocalBytes }}'}
+            - {name: NGKG_OFFLINE_MAX_CONSEQUENCES, value: '{{ .Values.operator.offlineReasoner.maxConsequences }}'}
+            - {name: NGKG_OFFLINE_PLAN_ROWS_IN_MEMORY, value: '{{ .Values.operator.offlineReasoner.planRowsInMemory }}'}
+            - {name: NGKG_OFFLINE_MAX_RUN_BYTES, value: '{{ .Values.operator.offlineReasoner.maxRunBytes }}'}
+            - {name: NGKG_OFFLINE_PARQUET_ROW_GROUP_ROWS, value: '{{ .Values.operator.offlineReasoner.parquetRowGroupRows }}'}
+            - {name: NGKG_OFFLINE_FINALIZE_CONCURRENCY, value: '{{ .Values.operator.offlineReasoner.finalizeConcurrency }}'}
+            - {name: NGKG_ACTIVATION_MAX_MANIFEST_BYTES, value: '{{ .Values.operator.snapshotActivation.maxManifestBytes }}'}
+            - {name: NGKG_ACTIVATION_MAX_PARTITION_BYTES, value: '{{ .Values.operator.snapshotActivation.maxPartitionBytes }}'}
+            - {name: NGKG_ACTIVATION_MAX_QUERY_DATASET_BYTES, value: '{{ .Values.operator.snapshotActivation.maxQueryDatasetBytes }}'}
+            - {name: NGKG_ACTIVATION_VERIFY_CONCURRENCY, value: '{{ .Values.operator.snapshotActivation.verifyConcurrency }}'}
+          resources: {{- toYaml .Values.resources.operator | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: {drop: [ALL]}

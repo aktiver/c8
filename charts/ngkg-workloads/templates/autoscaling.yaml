@@ -1,0 +1,129 @@
+{{- if eq .Values.autoscaling.parquetHydration.owner "hpa" }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: {name: ngkg-hydration}
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: ngkg-hydration}
+  minReplicas: {{ .Values.autoscaling.parquetHydration.minNodes }}
+  maxReplicas: {{ .Values.autoscaling.parquetHydration.maxNodes }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies: [{type: Percent, value: 100, periodSeconds: 60}]
+    scaleDown:
+      stabilizationWindowSeconds: 600
+      policies: [{type: Percent, value: 25, periodSeconds: 120}]
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: {type: Utilization, averageUtilization: {{ .Values.metrics.cpuUtilizationTargetPercent }}}
+    - type: Resource
+      resource:
+        name: memory
+        target: {type: Utilization, averageUtilization: {{ .Values.metrics.memoryUtilizationTargetPercent }}}
+  {{- if .Values.metrics.workloadAwareAutoscalingEnabled }}
+    - type: Pods
+      pods:
+        metric:
+          name: ngkg_admission_pending
+          selector: {matchLabels: {class: hydration}}
+        target: {type: AverageValue, averageValue: '{{ .Values.metrics.hydrationPendingAverageTarget }}'}
+  {{- end }}
+{{- end }}
+---
+{{- if eq .Values.autoscaling.sparqlFragmentProcessing.owner "hpa" }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: {name: ngkg-fragment-worker}
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: StatefulSet, name: ngkg-fragment-worker}
+  minReplicas: {{ .Values.autoscaling.sparqlFragmentProcessing.minNodes }}
+  maxReplicas: {{ .Values.autoscaling.sparqlFragmentProcessing.maxNodes }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies: [{type: Percent, value: 100, periodSeconds: 60}]
+    scaleDown:
+      stabilizationWindowSeconds: 900
+      policies: [{type: Pods, value: 1, periodSeconds: 180}]
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: {type: Utilization, averageUtilization: {{ .Values.metrics.cpuUtilizationTargetPercent }}}
+    - type: Resource
+      resource:
+        name: memory
+        target: {type: Utilization, averageUtilization: {{ .Values.metrics.memoryUtilizationTargetPercent }}}
+  {{- if .Values.metrics.workloadAwareAutoscalingEnabled }}
+    - type: Pods
+      pods:
+        metric:
+          name: ngkg_admission_pending
+          selector: {matchLabels: {class: fragment}}
+        target: {type: AverageValue, averageValue: '{{ .Values.metrics.fragmentPendingAverageTarget }}'}
+    - type: Pods
+      pods:
+        metric:
+          name: ngkg_admission_pending
+          selector: {matchLabels: {class: shuffle}}
+        target: {type: AverageValue, averageValue: '{{ .Values.metrics.algebraPendingAverageTarget }}'}
+    - type: Pods
+      pods:
+        metric: {name: ngkg_worker_join_active_spill_bytes}
+        target: {type: AverageValue, averageValue: '{{ .Values.metrics.algebraActiveSpillBytesAverageTarget }}'}
+    - type: Pods
+      pods:
+        metric: {name: ngkg_property_path_pending_work_items}
+        target: {type: AverageValue, averageValue: '{{ .Values.metrics.propertyPathPendingWorkItemsAverageTarget }}'}
+    - type: Pods
+      pods:
+        metric: {name: ngkg_property_path_active_frontier_items}
+        target: {type: AverageValue, averageValue: '{{ .Values.metrics.propertyPathActiveFrontierItemsAverageTarget }}'}
+  {{- end }}
+{{- end }}
+---
+{{- if eq .Values.autoscaling.sparqlQueryProcessing.owner "hpa" }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: {name: ngkg-query-shard}
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: StatefulSet, name: ngkg-query-shard}
+  minReplicas: {{ .Values.autoscaling.sparqlQueryProcessing.minNodes }}
+  maxReplicas: {{ .Values.autoscaling.sparqlQueryProcessing.maxNodes }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies: [{type: Percent, value: 50, periodSeconds: 60}]
+    scaleDown:
+      stabilizationWindowSeconds: 900
+      policies: [{type: Pods, value: 1, periodSeconds: 180}]
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: {type: Utilization, averageUtilization: {{ .Values.metrics.cpuUtilizationTargetPercent }}}
+    - type: Resource
+      resource:
+        name: memory
+        target: {type: Utilization, averageUtilization: {{ .Values.metrics.memoryUtilizationTargetPercent }}}
+  {{- if .Values.metrics.workloadAwareAutoscalingEnabled }}
+    - type: Pods
+      pods:
+        metric:
+          name: ngkg_admission_pending
+          selector: {matchLabels: {class: query}}
+        target: {type: AverageValue, averageValue: '{{ .Values.metrics.queryPendingAverageTarget }}'}
+    - type: Pods
+      pods:
+        metric: {name: ngkg_property_path_checkpoint_bytes}
+        target: {type: AverageValue, averageValue: '{{ .Values.metrics.propertyPathCheckpointBytesAverageTarget }}'}
+  {{- if .Values.onlineServing.federationEnabled }}
+    - type: Pods
+      pods:
+        metric: {name: ngkg_federation_pending_calls}
+        target: {type: AverageValue, averageValue: '{{ .Values.metrics.federationPendingCallsAverageTarget }}'}
+  {{- end }}
+  {{- end }}
+{{- end }}

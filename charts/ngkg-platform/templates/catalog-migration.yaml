@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ngkg-catalog-migration
+  labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: catalog-migration}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: '-10'
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: catalog-migration}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      restartPolicy: Never
+      containers:
+        - name: migrator
+          image: '{{ required "images.catalogMigrator.repository is required" .Values.images.catalogMigrator.repository }}@{{ required "images.catalogMigrator.digest is required" .Values.images.catalogMigrator.digest }}'
+          env:
+            - name: NGKG_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: '{{ required "dependencies.databaseSecret is required" .Values.dependencies.databaseSecret }}', key: migration-database-url}}
+            - {name: NGKG_MIGRATION_DIRECTORY, value: /opt/ngkg/migrations}
+          resources: {{- toYaml .Values.resources.catalogMigrator | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: {drop: [ALL]}

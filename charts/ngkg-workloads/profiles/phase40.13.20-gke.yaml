@@ -1,0 +1,8 @@
+platform: {kubernetesDistribution: gke}
+hpcNodeGroups: {provisioner: cluster-autoscaler}
+nodeProvisioning:
+  provider: gke-managed-cluster-autoscaler
+  namespace: kube-system
+  workloadName: cluster-autoscaler
+  credentialSecret: ''
+  discoveryResource: container.googleapis.com/nodePools

@@ -1,0 +1,174 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-data-plane-default-deny}
+spec:
+  podSelector:
+    matchLabels: {ngkg.io/network-plane: data}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-batch-plane-default-deny}
+spec:
+  podSelector:
+    matchLabels: {ngkg.io/network-plane: batch}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-data-plane-dns}
+spec:
+  podSelector:
+    matchLabels: {ngkg.io/network-plane: data}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: kube-system}
+          podSelector:
+            matchLabels: {k8s-app: kube-dns}
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-batch-plane-dns}
+spec:
+  podSelector:
+    matchLabels: {ngkg.io/network-plane: batch}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: kube-system}
+          podSelector:
+            matchLabels: {k8s-app: kube-dns}
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-data-plane-internal-ingress}
+spec:
+  podSelector:
+    matchLabels: {ngkg.io/network-plane: data}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - {key: app.kubernetes.io/component, operator: In, values: [query-shard, fragment-worker, locator, hydration, direct-reasoner]}
+      ports:
+        - {protocol: TCP, port: 32010}
+        - {protocol: TCP, port: 32020}
+        - {protocol: TCP, port: 32030}
+        - {protocol: TCP, port: 32040}
+        - {protocol: TCP, port: 32050}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-data-plane-internal-egress}
+spec:
+  podSelector:
+    matchLabels: {ngkg.io/network-plane: data}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector:
+            matchExpressions:
+              - {key: app.kubernetes.io/component, operator: In, values: [query-shard, fragment-worker, locator, hydration, direct-reasoner]}
+      ports:
+        - {protocol: TCP, port: 32010}
+        - {protocol: TCP, port: 32020}
+        - {protocol: TCP, port: 32030}
+        - {protocol: TCP, port: 32040}
+        - {protocol: TCP, port: 32050}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-query-client-ingress}
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: query-shard}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels: {ngkg.io/query-client: 'true'}
+      ports:
+        - {protocol: TCP, port: 32010}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-metrics-client-ingress}
+spec:
+  podSelector:
+    matchLabels: {ngkg.io/network-plane: data}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels: {ngkg.io/metrics-client: 'true'}
+      ports:
+        - {protocol: TCP, port: 32010}
+        - {protocol: TCP, port: 32020}
+        - {protocol: TCP, port: 32030}
+        - {protocol: TCP, port: 32040}
+        - {protocol: TCP, port: 32050}
+---
+{{- if .Values.networking.dependencyCidrs }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-dependency-egress}
+spec:
+  podSelector:
+    matchLabels: {ngkg.io/network-plane: data}
+  policyTypes: [Egress]
+  egress:
+    - to:
+      {{- range .Values.networking.dependencyCidrs }}
+        - ipBlock: {cidr: {{ . | quote }}}
+      {{- end }}
+      ports:
+        - {protocol: TCP, port: 443}
+        - {protocol: TCP, port: 5432}
+        - {protocol: TCP, port: 9000}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-batch-dependency-egress}
+spec:
+  podSelector:
+    matchLabels: {ngkg.io/network-plane: batch}
+  policyTypes: [Egress]
+  egress:
+    - to:
+      {{- range .Values.networking.dependencyCidrs }}
+        - ipBlock: {cidr: {{ . | quote }}}
+      {{- end }}
+      ports:
+        - {protocol: TCP, port: 443}
+        - {protocol: TCP, port: 5432}
+        - {protocol: TCP, port: 9000}
+{{- end }}
+{{- if and .Values.onlineServing.federationEnabled .Values.networking.federationCidrs }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-federation-egress}
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: query-shard}
+  policyTypes: [Egress]
+  egress:
+    - to:
+      {{- range .Values.networking.federationCidrs }}
+        - ipBlock: {cidr: {{ . | quote }}}
+      {{- end }}
+      ports:
+        - {protocol: TCP, port: 443}
+{{- end }}

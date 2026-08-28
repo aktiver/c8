@@ -1,0 +1,37 @@
+{{- if .Values.productionAutoscaling.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ngkg-phase40-13-20-autoscaling-policy
+  labels:
+    app.kubernetes.io/name: ngkg
+    app.kubernetes.io/component: autoscaling-qualification
+data:
+  policy.json: |-
+    {
+      "formatVersion": 1,
+      "cpuTargetPercent": {{ .Values.productionAutoscaling.cpuTargetPercent }},
+      "memoryTargetPercent": {{ .Values.productionAutoscaling.memoryTargetPercent }},
+      "demandOwners": {
+        "sparqlQueryProcessing": "{{ .Values.autoscaling.sparqlQueryProcessing.owner }}",
+        "sparqlFragmentProcessing": "{{ .Values.autoscaling.sparqlFragmentProcessing.owner }}",
+        "parquetHydration": "{{ .Values.autoscaling.parquetHydration.owner }}",
+        "storageRecovery": "{{ .Values.autoscaling.storageRecovery.owner }}"
+      },
+      "scaleFromZeroPools": [
+        "source-ingestion",
+        "semantic-projection",
+        "semantic-artifact-build",
+        "index-build",
+        "reasoning",
+        "storage-recovery"
+      ],
+      "kubernetesDistribution": "{{ .Values.platform.kubernetesDistribution }}",
+      "nodeProvisioner": "{{ .Values.nodeProvisioning.provider }}",
+      "nodeProvisionerDiscoveryResource": "{{ .Values.nodeProvisioning.discoveryResource }}",
+      "kueueRequired": {{ .Values.productionAutoscaling.requireKueue }},
+      "scaleDownRequiresZeroCheckpointBytes": {{ .Values.productionAutoscaling.scaleDownRequiresZeroCheckpointBytes }},
+      "scaleDownRequiresZeroSpillBytes": {{ .Values.productionAutoscaling.scaleDownRequiresZeroSpillBytes }},
+      "deterministicResultsRequired": {{ .Values.productionAutoscaling.requireDeterministicResults }}
+    }
+{{- end }}

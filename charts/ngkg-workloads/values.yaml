@@ -1,0 +1,371 @@
+platform:
+  kubernetesDistribution: generic
+images:
+  query:
+    repository: ''
+    digest: ''
+  fragment:
+    repository: ''
+    digest: ''
+  locator:
+    repository: ''
+    digest: ''
+  hydration:
+    repository: ''
+    digest: ''
+  reasoner:
+    repository: ''
+    digest: ''
+tls:
+  existingSecret: ''
+onlineServing:
+  databaseSecret: ''
+  databaseMaxConnections: '16'
+  authTokensSecret: ''
+  authTokensFileSha256: ''
+  tenantAdmissionSecret: ''
+  tenantAdmissionPolicySha256: ''
+  maxAdmissionTenants: '1024'
+  federationEnabled: false
+  federationRegistrySecret: ''
+  federationRegistryKey: registry.json
+  federationRegistrySha256: ''
+  federationCredentialsSecret: ''
+  objectStoreCredentialsSecret: ''
+  artifactStoreBaseUrl: ''
+  cacheSizeLimit: 128Gi
+  maxObjectBytes: '68719476736'
+  maxPayloadCacheBytes: '107374182400'
+  maxResidentQueryRoutes: '64'
+  maxResidentFragmentRuntimes: '16'
+  maxRequestBytes: '67108864'
+  maxQueryBytes: '1048576'
+  maxQueryResponseBytes: '536870912'
+  maxQueryResultRows: '1000000'
+  maxQueryGraphTriples: '1000000'
+  maxQueryGraphBlankNodes: '100000'
+  queryTimeoutSeconds: '120'
+  queryLogs:
+    storeQueryText: true
+    maxPageSize: '200'
+    coordinatorCpuMillis: '16000'
+    coordinatorMemoryBytes: '68719476736'
+    fragmentCpuMillis: '16000'
+    fragmentMemoryBytes: '68719476736'
+    hydrationCpuMillis: '8000'
+    hydrationMemoryBytes: '34359738368'
+  queryResultCacheSizeLimit: 128Gi
+  maxQueryResultCacheBytes: '107374182400'
+  maxQueryResultCacheEntries: '8192'
+  maxQueryResultCacheEntryBytes: '536871000'
+  maxQualifiedEntities: '100000'
+  maxHydrationRows: '1000000'
+  maxHydrationResponseBytes: '268435456'
+  hydrationWorkerThreads: '6'
+  maxDistributedFragments: '64'
+  maxDistributedIntermediateRows: '1000000'
+  maxDistributedExchangeBytes: '268435456'
+  maxFragmentResponseBytes: '67108864'
+  fragmentResponseSpoolSizeLimit: 32Gi
+  maxFragmentResponseSpoolBytes: '17179869184'
+  fragmentArrowBatchRows: '8192'
+  fragmentArrowHttpChunkBytes: '1048576'
+  fragmentArrowChannelCapacity: '4'
+  fragmentExchangeConcurrency: '16'
+  distributedAlgebraEnabled: true
+  distributedAlgebraReplicas: '2'
+  partitionNativePathsEnabled: true
+  propertyPathWorkerThreads: '4'
+  propertyPathMaxScanRows: '64000000'
+  shufflePartitions: '64'
+  maxShuffleRequestBytes: '67108864'
+  maxShuffleResponseBytes: '67108864'
+  maxShuffleExchangeBytes: '536870912'
+  shuffleExchangeConcurrency: '16'
+  shuffleSpillSizeLimit: 256Gi
+  maxShuffleSpillBytes: '214748364800'
+  maxShuffleOpenFiles: '256'
+  propertyPathMaxIterations: '10000'
+  propertyPathMaxFrontierItems: '100000'
+  propertyPathMaxVisitedItems: '10000000'
+  propertyPathMaxCheckpointBytes: '1073741824'
+  propertyPathMaxSpillBytes: '8589934592'
+  propertyPathHotVertexDegree: '100000'
+  propertyPathMaxHotVertexSplits: '64'
+  shuffleCacheSizeLimit: 128Gi
+  maxShuffleCacheBytes: '107374182400'
+  maxShuffleCacheEntries: '8192'
+  maxShuffleCacheEntryBytes: '134217728'
+  workerJoinSpillSizeLimit: 256Gi
+  maxWorkerJoinSpillBytes: '214748364800'
+  maxWorkerJoinSpillBytesPerRequest: '17179869184'
+  workerJoinBuckets: '64'
+  maxWorkerJoinOpenFiles: '128'
+  maxWorkerJoinBuildRows: '65536'
+  maxWorkerJoinProbeRows: '65536'
+  maxWorkerJoinRowBytes: '1048576'
+  inMemoryJoinBuildRows: '32768'
+  streamingRequestSpoolSizeLimit: 16Gi
+  maxStreamingRequestSpoolBytes: '8589934592'
+  maxQueryInFlight: '12'
+  maxFragmentWorkerInFlight: '16'
+  maxFragmentInFlight: '8'
+  maxShuffleInFlight: '16'
+  maxLocatorInFlight: '128'
+  maxHydrationInFlight: '2'
+  maxQueryPending: '24'
+  maxFragmentPending: '16'
+  maxShufflePending: '32'
+  maxLocatorPending: '256'
+  maxHydrationPending: '8'
+  admissionWaitMilliseconds: '250'
+  fragmentTimeoutSeconds: '30'
+  hydrationTimeoutSeconds: '60'
+phase40:
+  directAdmission:
+    maxBgps: 4096
+    maxTriplesPerBgp: 65536
+    maxClassificationCpuLanes: 32
+onlineReasoning:
+  enabled: true
+  sharedWorkspaceClaim: ''
+  sharedTokenSecret: ''
+  sharedTokenKey: token
+  sharedTokenSha256Key: token-sha256
+  javaExecutable: /usr/bin/java
+  adapterJar: /opt/ngkg/ngkg-hermit-adapter.jar
+  adapterSha256: ''
+  adapterVersion: '40.9'
+  hermitVersion: 1.4.5.519
+  maxInFlightPerPod: '12'
+  maxPendingPerPod: '48'
+  maxCandidateBindings: '10000000'
+  maxPartitionCandidates: '250000'
+  maxExactPartitions: '4096'
+  maxGroundedAxiomsPerCandidate: '65536'
+  maxGroundedRdfBytesPerCandidate: '16777216'
+  heapMiBPerLane: '4096'
+  partitionTimeoutSeconds: '300'
+  maxCertificateBytes: '536870912'
+  maxProofSupportIds: '1000000'
+  dispatchConcurrency: '32'
+  dispatchAttempts: '3'
+  maxPartitionResponseBytes: '67108864'
+  autoscaling:
+    minReplicas: 2
+    maxReplicas: 24
+    queuedPartitionsAverageTarget: '2'
+    estimatedAxiomsAverageTarget: '500000'
+    scaleDownStabilizationSeconds: 1200
+hpcNodeGroups:
+  provisioner: existing
+  source_ingestion_num_of_nodes: 0
+  semantic_projection_num_of_nodes: 3
+  semantic_artifact_build_num_of_nodes: 3
+  reasoning_num_of_nodes: 3
+  online_reasoning_num_of_nodes: 2
+  index_build_num_of_nodes: 3
+  sparql_query_processing_num_of_nodes: 6
+  sparql_fragment_processing_num_of_nodes: 3
+  parquet_hydration_num_of_nodes: 3
+  maintenance_export_num_of_nodes: 0
+  storage_recovery_num_of_nodes: 0
+autoscaling:
+  sourceIngestion:
+    owner: operator
+    minNodes: 0
+    maxNodes: 30
+    targetDrainSeconds: 1800
+  semanticProjection:
+    owner: operator
+    minNodes: 0
+    maxNodes: 30
+    targetDrainSeconds: 900
+  semanticArtifactBuild:
+    owner: operator
+    minNodes: 0
+    maxNodes: 30
+    targetDrainSeconds: 900
+  reasoning:
+    owner: operator
+    minNodes: 0
+    maxNodes: 12
+    targetDrainSeconds: 1800
+  onlineReasoning:
+    owner: hpa
+    minNodes: 2
+    maxNodes: 24
+    targetDrainSeconds: 1800
+  indexBuild:
+    owner: operator
+    minNodes: 0
+    maxNodes: 20
+    targetDrainSeconds: 900
+  sparqlQueryProcessing:
+    owner: hpa
+    minNodes: 3
+    maxNodes: 30
+  sparqlFragmentProcessing:
+    owner: hpa
+    minNodes: 3
+    maxNodes: 60
+  parquetHydration:
+    owner: hpa
+    minNodes: 2
+    maxNodes: 20
+  maintenanceExport:
+    owner: keda
+    minNodes: 0
+    maxNodes: 10
+    targetDrainSeconds: 3600
+  storageRecovery:
+    owner: operator
+    minNodes: 0
+    maxNodes: 32
+    targetDrainSeconds: 3600
+queryPlane:
+  coordinatorReplicas: 3
+  workersPerNode: 1
+  graphReplicaFactor: 2
+  locatorReplicaFactor: 2
+resources:
+  query:
+    requests:
+      cpu: '16'
+      memory: 64Gi
+      ephemeral-storage: 544Gi
+    limits:
+      cpu: '16'
+      memory: 64Gi
+      ephemeral-storage: 544Gi
+  fragment:
+    requests:
+      cpu: '16'
+      memory: 64Gi
+      ephemeral-storage: 640Gi
+    limits:
+      cpu: '16'
+      memory: 64Gi
+      ephemeral-storage: 640Gi
+  locator:
+    requests:
+      cpu: '8'
+      memory: 32Gi
+    limits:
+      cpu: '8'
+      memory: 32Gi
+  hydration:
+    requests:
+      cpu: '8'
+      memory: 32Gi
+    limits:
+      cpu: '8'
+      memory: 32Gi
+  reasoner:
+    requests:
+      cpu: '16'
+      memory: 64Gi
+      ephemeral-storage: 128Gi
+    limits:
+      cpu: '16'
+      memory: 64Gi
+      ephemeral-storage: 128Gi
+hpcRuntime:
+  guaranteedQos: true
+  nodeSaturationTargetPercent: 80
+  cpuManagerPolicyRequired: static
+  topologyManagerPolicyRequired: restricted
+  memoryManagerPolicyRequired: Static
+  nestedParallelism: false
+  localNvme:
+    requiredForSpill: true
+networking:
+  externalApi: gateway-api
+  internalExchange: certified-arrow-ipc-rest
+  tlsMode: external-service-mesh-required
+  defaultDenyNetworkPolicies: true
+  topologyAwareRouting: true
+  fragmentIpFamily: IPv4
+  dependencyCidrs: []
+  federationCidrs: []
+metrics:
+  cpuUtilizationTargetPercent: 80
+  memoryUtilizationTargetPercent: 80
+  workloadAwareAutoscalingEnabled: false
+  queryPendingAverageTarget: '2'
+  federationPendingCallsAverageTarget: '2'
+  fragmentPendingAverageTarget: '2'
+  algebraPendingAverageTarget: '2'
+  algebraActiveSpillBytesAverageTarget: 8Gi
+  propertyPathPendingWorkItemsAverageTarget: '2'
+  propertyPathActiveFrontierItemsAverageTarget: '10000'
+  propertyPathCheckpointBytesAverageTarget: 512Mi
+  hydrationPendingAverageTarget: '1'
+  reasonerQueuedPartitionsAverageTarget: '2'
+  reasonerEstimatedAxiomsAverageTarget: '500000'
+  hydrationBytesInFlightTarget: 512Mi
+  hydrationQueueDelayTargetSeconds: '2'
+  queryQueueDelayTargetSeconds: '1'
+rke2:
+  metricsServer:
+    requireAvailable: false
+  customMetricsApi:
+    requireAvailable: false
+  cni:
+    requireNetworkPolicyEnforcement: true
+  clusterAutoscaler:
+    installationMode: external
+    provider: none
+    namespace: kube-system
+    workloadName: cluster-autoscaler
+    statusConfigMapName: cluster-autoscaler-status
+    existingCloudConfigSecret: ''
+  hpcNodeValidation:
+    requireWholeCpuAllocation: true
+    requireCpuManagerPolicy: static
+    requireTopologyManagerPolicy: restricted
+metricsApis:
+  requireResourceMetrics: false
+  requireCustomMetrics: false
+nodeProvisioning:
+  installationMode: external
+  provider: none
+  namespace: kube-system
+  workloadName: ''
+  credentialSecret: ''
+  discoveryResource: ''
+productionAutoscaling:
+  enabled: false
+  prometheusServerAddress: http://prometheus-operated.monitoring.svc:9090
+  cpuTargetPercent: 80
+  memoryTargetPercent: 80
+  requireMetricsServer: true
+  requireCustomMetrics: true
+  requireKueue: true
+  requireNodeProvisioner: true
+  requireScaleFromZero: true
+  requireDeterministicResults: true
+  scaleDownRequiresZeroCheckpointBytes: true
+  scaleDownRequiresZeroSpillBytes: true
+batchScheduling:
+  mode: kueue
+  localQueue: ngkg-batch
+  quotas:
+    sourceIngestion:
+      cpu: '960'
+      memory: 3840Gi
+    semanticProjection:
+      cpu: '960'
+      memory: 3840Gi
+    semanticArtifactBuild:
+      cpu: '960'
+      memory: 3840Gi
+    indexBuild:
+      cpu: '640'
+      memory: 2560Gi
+    reasoning:
+      cpu: '384'
+      memory: 3072Gi
+    storageRecovery:
+      cpu: '512'
+      memory: 2048Gi

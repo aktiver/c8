@@ -1,0 +1,8 @@
+platform: {kubernetesDistribution: generic}
+hpcNodeGroups: {provisioner: cluster-autoscaler}
+nodeProvisioning:
+  provider: external-cluster-autoscaler
+  namespace: kube-system
+  workloadName: cluster-autoscaler
+  credentialSecret: ''
+  discoveryResource: nodes

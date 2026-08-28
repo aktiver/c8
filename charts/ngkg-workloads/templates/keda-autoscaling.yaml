@@ -1,0 +1,38 @@
+{{- if and .Values.productionAutoscaling.enabled (eq .Values.autoscaling.parquetHydration.owner "keda") }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: ngkg-hydration
+  labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: hydration}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ngkg-hydration
+  pollingInterval: 15
+  cooldownPeriod: 600
+  minReplicaCount: {{ .Values.autoscaling.parquetHydration.minNodes }}
+  maxReplicaCount: {{ .Values.autoscaling.parquetHydration.maxNodes }}
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleUp:
+          stabilizationWindowSeconds: 30
+          policies: [{type: Percent, value: 100, periodSeconds: 60}]
+        scaleDown:
+          stabilizationWindowSeconds: 600
+          policies: [{type: Pods, value: 1, periodSeconds: 180}]
+  triggers:
+    - type: cpu
+      metricType: Utilization
+      metadata: {value: '{{ .Values.productionAutoscaling.cpuTargetPercent }}'}
+    - type: memory
+      metricType: Utilization
+      metadata: {value: '{{ .Values.productionAutoscaling.memoryTargetPercent }}'}
+    - type: prometheus
+      metadata:
+        serverAddress: '{{ .Values.productionAutoscaling.prometheusServerAddress }}'
+        metricName: ngkg_hydration_pending
+        threshold: '{{ .Values.metrics.hydrationPendingAverageTarget }}'
+        query: 'sum(ngkg_admission_pending{class="hydration"})'
+{{- end }}

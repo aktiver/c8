@@ -1,0 +1,329 @@
+images:
+  api:
+    repository: ''
+    digest: ''
+  operator:
+    repository: ''
+    digest: ''
+  distributedOperator:
+    repository: ''
+    digest: ''
+  distributedWorker:
+    repository: ''
+    digest: ''
+  referenceWorker:
+    repository: ''
+    digest: ''
+  catalogMigrator:
+    repository: ''
+    digest: ''
+  storageRecoveryOperator:
+    repository: ''
+    digest: ''
+  storageRecoveryWorker:
+    repository: ''
+    digest: ''
+dependencies:
+  databaseSecret: ''
+  authTokensSecret: ''
+  objectStoreCredentialsSecret: ''
+artifactStore:
+  baseUrl: ''
+cloudSourceMounts:
+  readOnly: true
+  requireDriverDiscovery: true
+  awsS3:
+    enabled: true
+    csiDriver: s3.csi.aws.com
+    identityMode: workload-identity
+  azureBlob:
+    enabled: true
+    csiDriver: blob.csi.azure.com
+    identityMode: workload-identity
+  gcs:
+    enabled: true
+    csiDriver: gcsfuse.csi.storage.gke.io
+    identityMode: workload-identity
+service:
+  apiPort: 8080
+batchScheduling:
+  localQueue: ngkg-batch
+api:
+  replicas: 3
+  authTokensFileSha256: ''
+  allowedResourceProfiles:
+  - reference-balanced
+  - distributed-hpc-v1
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 12
+    cpuUtilizationTargetPercent: 80
+    memoryUtilizationTargetPercent: 80
+    scaleUpStabilizationSeconds: 30
+    scaleUpPercent: 100
+    scaleUpPeriodSeconds: 60
+    scaleDownStabilizationSeconds: 600
+    scaleDownPercent: 25
+    scaleDownPeriodSeconds: 120
+  sourceUpload:
+    objectPrefix: sources
+    scratchSizeLimit: 128Gi
+    maxBytes: '107374182400'
+    maxQuads: '2000000000'
+    maxNamedGraphs: '10000'
+    maxInFlight: '1'
+    singlePutMaxBytes: '67108864'
+    multipartBufferBytes: '8388608'
+    multipartConcurrency: '8'
+phase40:
+  direct:
+    maxCandidateBindings: 10000000
+    maxPartitionCandidates: 250000
+    maxExactPartitions: 4096
+    maxGroundedAxiomsPerCandidate: 65536
+    maxGroundedRdfBytesPerCandidate: 16777216
+    reasonerConcurrency: 8
+    reasonerHeapMiBPerLane: 4096
+    reasonerTimeoutSeconds: 300
+    maxCertificateBytes: 536870912
+    maxProofSupportIds: 1000000
+operator:
+  replicas: 1
+  cloudCompiler:
+    targetWorkBytes: '68719476736'
+    maxWorkItems: '4096'
+    maxParallelism: '64'
+    maxPlanBytes: '268435456'
+    maxCompletionManifestBytes: '16777216'
+    maxFragmentBytes: '1099511627776'
+    objectConcurrency: '8'
+    finalizeConcurrency: '16'
+  semanticCompiler:
+    scratchSize: 2048Gi
+    mapMaxParallelism: '128'
+    partitionMaxParallelism: '256'
+    maxManifestBytes: '268435456'
+    maxFragmentBytes: '1099511627776'
+    maxFragmentQuads: '4000000000'
+    mapRowsInMemory: '1000000'
+    maxRunBytes: '68719476736'
+    maxDictionaryBytes: '274877906944'
+    maxInputRuns: '1000000'
+    maxPartitionQuads: '1000000000'
+    parquetRowGroupRows: '1048576'
+    maxArtifactBytes: '1099511627776'
+    finalizeConcurrency: '32'
+  ontologyQualifier:
+    projectMaxParallelism: '256'
+    maxManifestBytes: '268435456'
+    maxPartitionQuads: '1000000000'
+    projectionRowsInMemory: '1000000'
+    maxArtifactBytes: '1099511627776'
+    downloadConcurrency: '32'
+    reasonerHeapMiB: '98304'
+    reasonerTimeoutSeconds: '14400'
+    maxNamedIndividuals: '10000000'
+    maxProperties: '1000000'
+  offlineReasoner:
+    workerCpu: '1'
+    workerMemory: 8Gi
+    scratchSize: 128Gi
+    partitionMaxParallelism: '256'
+    logicalPartitions: '4096'
+    maxManifestBytes: '268435456'
+    maxArtifactBytes: '1099511627776'
+    maxFinalizerLocalBytes: '107374182400'
+    maxConsequences: '10000000000'
+    planRowsInMemory: '1000000'
+    maxRunBytes: '1073741824'
+    parquetRowGroupRows: '1048576'
+    finalizeConcurrency: '32'
+  snapshotActivation:
+    maxManifestBytes: '268435456'
+    maxPartitionBytes: '1099511627776'
+    maxQueryDatasetBytes: '68719476736'
+    verifyConcurrency: '32'
+  reference:
+    resourceProfile: reference-balanced
+    serviceAccount: ngkg-reference-worker
+    cpu: '32'
+    memory: 128Gi
+    scratchSize: 512Gi
+    activeDeadlineSeconds: 7200
+    ttlSecondsAfterFinished: 86400
+    javaExecutable: /usr/bin/java
+    reasonerAdapterJar: /opt/ngkg/ngkg-hermit-adapter.jar
+    reasonerAdapterSha256: ''
+    reasonerName: HermiT
+    reasonerVersion: 1.4.5.519
+    javaToolOptions: -XX:ActiveProcessorCount=32 -XX:MaxRAMPercentage=80 -Djava.io.tmpdir=/scratch/java
+    hydrationWorkerThreads: '8'
+    ceilings:
+      bundleBytes: '16777216'
+      stagedObjectBytes: '10737418240'
+      stagedTotalBytes: '21474836480'
+      stagedArtifacts: '10000'
+      outputBytes: '107374182400'
+      outputArtifacts: '10000'
+      inputBytes: '10737418240'
+      quads: '100000000'
+      dictionaryTerms: '100000000'
+      reasonerSeconds: '5400'
+      parquetRowGroupRows: '1048576'
+      namedIndividuals: '10000000'
+      properties: '1000000'
+      hydrationRows: '10000000'
+    transfer:
+      downloadConcurrency: '16'
+      uploadConcurrency: '16'
+      singlePutMaxBytes: '67108864'
+      multipartBufferBytes: '8388608'
+      multipartConcurrency: '8'
+distributedOperator:
+  replicas: 1
+  resourceProfile: distributed-hpc-v1
+  serviceAccount: ngkg-distributed-worker
+  logicalPartitions: 256
+  reducerCount: 16
+  maxQuads: '100000000'
+  maxObjectBytes: '10737418240'
+  artifactRowGroupRows: '1048576'
+  ttlSecondsAfterFinished: 86400
+  stages:
+    plan:
+      queue: ngkg-batch
+      cpu: '1'
+      memory: 128Gi
+      scratch: 512Gi
+      maxParallelism: 1
+      activeDeadlineSeconds: 7200
+    projection:
+      queue: ngkg-batch
+      cpu: '1'
+      memory: 16Gi
+      scratch: 256Gi
+      maxParallelism: 96
+      activeDeadlineSeconds: 3600
+    reducer:
+      queue: ngkg-batch
+      cpu: '1'
+      memory: 32Gi
+      scratch: 512Gi
+      maxParallelism: 24
+      activeDeadlineSeconds: 7200
+    finalize:
+      queue: ngkg-batch
+      cpu: '1'
+      memory: 128Gi
+      scratch: 512Gi
+      maxParallelism: 1
+      activeDeadlineSeconds: 7200
+    artifact_plan:
+      queue: ngkg-batch
+      cpu: '1'
+      memory: 32Gi
+      scratch: 64Gi
+      maxParallelism: 1
+      activeDeadlineSeconds: 1800
+    artifact:
+      queue: ngkg-batch
+      cpu: '1'
+      memory: 32Gi
+      scratch: 256Gi
+      maxParallelism: 96
+      activeDeadlineSeconds: 7200
+    artifact_finalize:
+      queue: ngkg-batch
+      cpu: '1'
+      memory: 128Gi
+      scratch: 512Gi
+      maxParallelism: 1
+      activeDeadlineSeconds: 7200
+    serving_root:
+      queue: ngkg-batch
+      cpu: '1'
+      memory: 128Gi
+      scratch: 512Gi
+      maxParallelism: 1
+      activeDeadlineSeconds: 7200
+    reasoner:
+      queue: ngkg-batch
+      cpu: '32'
+      memory: 512Gi
+      scratch: 1024Gi
+      maxParallelism: 1
+      activeDeadlineSeconds: 14400
+storageRecovery:
+  operatorReplicas: 2
+  nodeSaturationTargetPercent: 80
+  resourceProfile: storage-recovery-hpc-v1
+  serviceAccount: ngkg-storage-recovery-worker
+  queue: ngkg-batch
+  primaryTarget: primary-zone-a
+  targetsJson: >-
+    {"formatVersion":1,"targets":[{"name":"primary-zone-a","failureDomain":"zone-a","baseUrl":"s3://ngkg-primary","writable":true},{"name":"replica-zone-b","failureDomain":"zone-b","baseUrl":"s3://ngkg-replica","writable":true},{"name":"backup-region","failureDomain":"region-backup","baseUrl":"s3://ngkg-backup","writable":true}]}
+  apiScratchSize: 2Gi
+  workerCpu: '2'
+  workerMemory: 8Gi
+  workerScratchSize: 64Gi
+  maxParallelism: 256
+  maxInFlightBytes: '1099511627776'
+  maxManifestBytes: '1073741824'
+  maxArtifactBytes: '1099511627776'
+  maxArtifacts: '10000000'
+  maxPlanBytes: '1073741824'
+  maxResultBytes: '16777216'
+  maxTaskBytes: '64424509440'
+  taskTimeoutSeconds: '7200'
+  activeDeadlineSeconds: 86400
+  ttlSecondsAfterFinished: 604800
+  transfer:
+    singlePutMaxBytes: '67108864'
+    multipartBufferBytes: '8388608'
+    multipartConcurrency: '8'
+serviceAccounts:
+  referenceWorker:
+    annotations: {}
+    automountToken: false
+  distributedWorker:
+    annotations: {}
+    automountToken: false
+resources:
+  api:
+    requests:
+      cpu: '4'
+      memory: 8Gi
+      ephemeral-storage: 128Gi
+    limits:
+      cpu: '4'
+      memory: 8Gi
+      ephemeral-storage: 128Gi
+  operator:
+    requests:
+      cpu: '1'
+      memory: 1Gi
+    limits:
+      cpu: '1'
+      memory: 1Gi
+  distributedOperator:
+    requests:
+      cpu: '1'
+      memory: 1Gi
+    limits:
+      cpu: '1'
+      memory: 1Gi
+  storageRecoveryOperator:
+    requests:
+      cpu: '1'
+      memory: 1Gi
+    limits:
+      cpu: '1'
+      memory: 1Gi
+  catalogMigrator:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi

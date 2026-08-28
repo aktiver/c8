@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "limits": {
+    "maxCallsPerQuery": 64,
+    "maxConcurrentCalls": 12,
+    "maxPendingCalls": 48,
+    "queueTimeoutMillis": 1000,
+    "connectTimeoutMillis": 2000,
+    "requestTimeoutMillis": 30000,
+    "maxResponseBytes": 67108864
+  },
+  "endpoints": [
+    {
+      "iri": "https://federation.example.org/sparql",
+      "tenantIds": ["00000000-0000-0000-0000-000000000001"],
+      "bearerTokenEnv": "NGKG_FEDERATION_EXAMPLE_BEARER_TOKEN"
+    }
+  ]
+}
