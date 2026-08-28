@@ -1,0 +1,76 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ngkg-standards-qualification
+  namespace: ngkg-system
+  labels:
+    app.kubernetes.io/name: ngkg-standards-qualification
+    kueue.x-k8s.io/queue-name: ngkg-sparql-query
+spec:
+  completionMode: Indexed
+  completions: 64
+  parallelism: 16
+  backoffLimitPerIndex: 2
+  maxFailedIndexes: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ngkg-standards-qualification
+        ngkg.io/workload: sparql-query-processing
+    spec:
+      restartPolicy: Never
+      serviceAccountName: ngkg-standards-qualification
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: qualification
+        image: registry.example.invalid/ngkg/standards-qualification@sha256:REPLACE_WITH_RELEASE_DIGEST
+        imagePullPolicy: IfNotPresent
+        args:
+        - scripts/run_phase40_13_22_partition.py
+        - --plan=/evidence/plan.json
+        - --suite-inventory=/evidence/suite.json
+        - --case-catalog=/evidence/cases.json
+        - --output=/reports/partition-$(JOB_COMPLETION_INDEX).json
+        - --ngkg-driver=/opt/ngkg/bin/ngkg-standards-driver
+        - --w3c-driver=/opt/ngkg/bin/w3c-expected-driver
+        - --jena-driver=java -XX:ActiveProcessorCount=1 -jar /opt/ngkg/ngkg-jena-differential.jar
+        - --hermit-driver=java -XX:ActiveProcessorCount=1 -jar /opt/ngkg/ngkg-hermit-standards-driver.jar
+        env:
+        - name: JOB_COMPLETION_INDEX
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['batch.kubernetes.io/job-completion-index']
+        - name: OMP_NUM_THREADS
+          value: '1'
+        - name: RAYON_NUM_THREADS
+          value: '1'
+        resources:
+          requests:
+            cpu: '4'
+            memory: 16Gi
+          limits:
+            cpu: '4'
+            memory: 16Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - {name: evidence, mountPath: /evidence, readOnly: true}
+        - {name: reports, mountPath: /reports}
+        - {name: tmp, mountPath: /tmp}
+      volumes:
+      - name: evidence
+        configMap:
+          name: ngkg-standards-plan
+      - name: reports
+        persistentVolumeClaim:
+          claimName: ngkg-standards-reports
+      - name: tmp
+        emptyDir:
+          sizeLimit: 2Gi

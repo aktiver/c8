@@ -1,0 +1,33 @@
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ResourceFlavor
+metadata:
+  name: ngkg-semantic-projection
+spec:
+  nodeLabels:
+    ngkg.io/workload: semantic-projection
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ClusterQueue
+metadata:
+  name: ngkg-batch-cluster
+spec:
+  namespaceSelector: {}
+  queueingStrategy: BestEffortFIFO
+  resourceGroups:
+    - coveredResources: [cpu, memory]
+      flavors:
+        - name: ngkg-semantic-projection
+          resources:
+            - name: cpu
+              nominalQuota: '960'
+            - name: memory
+              nominalQuota: 3840Gi
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: LocalQueue
+metadata:
+  name: ngkg-batch
+  namespace: data-platform
+spec:
+  clusterQueue: ngkg-batch-cluster
+
