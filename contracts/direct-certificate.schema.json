@@ -1,0 +1,285 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.example/contracts/direct-certificate.schema.json",
+  "title": "NGKG Phase 40.9 Direct Certificate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "datasetId",
+    "snapshotId",
+    "querySha256",
+    "bgpSha256",
+    "activeDatasetSha256",
+    "authorizedGraphSetSha256",
+    "owlSignatureSha256",
+    "datatypePolicySha256",
+    "entailmentRegime",
+    "graphContext",
+    "certifiedOutcome",
+    "directBgpResultSha256",
+    "reasoner",
+    "completeness",
+    "proofCoverage",
+    "supportReferences"
+  ],
+  "properties": {
+    "formatVersion": {
+      "enum": [
+        1,
+        2
+      ]
+    },
+    "datasetId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "snapshotId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "querySha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "bgpSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "activeDatasetSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "authorizedGraphSetSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "owlSignatureSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "datatypePolicySha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "entailmentRegime": {
+      "const": "owl2-direct"
+    },
+    "graphContext": {
+      "$ref": "#/$defs/graphContext"
+    },
+    "certifiedOutcome": {
+      "const": "exact-complete"
+    },
+    "directBgpResultSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "reasoner": {
+      "$ref": "#/$defs/reasoner"
+    },
+    "completeness": {
+      "$ref": "#/$defs/completeness"
+    },
+    "proofCoverage": {
+      "enum": [
+        "not-available",
+        "partial",
+        "complete"
+      ]
+    },
+    "supportReferences": {
+      "type": "array",
+      "maxItems": 1000000,
+      "items": {
+        "$ref": "#/$defs/supportReference"
+      }
+    },
+    "proofManifestSha256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "graphContext": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scope",
+            "activeDefaultGraphSha256"
+          ],
+          "properties": {
+            "scope": {
+              "const": "default"
+            },
+            "activeDefaultGraphSha256": {
+              "$ref": "#/$defs/sha256"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scope",
+            "graphIri"
+          ],
+          "properties": {
+            "scope": {
+              "const": "named"
+            },
+            "graphIri": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 8192
+            }
+          }
+        }
+      ]
+    },
+    "reasoner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "engine",
+        "engineVersion",
+        "adapterName",
+        "adapterVersion",
+        "requestSha256"
+      ],
+      "properties": {
+        "engine": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "engineVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "adapterName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "adapterVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "requestSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "completeness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "candidateSpaceSha256",
+        "candidateBindingCount",
+        "checkedCandidateBindingCount",
+        "partitionCount",
+        "completedPartitionCount",
+        "reasonerRequestCount",
+        "successfulReasonerRequestCount",
+        "executionRootSha256"
+      ],
+      "properties": {
+        "method": {
+          "const": "exhaustive-candidate-entailment"
+        },
+        "candidateSpaceSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "candidateBindingCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkedCandidateBindingCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "partitionCount": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000
+        },
+        "completedPartitionCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "reasonerRequestCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "successfulReasonerRequestCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "executionRootSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "supportReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supportId",
+        "kind"
+      ],
+      "properties": {
+        "supportId": {
+          "$ref": "#/$defs/sha256"
+        },
+        "kind": {
+          "enum": [
+            "ontology-input",
+            "asserted-axiom",
+            "entailed-axiom",
+            "ontology-import",
+            "closure-artifact",
+            "reasoner-check"
+          ]
+        },
+        "artifactSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "sourceGraphIri": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 8192
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "formatVersion": {
+            "const": 2
+          }
+        },
+        "required": [
+          "formatVersion"
+        ]
+      },
+      "then": {
+        "required": [
+          "proofManifestSha256"
+        ],
+        "properties": {
+          "proofCoverage": {
+            "const": "complete"
+          },
+          "supportReferences": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
+}

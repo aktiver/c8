@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/certified-query-record.schema.json",
+  "title": "NGKG Certified SPARQL Query Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "queryId",
+    "querySha256",
+    "expectedSha256",
+    "sparqlAlgebraFormatVersion",
+    "sparqlAlgebraSha256",
+    "queryForm",
+    "resultHashVersion",
+    "ordered",
+    "maxSolutionRows",
+    "maxGraphTriples",
+    "maxGraphBlankNodes",
+    "observedResultSha256",
+    "reasonerReportSha256",
+    "scope",
+    "routing"
+  ],
+  "properties": {
+    "queryId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "querySha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "expectedSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "sparqlAlgebraFormatVersion": {
+      "const": 1
+    },
+    "sparqlAlgebraSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "queryForm": {
+      "type": "string",
+      "enum": [
+        "SELECT",
+        "ASK",
+        "CONSTRUCT",
+        "DESCRIBE"
+      ]
+    },
+    "resultHashVersion": {
+      "const": 2
+    },
+    "ordered": {
+      "type": "boolean"
+    },
+    "maxSolutionRows": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "maxGraphTriples": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "maxGraphBlankNodes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "observedResultSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "observedMultisetSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "reasonerReportSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "routing": {
+      "$ref": "query-routing-certificate.schema.json"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "queryForm": {
+            "const": "SELECT"
+          }
+        },
+        "required": [
+          "queryForm"
+        ]
+      },
+      "then": {
+        "required": [
+          "observedMultisetSha256"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "queryForm": {
+            "enum": [
+              "ASK",
+              "CONSTRUCT",
+              "DESCRIBE"
+            ]
+          }
+        },
+        "required": [
+          "queryForm"
+        ]
+      },
+      "then": {
+        "properties": {
+          "ordered": {
+            "const": false
+          }
+        },
+        "not": {
+          "required": [
+            "observedMultisetSha256"
+          ]
+        }
+      }
+    }
+  ]
+}

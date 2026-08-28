@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.example/contracts/cloud-source-manifest.schema.json",
+  "title": "NGKG frozen existing-cloud TriG source manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion", "tenantId", "datasetId", "operationId", "targetSnapshotId",
+    "provider", "bucket", "accountName", "sourceMount", "versionPolicy",
+    "logicalPartitions", "objects", "totalObjects", "totalBytes", "totalQuads",
+    "aggregateSourceSha256"
+  ],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "tenantId": {"type": "string", "format": "uuid"},
+    "datasetId": {"type": "string", "format": "uuid"},
+    "operationId": {"type": "string", "format": "uuid"},
+    "targetSnapshotId": {"type": "string", "format": "uuid"},
+    "provider": {"enum": ["aws-s3", "azure-blob", "gcs"]},
+    "bucket": {"type": "string", "minLength": 3},
+    "accountName": {"type": ["string", "null"]},
+    "sourceMount": {"const": "/source"},
+    "versionPolicy": {"const": "require-immutable-checksum"},
+    "logicalPartitions": {"type": "integer", "minimum": 1, "maximum": 65536},
+    "objects": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1000000,
+      "items": {"$ref": "#/$defs/object"}
+    },
+    "totalObjects": {"type": "integer", "minimum": 1, "maximum": 1000000},
+    "totalBytes": {"type": "integer", "minimum": 1},
+    "totalQuads": {"type": "integer", "minimum": 1},
+    "aggregateSourceSha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ordinal", "objectKey", "bytes", "sha256", "parsedQuadCount",
+        "defaultGraphQuadCount", "namedGraphQuadCounts", "blankNodeScope"
+      ],
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 0},
+        "objectKey": {"type": "string", "pattern": "^[^/].*\\.[Tt][Rr][Ii][Gg]$"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "parsedQuadCount": {"type": "integer", "minimum": 1},
+        "defaultGraphQuadCount": {"type": "integer", "minimum": 0},
+        "namedGraphQuadCounts": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 1}
+        },
+        "blankNodeScope": {
+          "type": "string",
+          "pattern": "^object-[0-9]{8}-[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}

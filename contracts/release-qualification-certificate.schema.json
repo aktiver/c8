@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/release-qualification-certificate.schema.json",
+  "title": "NGKG Phase 40.13.24 release qualification certificate",
+  "type": "object", "additionalProperties": false,
+  "required": ["formatVersion", "planSha256", "releaseSha256", "performanceCertificateSha256", "semanticEvidenceSha256", "qualifiedProviders", "qualifiedGates", "evidenceRootSha256", "failureCount", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1}, "planSha256": {"$ref": "#/$defs/sha256"}, "releaseSha256": {"$ref": "#/$defs/sha256"},
+    "performanceCertificateSha256": {"$ref": "#/$defs/sha256"}, "semanticEvidenceSha256": {"$ref": "#/$defs/sha256"},
+    "qualifiedProviders": {"type": "array", "minItems": 5, "maxItems": 5, "uniqueItems": true, "items": {"enum": ["rke", "rke2", "eks", "aks", "gke"]}},
+    "qualifiedGates": {"type": "array", "minItems": 15, "maxItems": 15, "uniqueItems": true, "items": {"type": "string"}},
+    "evidenceRootSha256": {"$ref": "#/$defs/sha256"}, "failureCount": {"const": 0}, "complete": {"const": true}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

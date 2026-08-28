@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/rdf-dataset-catalog.schema.json",
+  "title": "NGKG Immutable RDF Dataset Graph Catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "datasetId",
+    "snapshotId",
+    "graphs"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "datasetId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "snapshotId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "graphs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/graphRecord"
+      }
+    }
+  },
+  "$defs": {
+    "authorizationLabel": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_.:/-]+$"
+    },
+    "logicalName": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "const": "default"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "iri"
+          ],
+          "properties": {
+            "kind": {
+              "const": "named"
+            },
+            "iri": {
+              "type": "string",
+              "format": "uri",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "graphRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "graphId",
+        "name",
+        "role",
+        "authorizationLabels",
+        "queryVisible",
+        "reasoningVisible",
+        "assertedQuadCount"
+      ],
+      "properties": {
+        "graphId": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "name": {
+          "$ref": "#/$defs/logicalName"
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "authorizationLabels": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/authorizationLabel"
+          }
+        },
+        "queryVisible": {
+          "type": "boolean"
+        },
+        "reasoningVisible": {
+          "type": "boolean"
+        },
+        "assertedQuadCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

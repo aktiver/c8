@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/snapshot-restore-certificate.schema.json",
+  "title": "NGKG inactive restored snapshot certificate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "restoreId", "backupManifestSha256", "sourceSnapshotId", "restoredSnapshotId", "storageManifestSha256", "recoveryCertificateSha256", "catalogImported", "publicationState", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "restoreId": {"type": "string", "format": "uuid"},
+    "backupManifestSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "sourceSnapshotId": {"type": "string", "format": "uuid"},
+    "restoredSnapshotId": {"type": "string", "format": "uuid"},
+    "storageManifestSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "recoveryCertificateSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "catalogImported": {"type": "boolean"},
+    "publicationState": {"enum": ["storage-verified", "certified-inactive"]},
+    "complete": {"const": true}
+  }
+}

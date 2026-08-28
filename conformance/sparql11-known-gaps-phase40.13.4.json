@@ -1,0 +1,84 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.4",
+  "scope": "Pinned official SPARQL 1.1 query and result-format manifests",
+  "baseline": {
+    "total": 338,
+    "pass": 326,
+    "fail": 12
+  },
+  "gaps": [
+    {
+      "id": "aggregate.group-concat-language",
+      "layer": "scalar-evaluator",
+      "count": 2,
+      "tests": [
+        "GROUP_CONCAT with same language tag",
+        "GROUP_CONCAT with one element"
+      ],
+      "requirement": "GROUP_CONCAT produces the specified simple literal instead of retaining an input language tag.",
+      "nextAction": "Implement aggregate evaluation in the NGKG scalar oracle or patch the pinned evaluator behind differential tests."
+    },
+    {
+      "id": "aggregate.graph-empty-group",
+      "layer": "scalar-evaluator",
+      "count": 1,
+      "tests": ["COUNT: no GROUP BY inside of GRAPH"],
+      "requirement": "Aggregate empty groups are emitted for every active named graph selected by GRAPH.",
+      "nextAction": "Correct GRAPH and aggregation algebra evaluation before distributing the aggregate."
+    },
+    {
+      "id": "pattern.values-graph-variable",
+      "layer": "scalar-evaluator",
+      "count": 1,
+      "tests": ["VALUES inside GRAPH binding the same variable as the graph name"],
+      "requirement": "VALUES bindings constrain and retain the same variable used as the active GRAPH name.",
+      "nextAction": "Correct variable-domain propagation across VALUES and GRAPH."
+    },
+    {
+      "id": "function.bnode-solution-scope",
+      "layer": "scalar-evaluator",
+      "count": 1,
+      "tests": ["BNODE(str)"],
+      "requirement": "BNODE(string) labels are stable only within one solution mapping and never alias across mappings.",
+      "nextAction": "Add query- and solution-scoped blank-node allocation to the expression evaluator."
+    },
+    {
+      "id": "pattern.minus-outer-graph",
+      "layer": "scalar-evaluator",
+      "count": 1,
+      "tests": ["outer GRAPH operator does not affect MINUS disjointness"],
+      "requirement": "An outer GRAPH variable does not create an in-scope shared variable inside MINUS when algebra domains are disjoint.",
+      "nextAction": "Correct MINUS compatibility-domain calculation before distributed lowering."
+    },
+    {
+      "id": "path.zero-length-constant-empty",
+      "layer": "scalar-evaluator",
+      "count": 4,
+      "tests": [
+        "* with start being a constant on the empty dataset",
+        "* with end being a constant on the empty dataset",
+        "? with start being a constant on the empty dataset",
+        "? with end being a constant on the empty dataset"
+      ],
+      "requirement": "Zero-length path alternatives return the identity solution for a constant endpoint even on an empty graph.",
+      "nextAction": "Seed constant endpoint identity before graph frontier expansion."
+    },
+    {
+      "id": "results.csv-lexical-identity",
+      "layer": "rdf-storage-and-serialization",
+      "count": 1,
+      "tests": ["csv03 - CSV Result Format"],
+      "requirement": "CSV serialization preserves the RDF literal lexical form required by the result-format test.",
+      "nextAction": "Preserve source literal lexical identity through storage and result serialization."
+    },
+    {
+      "id": "rdf.derived-datatype-preservation",
+      "layer": "rdf-storage-and-serialization",
+      "count": 1,
+      "tests": ["tsv03 - TSV Result Format"],
+      "requirement": "Arbitrary RDF datatypes, including xsd:negativeInteger, remain distinct from their value-space parents.",
+      "nextAction": "Separate lossless RDF term storage from the stricter OWL reasoning datatype policy."
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "https://c8-next-generation.io/contracts/rc1-supply-chain-evidence.schema.json",
+  "title": "NGKG RC1 supply-chain evidence", "type": "object", "additionalProperties": false,
+  "required": ["signatureReportSha256", "provenanceReportSha256", "secretScanSha256", "licenseReportSha256", "vulnerabilityReportSha256", "unapprovedCriticalCves", "unapprovedHighCves", "embeddedCredentials", "licensePolicyComplete", "runtimeHardeningComplete", "workloadIdentityComplete", "networkPolicyComplete", "complete"],
+  "properties": {
+    "signatureReportSha256": {"$ref": "#/$defs/sha256"}, "provenanceReportSha256": {"$ref": "#/$defs/sha256"}, "secretScanSha256": {"$ref": "#/$defs/sha256"}, "licenseReportSha256": {"$ref": "#/$defs/sha256"}, "vulnerabilityReportSha256": {"$ref": "#/$defs/sha256"},
+    "unapprovedCriticalCves": {"const": 0}, "unapprovedHighCves": {"const": 0}, "embeddedCredentials": {"const": 0},
+    "licensePolicyComplete": {"const": true}, "runtimeHardeningComplete": {"const": true}, "workloadIdentityComplete": {"const": true}, "networkPolicyComplete": {"const": true}, "complete": {"const": true}
+  }, "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

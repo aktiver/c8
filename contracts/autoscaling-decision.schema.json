@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/autoscaling-decision.schema.json",
+  "title": "c8 Phase 40.13.20 deterministic scaling decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion", "workload", "poolName", "action", "currentNodes", "desiredNodes",
+    "readyNodes", "pendingPods", "cpuSaturationPercent", "memorySaturationPercent",
+    "trigger", "observationSha256"
+  ],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "workload": {"enum": ["source-ingestion", "semantic-projection", "semantic-artifact-build", "index-build", "offline-reasoning", "online-reasoning", "sparql-query", "sparql-fragment", "parquet-hydration", "storage-recovery"]},
+    "poolName": {"type": "string", "minLength": 1, "maxLength": 63},
+    "action": {"enum": ["scale-from-zero", "scale-out", "hold", "scale-in", "scale-in-blocked"]},
+    "currentNodes": {"type": "integer", "minimum": 0},
+    "desiredNodes": {"type": "integer", "minimum": 0},
+    "readyNodes": {"type": "integer", "minimum": 0},
+    "pendingPods": {"type": "integer", "minimum": 0},
+    "cpuSaturationPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+    "memorySaturationPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+    "trigger": {"type": "string", "minLength": 1, "maxLength": 128},
+    "observationSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/snapshot-activation-manifest.schema.json",
+  "title": "NGKG atomic snapshot activation manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion", "tenantId", "datasetId", "operationId", "snapshotId",
+    "parentSnapshotId", "identityNamespace", "semanticRoot", "qualificationRequest",
+    "qualificationRoot", "offlineReasoningRoot", "semanticContentSha256",
+    "authorizedGraphSetSha256", "datatypePolicySha256", "syntheticSnapshotOntologySha256",
+    "finiteClosureSha256", "proofSupportRootSha256", "factCount", "consequenceCount",
+    "semanticPartitionCount", "reasoningPartitionCount", "referenceManifestSha256",
+    "queryDatasetSha256", "queryDatasetBytes", "graphCatalogSha256",
+    "capabilityIndexSha256", "exactReasoner", "exactReasonerVersion",
+    "unknownRoutesToExactHermit", "allPartitionsVerified", "publicationState"
+  ],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "tenantId": {"type": "string", "format": "uuid"},
+    "datasetId": {"type": "string", "format": "uuid"},
+    "operationId": {"type": "string", "format": "uuid"},
+    "snapshotId": {"type": "string", "format": "uuid"},
+    "parentSnapshotId": {"type": ["string", "null"], "format": "uuid"},
+    "identityNamespace": {"type": "string", "format": "uuid"},
+    "semanticRoot": {"$ref": "#/$defs/root"},
+    "qualificationRequest": {"$ref": "#/$defs/root"},
+    "qualificationRoot": {"$ref": "#/$defs/root"},
+    "offlineReasoningRoot": {"$ref": "#/$defs/root"},
+    "semanticContentSha256": {"$ref": "#/$defs/sha256"},
+    "authorizedGraphSetSha256": {"$ref": "#/$defs/sha256"},
+    "datatypePolicySha256": {"$ref": "#/$defs/sha256"},
+    "syntheticSnapshotOntologySha256": {"$ref": "#/$defs/sha256"},
+    "finiteClosureSha256": {"$ref": "#/$defs/sha256"},
+    "proofSupportRootSha256": {"$ref": "#/$defs/sha256"},
+    "factCount": {"type": "integer", "minimum": 0},
+    "consequenceCount": {"type": "integer", "minimum": 0},
+    "semanticPartitionCount": {"type": "integer", "minimum": 1, "maximum": 65536},
+    "reasoningPartitionCount": {"type": "integer", "minimum": 1, "maximum": 65536},
+    "referenceManifestSha256": {"$ref": "#/$defs/sha256"},
+    "queryDatasetSha256": {"$ref": "#/$defs/sha256"},
+    "queryDatasetBytes": {"type": "integer", "minimum": 0},
+    "graphCatalogSha256": {"$ref": "#/$defs/sha256"},
+    "capabilityIndexSha256": {"$ref": "#/$defs/sha256"},
+    "exactReasoner": {"const": "HermiT"},
+    "exactReasonerVersion": {"const": "1.4.5.519"},
+    "unknownRoutesToExactHermit": {"const": true},
+    "allPartitionsVerified": {"const": true},
+    "publicationState": {"const": "certified-inactive"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "root": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["objectKey", "sha256"],
+      "properties": {
+        "objectKey": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

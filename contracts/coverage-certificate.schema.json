@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["certificateId", "snapshotId", "entailmentRegime", "authorizedGraphSetHash", "selectedGraphSetHash", "queryAlgebraHash", "coveredOperatorHashes", "ontologyModuleHashes", "closureRootHash", "proofRootHash", "dictionaryHash", "policyHash", "expiresWithSnapshot"],
+  "properties": {
+    "certificateId": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "snapshotId": {"type": "string", "format": "uuid"},
+    "entailmentRegime": {"const": "owl2-direct"},
+    "authorizedGraphSetHash": {"type": "array", "minItems": 32, "maxItems": 32},
+    "selectedGraphSetHash": {"type": "array", "minItems": 32, "maxItems": 32},
+    "queryAlgebraHash": {"type": "array", "minItems": 32, "maxItems": 32},
+    "coveredOperatorHashes": {"type": "array", "items": {"type": "array", "minItems": 32, "maxItems": 32}},
+    "ontologyModuleHashes": {"type": "array", "minItems": 1, "items": {"type": "array", "minItems": 32, "maxItems": 32}},
+    "closureRootHash": {"type": "array", "minItems": 32, "maxItems": 32},
+    "proofRootHash": {"type": "array", "minItems": 32, "maxItems": 32},
+    "dictionaryHash": {"type": "array", "minItems": 32, "maxItems": 32},
+    "policyHash": {"type": "array", "minItems": 32, "maxItems": 32},
+    "expiresWithSnapshot": {"const": true}
+  }
+}
+

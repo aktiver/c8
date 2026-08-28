@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/storage-recovery-certificate.schema.json",
+  "title": "NGKG all-partitions storage recovery certificate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "operationId", "planSha256", "snapshotId", "verifiedTaskCount", "verifiedBytes", "resultSetSha256", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "operationId": {"type": "string", "format": "uuid"},
+    "planSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "snapshotId": {"type": "string", "format": "uuid"},
+    "verifiedTaskCount": {"type": "integer", "minimum": 0},
+    "verifiedBytes": {"type": "integer", "minimum": 0},
+    "resultSetSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "complete": {"const": true}
+  }
+}

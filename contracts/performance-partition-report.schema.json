@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/performance-partition-report.schema.json",
+  "title": "Phase 40.13.23 partition report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "planSha256", "partition", "workerId", "observations", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "planSha256": {"$ref": "#/$defs/sha256"},
+    "partition": {"type": "integer", "minimum": 0, "maximum": 65535},
+    "workerId": {"type": "string", "minLength": 1, "maxLength": 253},
+    "observations": {"type": "array", "items": {"$ref": "#/$defs/observation"}},
+    "complete": {"const": true}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "shaOrNull": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scenarioId", "engine", "trialPhase", "trial", "durationNanoseconds", "operations", "workItems", "inputBytes", "outputItems", "cpuTimeNanoseconds", "peakRssBytes", "bytesRead", "bytesWritten", "nodesActivated", "cpuMillisActivated", "ramBytesActivated", "resultSha256", "artifactRootSha256", "autoscalingEvidenceSha256", "costMicroUsd", "complete"],
+      "properties": {
+        "scenarioId": {"type": "string", "minLength": 1},
+        "engine": {"enum": ["ngkg-rust", "external-apache-jena"]},
+        "trialPhase": {"enum": ["warmup", "measured"]},
+        "trial": {"type": "integer", "minimum": 0},
+        "durationNanoseconds": {"type": "integer", "minimum": 1},
+        "operations": {"type": "integer", "minimum": 1},
+        "workItems": {"type": "integer", "minimum": 1},
+        "inputBytes": {"type": "integer", "minimum": 0},
+        "outputItems": {"type": "integer", "minimum": 0},
+        "cpuTimeNanoseconds": {"type": "integer", "minimum": 0},
+        "peakRssBytes": {"type": "integer", "minimum": 0},
+        "bytesRead": {"type": "integer", "minimum": 0},
+        "bytesWritten": {"type": "integer", "minimum": 0},
+        "nodesActivated": {"type": "integer", "minimum": 1},
+        "cpuMillisActivated": {"type": "integer", "minimum": 1},
+        "ramBytesActivated": {"type": "integer", "minimum": 1},
+        "resultSha256": {"$ref": "#/$defs/sha256"},
+        "artifactRootSha256": {"$ref": "#/$defs/shaOrNull"},
+        "autoscalingEvidenceSha256": {"$ref": "#/$defs/sha256"},
+        "costMicroUsd": {"type": "integer", "minimum": 0},
+        "complete": {"const": true}
+      }
+    }
+  }
+}

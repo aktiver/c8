@@ -1,0 +1,268 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/direct-exact-partition-result.schema.json",
+  "title": "NGKG Phase 40.9 Proof-enabled Exact Direct-BGP Partition Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "datasetId",
+    "snapshotId",
+    "querySha256",
+    "bgpSha256",
+    "engine",
+    "reasonerName",
+    "reasonerVersion",
+    "adapterVersion",
+    "requestSha256",
+    "aggregateInputSha256",
+    "candidateSpaceSha256",
+    "partition",
+    "candidateBindingCount",
+    "partitionStartOrdinal",
+    "partitionEndOrdinalExclusive",
+    "checkedCandidateCount",
+    "groundedOwl2dlCandidateCount",
+    "entailedCandidateCount",
+    "reasonerRequestCount",
+    "entailed",
+    "complete"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "datasetId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "snapshotId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "querySha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "bgpSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "engine": {
+      "const": "hermit-grounded-owl2dl-isentailed-v1"
+    },
+    "partition": {
+      "$ref": "#/$defs/partition"
+    },
+    "candidateBindingCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "partitionStartOrdinal": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "partitionEndOrdinalExclusive": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "checkedCandidateCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "groundedOwl2dlCandidateCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "entailedCandidateCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "reasonerRequestCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "entailed": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entailed"
+      }
+    },
+    "complete": {
+      "const": true
+    },
+    "reasonerName": {
+      "const": "HermiT"
+    },
+    "reasonerVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "adapterVersion": {
+      "enum": [
+        "40.8",
+        "40.9"
+      ]
+    },
+    "requestSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "aggregateInputSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "candidateSpaceSha256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "partition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "index",
+        "count"
+      ],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "rdfTerm": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "termType",
+            "value"
+          ],
+          "properties": {
+            "termType": {
+              "const": "iri"
+            },
+            "value": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "termType",
+            "value"
+          ],
+          "properties": {
+            "termType": {
+              "const": "blankNode"
+            },
+            "value": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "termType",
+            "lexicalForm",
+            "datatypeIri"
+          ],
+          "properties": {
+            "termType": {
+              "const": "literal"
+            },
+            "lexicalForm": {
+              "type": "string"
+            },
+            "datatypeIri": {
+              "type": "string",
+              "minLength": 1
+            },
+            "language": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "entailed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidateOrdinal",
+        "bindings"
+      ],
+      "properties": {
+        "candidateOrdinal": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bindings": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/rdfTerm"
+          }
+        },
+        "groundedRdfSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "logicalAxiomsSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "logicalAxiomCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "adapterVersion": {
+            "const": "40.9"
+          }
+        },
+        "required": [
+          "adapterVersion"
+        ]
+      },
+      "then": {
+        "properties": {
+          "entailed": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/entailed"
+                },
+                {
+                  "required": [
+                    "groundedRdfSha256",
+                    "logicalAxiomsSha256",
+                    "logicalAxiomCount"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}

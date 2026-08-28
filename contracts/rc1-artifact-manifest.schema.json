@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/rc1-artifact-manifest.schema.json",
+  "title": "NGKG 1.0.0-RC1 signed artifact manifest",
+  "type": "object", "additionalProperties": false,
+  "required": ["formatVersion", "releaseVersion", "releaseSha256", "artifacts", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1}, "releaseVersion": {"const": "1.0.0-rc.1"}, "releaseSha256": {"$ref": "#/$defs/sha256"}, "complete": {"const": true},
+    "artifacts": {"type": "array", "minItems": 14, "items": {"$ref": "#/$defs/artifact"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "class": {"enum": ["source-archive", "image-index", "helm-charts", "kubernetes-bundle", "crds", "migrations", "utilities", "api-schemas", "sbom-spdx", "sbom-cyclone-dx", "provenance", "qualification-evidence", "documentation", "checksums"]},
+    "artifact": {"type": "object", "additionalProperties": false, "required": ["class", "path", "sha256", "signatureSha256", "mediaType"],
+      "properties": {"class": {"$ref": "#/$defs/class"}, "path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}, "signatureSha256": {"$ref": "#/$defs/sha256"}, "mediaType": {"type": "string", "minLength": 1}}}
+  }
+}

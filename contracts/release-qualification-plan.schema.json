@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/release-qualification-plan.schema.json",
+  "title": "NGKG Phase 40.13.24 release qualification plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "runId", "releaseSha256", "performanceCertificateSha256", "semanticEvidenceSha256", "inventorySha256", "partitionCount", "scenarios"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "runId": {"type": "string", "minLength": 1},
+    "releaseSha256": {"$ref": "#/$defs/sha256"},
+    "performanceCertificateSha256": {"$ref": "#/$defs/sha256"},
+    "semanticEvidenceSha256": {"$ref": "#/$defs/sha256"},
+    "inventorySha256": {"$ref": "#/$defs/sha256"},
+    "partitionCount": {"type": "integer", "minimum": 1, "maximum": 65536},
+    "scenarios": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/scenario"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "provider": {"enum": ["rke", "rke2", "eks", "aks", "gke"]},
+    "gate": {"enum": ["semantic-context-graph", "multinode-soak", "compute-chaos", "network-chaos", "storage-chaos", "upgrade", "rollback", "backup-restore", "helm", "image-provenance", "sbom", "cve", "license", "reproducible-build", "provider-portability"]},
+    "scenario": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scenarioId", "gate", "provider", "inputSha256", "expectedOutputSha256", "partition", "minimumNodes", "minimumCpuMillis", "minimumMemoryBytes", "minimumDurationSeconds", "disruptive", "approvalEvidenceSha256"],
+      "properties": {
+        "scenarioId": {"type": "string", "minLength": 1}, "gate": {"$ref": "#/$defs/gate"}, "provider": {"$ref": "#/$defs/provider"},
+        "inputSha256": {"$ref": "#/$defs/sha256"}, "expectedOutputSha256": {"$ref": "#/$defs/sha256"},
+        "partition": {"type": "integer", "minimum": 0}, "minimumNodes": {"type": "integer", "minimum": 3},
+        "minimumCpuMillis": {"type": "integer", "minimum": 3000}, "minimumMemoryBytes": {"type": "integer", "minimum": 1},
+        "minimumDurationSeconds": {"type": "integer", "minimum": 0}, "disruptive": {"type": "boolean"},
+        "approvalEvidenceSha256": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]}
+      }
+    }
+  }
+}

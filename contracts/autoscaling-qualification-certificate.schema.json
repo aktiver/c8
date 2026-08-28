@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/autoscaling-qualification-certificate.schema.json",
+  "title": "c8 Phase 40.13.20 production autoscaling qualification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion", "policyBundleSha256", "decisionsSha256", "determinismSha256",
+    "qualifiedWorkloads", "cpuTargetPercent", "memoryTargetPercent",
+    "kueueAdmissionObserved", "nodeProvisionerObserved", "scaleFromZeroObserved",
+    "nodeLossObserved", "complete"
+  ],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "policyBundleSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "decisionsSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "determinismSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "qualifiedWorkloads": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"enum": ["source-ingestion", "semantic-projection", "semantic-artifact-build", "index-build", "offline-reasoning", "online-reasoning", "sparql-query", "sparql-fragment", "parquet-hydration", "storage-recovery"]}
+    },
+    "cpuTargetPercent": {"const": 80},
+    "memoryTargetPercent": {"const": 80},
+    "kueueAdmissionObserved": {"const": true},
+    "nodeProvisionerObserved": {"const": true},
+    "scaleFromZeroObserved": {"const": true},
+    "nodeLossObserved": {"const": true},
+    "complete": {"const": true}
+  }
+}

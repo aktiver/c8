@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/storage-recovery-result.schema.json",
+  "title": "NGKG storage recovery partition result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["operationId", "taskIndex", "stableWorkId", "state", "observedSha256", "copiedBytes", "errorCode"],
+  "properties": {
+    "operationId": {"type": "string", "format": "uuid"},
+    "taskIndex": {"type": "integer", "minimum": 0},
+    "stableWorkId": {"type": "string", "pattern": "^blake3:[0-9a-f]{64}$"},
+    "state": {"enum": ["SUCCEEDED", "QUARANTINED", "RETRYABLE_FAILURE", "PERMANENT_FAILURE"]},
+    "observedSha256": {"anyOf": [{"type": "string", "pattern": "^[0-9a-f]{64}$"}, {"type": "null"}]},
+    "copiedBytes": {"type": "integer", "minimum": 0},
+    "errorCode": {"type": ["string", "null"], "maxLength": 128}
+  }
+}

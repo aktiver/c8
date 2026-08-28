@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/ontology-qualification-root.schema.json",
+  "title": "NGKG Exact OWL 2 DL Snapshot Qualification Root",
+  "type": "object", "additionalProperties": false,
+  "required": [
+    "formatVersion", "tenantId", "datasetId", "operationId", "snapshotId",
+    "semanticCompilationRootSha256", "qualificationRequestSha256", "assemblyManifestSha256",
+    "authorizedGraphSetSha256", "datatypePolicySha256", "syntheticSnapshotOntologySha256",
+    "owlSignatureSha256", "owlProfileQualificationSha256", "owlConsistencyQualificationSha256",
+    "reasonerReportSha256", "finiteClosureSha256", "finiteClosureAxiomCount", "reasonerName", "reasonerVersion", "profileValid",
+    "consistencyChecked", "consistent", "qualificationState", "publicationState"
+  ],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "tenantId": {"type": "string", "format": "uuid"},
+    "datasetId": {"type": "string", "format": "uuid"},
+    "operationId": {"type": "string", "format": "uuid"},
+    "snapshotId": {"type": "string", "format": "uuid"},
+    "semanticCompilationRootSha256": {"$ref": "#/$defs/sha256"},
+    "qualificationRequestSha256": {"$ref": "#/$defs/sha256"},
+    "assemblyManifestSha256": {"$ref": "#/$defs/sha256"},
+    "authorizedGraphSetSha256": {"$ref": "#/$defs/sha256"},
+    "datatypePolicySha256": {"$ref": "#/$defs/sha256"},
+    "syntheticSnapshotOntologySha256": {"$ref": "#/$defs/sha256"},
+    "owlSignatureSha256": {"$ref": "#/$defs/sha256"},
+    "owlProfileQualificationSha256": {"$ref": "#/$defs/sha256"},
+    "owlConsistencyQualificationSha256": {"$ref": "#/$defs/sha256"},
+    "reasonerReportSha256": {"$ref": "#/$defs/sha256"},
+    "finiteClosureSha256": {"$ref": "#/$defs/sha256"},
+    "finiteClosureAxiomCount": {"type": "integer", "minimum": 0},
+    "reasonerName": {"const": "HermiT"},
+    "reasonerVersion": {"const": "1.4.5.519"},
+    "profileValid": {"const": true},
+    "consistencyChecked": {"const": true},
+    "consistent": {"const": true},
+    "qualificationState": {"const": "owl2-dl-qualified"},
+    "publicationState": {"const": "inactive"}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

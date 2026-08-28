@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "https://c8-next-generation.io/contracts/rc1-readiness.schema.json",
+  "title": "NGKG RC1 readiness assessment", "type": "object", "additionalProperties": false,
+  "required": ["formatVersion", "releaseVersion", "status", "publishable", "blockerCount", "blockers", "evidenceInspected", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1}, "releaseVersion": {"const": "1.0.0-rc.1"}, "status": {"enum": ["blocked", "publishable"]},
+    "publishable": {"type": "boolean"}, "blockerCount": {"type": "integer", "minimum": 0}, "blockers": {"type": "array", "items": {"type": "string"}},
+    "evidenceInspected": {"type": "array", "items": {"type": "object"}}, "complete": {"const": true}
+  }
+}

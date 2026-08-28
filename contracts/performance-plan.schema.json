@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/performance-plan.schema.json",
+  "title": "Phase 40.13.23 performance plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "runId", "benchmarkInventorySha256", "ngkgImageSha256", "externalJenaImageSha256", "hardwareSha256", "pricingSha256", "autoscalingEvidenceSha256", "partitionCount", "scenarios"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "runId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "benchmarkInventorySha256": {"$ref": "#/$defs/sha256"},
+    "ngkgImageSha256": {"$ref": "#/$defs/sha256"},
+    "externalJenaImageSha256": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+    "hardwareSha256": {"$ref": "#/$defs/sha256"},
+    "pricingSha256": {"$ref": "#/$defs/sha256"},
+    "autoscalingEvidenceSha256": {"$ref": "#/$defs/sha256"},
+    "partitionCount": {"type": "integer", "minimum": 1, "maximum": 65536},
+    "scenarios": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/scenario"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scenarioId", "family", "inputSha256", "expectedResultSha256", "capacityGroup", "scaleOrdinal", "cacheState", "concurrency", "requestedNodes", "requestedCpuMillis", "requestedMemoryBytes", "warmupTrials", "measuredTrials", "requireExternalJena", "maximumP95Nanoseconds", "minimumThroughputPerSecond", "minimumSpeedupMilliX", "maximumCostMicroUsdPerMillion", "partition"],
+      "properties": {
+        "scenarioId": {"type": "string", "minLength": 1, "maxLength": 256},
+        "family": {"enum": ["trig-ingestion", "semantic-compilation", "offline-reasoning", "property-path", "sparql-query", "concurrent-sparql", "recovery"]},
+        "inputSha256": {"$ref": "#/$defs/sha256"},
+        "expectedResultSha256": {"$ref": "#/$defs/sha256"},
+        "capacityGroup": {"type": "string", "minLength": 1, "maxLength": 128},
+        "scaleOrdinal": {"type": "integer", "minimum": 0},
+        "cacheState": {"enum": ["cold", "warm", "hot"]},
+        "concurrency": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "requestedNodes": {"type": "integer", "minimum": 1},
+        "requestedCpuMillis": {"type": "integer", "minimum": 1},
+        "requestedMemoryBytes": {"type": "integer", "minimum": 1},
+        "warmupTrials": {"type": "integer", "minimum": 0},
+        "measuredTrials": {"type": "integer", "minimum": 3},
+        "requireExternalJena": {"type": "boolean"},
+        "maximumP95Nanoseconds": {"type": "integer", "minimum": 0},
+        "minimumThroughputPerSecond": {"type": "integer", "minimum": 0},
+        "minimumSpeedupMilliX": {"type": "integer", "minimum": 0},
+        "maximumCostMicroUsdPerMillion": {"type": "integer", "minimum": 0},
+        "partition": {"type": "integer", "minimum": 0, "maximum": 65535}
+      }
+    }
+  }
+}

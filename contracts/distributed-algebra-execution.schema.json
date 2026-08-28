@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/distributed-algebra-execution.schema.json",
+  "title": "C8 Phase 40.13.16 distributed scalar-oracle execution envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "snapshotId", "manifestSha256", "originalQuery", "originalQuerySha256",
+    "rewrittenQuery", "rewrittenQuerySha256", "activeDataset", "maxSolutionRows",
+    "maxGraphTriples", "maxGraphBlankNodes", "ordered", "replica", "replicaCount"
+  ],
+  "properties": {
+    "snapshotId": {"type": "string", "format": "uuid"},
+    "manifestSha256": {"$ref": "#/$defs/sha256"},
+    "originalQuery": {"type": "string", "minLength": 1},
+    "originalQuerySha256": {"$ref": "#/$defs/sha256"},
+    "rewrittenQuery": {"type": "string", "minLength": 1},
+    "rewrittenQuerySha256": {"$ref": "#/$defs/sha256"},
+    "activeDataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selectionSource", "defaultGraphIds", "namedGraphIds", "authorizedGraphIds",
+        "authorizedGraphSetSha256", "activeDatasetSha256"
+      ],
+      "properties": {
+        "selectionSource": {"enum": ["service_default", "query_dataset", "protocol_dataset"]},
+        "defaultGraphIds": {"$ref": "#/$defs/graphIds"},
+        "namedGraphIds": {"$ref": "#/$defs/graphIds"},
+        "authorizedGraphIds": {"$ref": "#/$defs/graphIds"},
+        "authorizedGraphSetSha256": {"$ref": "#/$defs/sha256"},
+        "activeDatasetSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "maxSolutionRows": {"type": "integer", "minimum": 1},
+    "maxGraphTriples": {"type": "integer", "minimum": 1},
+    "maxGraphBlankNodes": {"type": "integer", "minimum": 1},
+    "ordered": {"type": "boolean"},
+    "replica": {"type": "integer", "minimum": 0},
+    "replicaCount": {"type": "integer", "minimum": 2}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "graphIds": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "integer", "minimum": 0}
+    }
+  }
+}

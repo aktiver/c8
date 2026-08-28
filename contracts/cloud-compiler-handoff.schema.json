@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/cloud-compiler-handoff.schema.json",
+  "title": "C8 Next Generation verified cloud compiler handoff",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "tenantId", "datasetId", "operationId", "targetSnapshotId", "sourceManifestObjectKey", "sourceManifestSha256", "decodePlanObjectKey", "decodePlanSha256", "aggregateSourceSha256", "logicalPartitions", "decodedFormat", "blankNodePolicy", "totalObjects", "totalBytes", "totalQuads", "expectedCompletions", "verifiedCompletions", "completionSetSha256", "fragments"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "tenantId": {"type": "string", "format": "uuid"},
+    "datasetId": {"type": "string", "format": "uuid"},
+    "operationId": {"type": "string", "format": "uuid"},
+    "targetSnapshotId": {"type": "string", "format": "uuid"},
+    "sourceManifestObjectKey": {"type": "string", "minLength": 1},
+    "sourceManifestSha256": {"$ref": "#/$defs/sha256"},
+    "decodePlanObjectKey": {"type": "string", "minLength": 1},
+    "decodePlanSha256": {"$ref": "#/$defs/sha256"},
+    "aggregateSourceSha256": {"$ref": "#/$defs/sha256"},
+    "logicalPartitions": {"type": "integer", "minimum": 1, "maximum": 65536},
+    "decodedFormat": {"const": "application/n-quads"},
+    "blankNodePolicy": {"const": "object-scoped-label-v1"},
+    "totalObjects": {"type": "integer", "minimum": 1},
+    "totalBytes": {"type": "integer", "minimum": 1},
+    "totalQuads": {"type": "integer", "minimum": 1},
+    "expectedCompletions": {"type": "integer", "minimum": 1},
+    "verifiedCompletions": {"type": "integer", "minimum": 1},
+    "completionSetSha256": {"$ref": "#/$defs/sha256"},
+    "fragments": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/fragment"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "fragment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ordinal", "sourceObjectKey", "sourceSha256", "blankNodeScope", "objectKey", "sha256", "bytes", "quadCount"],
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 0},
+        "sourceObjectKey": {"type": "string", "minLength": 1},
+        "sourceSha256": {"$ref": "#/$defs/sha256"},
+        "blankNodeScope": {"type": "string", "pattern": "^object-[0-9]{8}-[0-9a-f]{64}$"},
+        "objectKey": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "quadCount": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

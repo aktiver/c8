@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/ontology-assembly.schema.json",
+  "title": "NGKG Synthetic OWL 2 DL Snapshot Assembly",
+  "type": "object", "additionalProperties": false,
+  "required": [
+    "formatVersion", "tenantId", "datasetId", "operationId", "snapshotId",
+    "semanticCompilationRootSha256", "semanticContentSha256", "qualificationRequestSha256",
+    "authorizationPolicySha256", "authorizedGraphSetSha256", "datatypePolicySha256",
+    "projectionCompletionSetSha256", "documents", "completePinnedImportClosure",
+    "aggregateInputSha256", "ontologyHashesSha256", "syntheticSnapshotOntologySha256",
+    "publicationState"
+  ],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "tenantId": {"type": "string", "format": "uuid"},
+    "datasetId": {"type": "string", "format": "uuid"},
+    "operationId": {"type": "string", "format": "uuid"},
+    "snapshotId": {"type": "string", "format": "uuid"},
+    "semanticCompilationRootSha256": {"$ref": "#/$defs/sha256"},
+    "semanticContentSha256": {"$ref": "#/$defs/sha256"},
+    "qualificationRequestSha256": {"$ref": "#/$defs/sha256"},
+    "authorizationPolicySha256": {"$ref": "#/$defs/sha256"},
+    "authorizedGraphSetSha256": {"$ref": "#/$defs/sha256"},
+    "datatypePolicySha256": {"$ref": "#/$defs/sha256"},
+    "projectionCompletionSetSha256": {"$ref": "#/$defs/sha256"},
+    "documents": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/document"}},
+    "completePinnedImportClosure": {"const": true},
+    "aggregateInputSha256": {"$ref": "#/$defs/sha256"},
+    "ontologyHashesSha256": {"$ref": "#/$defs/sha256"},
+    "syntheticSnapshotOntologySha256": {"$ref": "#/$defs/sha256"},
+    "publicationState": {"const": "inactive"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "document": {
+      "type": "object", "additionalProperties": false,
+      "required": ["documentId", "sourceKind", "graphIri", "ontologyIri", "versionIri", "importIris", "relativePath", "sha256", "bytes", "tripleCount"],
+      "properties": {
+        "documentId": {"type": "string", "minLength": 1},
+        "sourceKind": {"enum": ["authorized-asserted-semkg", "pinned-import"]},
+        "graphIri": {"type": ["string", "null"], "format": "uri"},
+        "ontologyIri": {"type": "string", "format": "uri"},
+        "versionIri": {"type": ["string", "null"], "format": "uri"},
+        "importIris": {"type": "array", "uniqueItems": true, "items": {"type": "string", "format": "uri"}},
+        "relativePath": {"type": "string", "pattern": "^documents/(asserted|import)-[0-9]{8}\\.(nt|ttl|rdf|owl|xml)$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "tripleCount": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

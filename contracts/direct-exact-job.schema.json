@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/direct-exact-job.schema.json",
+  "title": "NGKG Phase 40.9 Proof-enabled Exact Direct-BGP Reference Worker Job",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "snapshotRoot",
+    "snapshotManifestPath",
+    "snapshotManifestSha256",
+    "requestRoot",
+    "queryPath",
+    "querySha256",
+    "legalityReportPath",
+    "resolvedDataset",
+    "bgpOrdinal",
+    "javaExecutable",
+    "reasonerAdapterJar",
+    "reasonerAdapterSha256",
+    "reasonerAdapterVersion",
+    "reasonerVersion",
+    "workRoot",
+    "workDir",
+    "outputResultPath",
+    "outputCertificatePath",
+    "limits"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "snapshotRoot": {
+      "$ref": "#/$defs/path"
+    },
+    "snapshotManifestPath": {
+      "$ref": "#/$defs/path"
+    },
+    "snapshotManifestSha256": {
+      "$ref": "#/$defs/sha"
+    },
+    "requestRoot": {
+      "$ref": "#/$defs/path"
+    },
+    "queryPath": {
+      "$ref": "#/$defs/path"
+    },
+    "querySha256": {
+      "$ref": "#/$defs/sha"
+    },
+    "legalityReportPath": {
+      "$ref": "#/$defs/path"
+    },
+    "resolvedDataset": {
+      "$ref": "#/$defs/resolved"
+    },
+    "bgpOrdinal": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "graphBindingIri": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8192
+    },
+    "javaExecutable": {
+      "$ref": "#/$defs/path"
+    },
+    "reasonerAdapterJar": {
+      "$ref": "#/$defs/path"
+    },
+    "reasonerAdapterSha256": {
+      "$ref": "#/$defs/sha"
+    },
+    "reasonerAdapterVersion": {
+      "enum": [
+        "40.8",
+        "40.9"
+      ]
+    },
+    "reasonerVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "workRoot": {
+      "$ref": "#/$defs/path"
+    },
+    "workDir": {
+      "$ref": "#/$defs/path"
+    },
+    "outputResultPath": {
+      "$ref": "#/$defs/path"
+    },
+    "outputCertificatePath": {
+      "$ref": "#/$defs/path"
+    },
+    "limits": {
+      "$ref": "#/$defs/limits"
+    },
+    "outputProofManifestPath": {
+      "$ref": "#/$defs/path"
+    }
+  },
+  "$defs": {
+    "sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8192
+    },
+    "resolved": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selectionSource",
+        "defaultGraphIds",
+        "namedGraphIds",
+        "authorizedGraphIds",
+        "authorizedGraphSetSha256",
+        "activeDatasetSha256"
+      ],
+      "properties": {
+        "selectionSource": {
+          "enum": [
+            "service_default",
+            "query_dataset",
+            "protocol_dataset"
+          ]
+        },
+        "defaultGraphIds": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "uniqueItems": true
+        },
+        "namedGraphIds": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "uniqueItems": true
+        },
+        "authorizedGraphIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "uniqueItems": true
+        },
+        "authorizedGraphSetSha256": {
+          "$ref": "#/$defs/sha"
+        },
+        "activeDatasetSha256": {
+          "$ref": "#/$defs/sha"
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maxCandidateBindings",
+        "maxPartitionCandidates",
+        "maxGroundedAxiomsPerCandidate",
+        "maxGroundedRdfBytesPerCandidate",
+        "maxLocalReasonerLanes",
+        "reasonerHeapMibPerLane",
+        "reasonerTimeoutSeconds"
+      ],
+      "properties": {
+        "maxCandidateBindings": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxPartitionCandidates": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxGroundedAxiomsPerCandidate": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxGroundedRdfBytesPerCandidate": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxLocalReasonerLanes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32
+        },
+        "reasonerHeapMibPerLane": {
+          "type": "integer",
+          "minimum": 256
+        },
+        "reasonerTimeoutSeconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "reasonerAdapterVersion": {
+            "const": "40.9"
+          }
+        },
+        "required": [
+          "reasonerAdapterVersion"
+        ]
+      },
+      "then": {
+        "required": [
+          "outputProofManifestPath"
+        ]
+      }
+    }
+  ]
+}

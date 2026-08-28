@@ -1,0 +1,53 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.22",
+  "w3c": {
+    "repository": "https://github.com/w3c/rdf-tests.git",
+    "commit": "8af71fed933539d09d5f4658fb1ea7ba4c8e30b9",
+    "requiredManifests": [
+      "rdf/rdf11/rdf-trig/manifest.ttl",
+      "sparql/sparql11/manifest-sparql11-query.ttl",
+      "sparql/sparql11/manifest-sparql11-results.ttl",
+      "sparql/sparql11/protocol/manifest.ttl",
+      "sparql/sparql11/service-description/manifest.ttl",
+      "sparql/sparql11/entailment/manifest.ttl"
+    ]
+  },
+  "oracles": {
+    "ngkg": {
+      "version": "1.0.0",
+      "role": "release implementation under qualification"
+    },
+    "w3cExpected": {
+      "version": "8af71fed933539d09d5f4658fb1ea7ba4c8e30b9",
+      "role": "normative result authority from the exact pinned W3C suite"
+    },
+    "apacheJena": {
+      "version": "6.2.0",
+      "role": "independent SPARQL 1.1, TriG, protocol, result-format and federation differential"
+    },
+    "hermit": {
+      "version": "1.4.5.519",
+      "role": "independent OWL 2 Direct-Semantics and consistency differential"
+    }
+  },
+  "requiredFamilies": [
+    "trig-syntax",
+    "trig-evaluation",
+    "sparql-syntax",
+    "sparql-evaluation",
+    "result-format",
+    "sparql-protocol",
+    "service-description",
+    "federation",
+    "owl-direct",
+    "failure"
+  ],
+  "releasePolicy": {
+    "allowUnsupported": false,
+    "allowMissing": false,
+    "allowMismatch": false,
+    "allowPartial": false,
+    "requireEveryPartition": true
+  }
+}

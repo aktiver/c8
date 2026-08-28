@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/online-ontology-snapshot-binding.schema.json",
+  "title": "NGKG deterministic authorized OWL snapshot binding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "datasetId",
+    "snapshotId",
+    "authorizedGraphSetSha256",
+    "activeDatasetSha256",
+    "datatypePolicySha256",
+    "owlSignatureSha256",
+    "owlProfileQualificationSha256",
+    "owlConsistencyQualificationSha256",
+    "assertedModules",
+    "pinnedImports",
+    "syntheticOntologySha256"
+  ],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "datasetId": {"type": "string", "format": "uuid"},
+    "snapshotId": {"type": "string", "format": "uuid"},
+    "authorizedGraphSetSha256": {"$ref": "#/$defs/sha256"},
+    "activeDatasetSha256": {"$ref": "#/$defs/sha256"},
+    "datatypePolicySha256": {"$ref": "#/$defs/sha256"},
+    "owlSignatureSha256": {"$ref": "#/$defs/sha256"},
+    "owlProfileQualificationSha256": {"$ref": "#/$defs/sha256"},
+    "owlConsistencyQualificationSha256": {"$ref": "#/$defs/sha256"},
+    "assertedModules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["graphIri", "contentSha256"],
+        "properties": {
+          "graphIri": {
+            "type": "string",
+            "pattern": "^https://semkg\\.io/graph/[^/]+/[^/]+/semkg$"
+          },
+          "contentSha256": {"$ref": "#/$defs/sha256"}
+        }
+      }
+    },
+    "pinnedImports": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ontologyIri", "versionIri", "documentSha256"],
+        "properties": {
+          "ontologyIri": {"type": "string", "format": "uri"},
+          "versionIri": {"type": "string", "format": "uri"},
+          "documentSha256": {"$ref": "#/$defs/sha256"}
+        }
+      }
+    },
+    "syntheticOntologySha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

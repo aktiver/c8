@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/rc1-release-certificate.schema.json",
+  "title": "NGKG 1.0.0-RC1 publication certificate",
+  "type": "object", "additionalProperties": false,
+  "required": ["formatVersion", "releaseVersion", "releaseSha256", "prerequisiteLedgerSha256", "freezeManifestSha256", "artifactManifestSha256", "artifactRootSha256", "supportMatrixSha256", "knownIssuesSha256", "acceptancePlanSha256", "failureCount", "publishable", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1}, "releaseVersion": {"const": "1.0.0-rc.1"},
+    "releaseSha256": {"$ref": "#/$defs/sha256"}, "prerequisiteLedgerSha256": {"$ref": "#/$defs/sha256"},
+    "freezeManifestSha256": {"$ref": "#/$defs/sha256"}, "artifactManifestSha256": {"$ref": "#/$defs/sha256"},
+    "artifactRootSha256": {"$ref": "#/$defs/sha256"}, "supportMatrixSha256": {"$ref": "#/$defs/sha256"},
+    "knownIssuesSha256": {"$ref": "#/$defs/sha256"}, "acceptancePlanSha256": {"$ref": "#/$defs/sha256"},
+    "failureCount": {"const": 0}, "publishable": {"const": true}, "complete": {"const": true}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

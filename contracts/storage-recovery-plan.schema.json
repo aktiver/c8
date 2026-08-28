@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/storage-recovery-plan.schema.json",
+  "title": "NGKG deterministic distributed storage recovery plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "operationId", "tenantId", "datasetId", "snapshotId", "storageManifestSha256", "replicationFactor", "maxInFlightBytes", "tasks"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "operationId": {"type": "string", "format": "uuid"},
+    "tenantId": {"type": "string", "format": "uuid"},
+    "datasetId": {"type": "string", "format": "uuid"},
+    "snapshotId": {"type": "string", "format": "uuid"},
+    "storageManifestSha256": {"$ref": "#/$defs/sha256"},
+    "replicationFactor": {"type": "integer", "minimum": 1, "maximum": 16},
+    "maxInFlightBytes": {"type": "integer", "minimum": 1},
+    "tasks": {"type": "array", "maxItems": 10000000, "items": {"$ref": "#/$defs/task"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "key": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "target": {"type": "string", "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$", "maxLength": 63},
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taskIndex", "stableWorkId", "reason", "sourceTarget", "destinationTarget", "sourceObjectKey", "destinationObjectKey", "sha256", "bytes"],
+      "properties": {
+        "taskIndex": {"type": "integer", "minimum": 0},
+        "stableWorkId": {"type": "string", "pattern": "^blake3:[0-9a-f]{64}$"},
+        "reason": {"enum": ["replication", "relocation", "node-loss", "checksum-repair", "backup", "restore"]},
+        "sourceTarget": {"$ref": "#/$defs/target"},
+        "destinationTarget": {"$ref": "#/$defs/target"},
+        "sourceObjectKey": {"$ref": "#/$defs/key"},
+        "destinationObjectKey": {"$ref": "#/$defs/key"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

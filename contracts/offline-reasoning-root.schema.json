@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/offline-reasoning-root.schema.json",
+  "title": "NGKG Exact Offline Reasoning Root",
+  "type": "object", "additionalProperties": false,
+  "required": ["formatVersion", "tenantId", "datasetId", "operationId", "snapshotId", "ontologyQualificationRootSha256", "finiteClosureSha256", "reasonerName", "reasonerVersion", "logicalPartitions", "partitions", "consequenceCount", "equalityComponentsSha256", "equalityMemberCount", "proofSupportRootSha256", "coverage", "arbitraryOwl2DlComplete", "unknownRoutesToExactHermit", "publicationState"],
+  "properties": {
+    "formatVersion": {"const": 1}, "tenantId": {"type": "string", "format": "uuid"}, "datasetId": {"type": "string", "format": "uuid"}, "operationId": {"type": "string", "format": "uuid"}, "snapshotId": {"type": "string", "format": "uuid"},
+    "ontologyQualificationRootSha256": {"$ref": "#/$defs/sha256"}, "finiteClosureSha256": {"$ref": "#/$defs/sha256"}, "reasonerName": {"const": "HermiT"}, "reasonerVersion": {"const": "1.4.5.519"},
+    "logicalPartitions": {"type": "integer", "minimum": 1}, "partitions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/partition"}}, "consequenceCount": {"type": "integer", "minimum": 0},
+    "equalityComponentsSha256": {"$ref": "#/$defs/sha256"}, "equalityMemberCount": {"type": "integer", "minimum": 0}, "proofSupportRootSha256": {"$ref": "#/$defs/sha256"},
+    "coverage": {"const": "finite-named-consequences-emitted-by-exact-hermit"}, "arbitraryOwl2DlComplete": {"const": false}, "unknownRoutesToExactHermit": {"const": true}, "publicationState": {"const": "inactive"}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "partition": {"type": "object", "additionalProperties": false, "required": ["partitionIndex", "manifestPath", "manifestSha256", "consequenceCount"], "properties": {
+    "partitionIndex": {"type": "integer", "minimum": 0}, "manifestPath": {"type": "string", "minLength": 1}, "manifestSha256": {"$ref": "#/$defs/sha256"}, "consequenceCount": {"type": "integer", "minimum": 0}
+  }}}
+}

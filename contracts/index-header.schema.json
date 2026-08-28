@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format_name", "format_version", "dataset_id", "snapshot_id", "ontology_hash", "dictionary_hash", "policy_hash", "schema_hash", "partition_key", "entry_count", "payload_sha256"],
+  "properties": {
+    "format_name": {"const": "ngkg-index"},
+    "format_version": {"const": 1},
+    "dataset_id": {"type": "string", "format": "uuid"},
+    "snapshot_id": {"type": "string", "format": "uuid"},
+    "ontology_hash": {"type": "array", "minItems": 32, "maxItems": 32},
+    "dictionary_hash": {"type": "array", "minItems": 32, "maxItems": 32},
+    "policy_hash": {"type": "array", "minItems": 32, "maxItems": 32},
+    "schema_hash": {"type": "array", "minItems": 32, "maxItems": 32},
+    "partition_key": {"type": "string", "minLength": 1},
+    "entry_count": {"type": "integer", "minimum": 0},
+    "payload_sha256": {"type": "array", "minItems": 32, "maxItems": 32}
+  }
+}
+

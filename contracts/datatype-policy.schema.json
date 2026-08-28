@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/datatype-policy.schema.json",
+  "title": "NGKG Phase 40.2 OWL Direct Datatype Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "policyId",
+    "unsupportedDatatypeBehavior",
+    "illTypedLiteralBehavior",
+    "canonicalization",
+    "maxLexicalBytes",
+    "lexicalLimits",
+    "supportedDatatypes"
+  ],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "policyId": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+    "unsupportedDatatypeBehavior": {"const": "reject_snapshot"},
+    "illTypedLiteralBehavior": {"const": "reject_snapshot"},
+    "canonicalization": {"const": "preserve_source_lexical_form"},
+    "maxLexicalBytes": {"type": "integer", "minimum": 1, "maximum": 16777216},
+    "lexicalLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["integerDigitsMax", "dateTimeYearDigitsMax", "xmlNameValidation"],
+      "properties": {
+        "integerDigitsMax": {"type": "integer", "minimum": 1, "maximum": 65536},
+        "dateTimeYearDigitsMax": {"type": "integer", "minimum": 4, "maximum": 64},
+        "xmlNameValidation": {"const": "ascii_subset"}
+      }
+    },
+    "supportedDatatypes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["iri", "lexicalSpace"],
+        "properties": {
+          "iri": {"type": "string", "format": "uri", "minLength": 1},
+          "lexicalSpace": {
+            "enum": [
+              "language_tagged_string", "string", "normalized_string", "token", "language",
+              "name", "ncname", "nmtoken", "boolean", "decimal", "integer",
+              "non_positive_integer", "negative_integer", "long", "int", "short", "byte",
+              "non_negative_integer", "unsigned_long", "unsigned_int", "unsigned_short",
+              "unsigned_byte", "positive_integer", "float", "double", "hex_binary",
+              "any_uri", "date_time", "date_time_stamp", "date", "time"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

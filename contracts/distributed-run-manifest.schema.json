@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/distributed-run-manifest.schema.json",
+  "oneOf": [
+    {"$ref": "#/$defs/projection"},
+    {"$ref": "#/$defs/reducer"},
+    {"$ref": "#/$defs/root"}
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "base": {
+      "type": "object",
+      "properties": {
+        "formatVersion": {"const": 1},
+        "datasetId": {"type": "string", "format": "uuid"},
+        "snapshotId": {"type": "string", "format": "uuid"},
+        "sourcePlanSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "projection": {
+      "allOf": [
+        {"$ref": "#/$defs/base"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["formatVersion", "datasetId", "snapshotId", "sourcePlanSha256", "partitionIndex", "partitionId", "factRunPath", "factRunSha256", "termRunPath", "termRunSha256", "factCount", "termCount", "graphCounts"],
+          "properties": {
+            "formatVersion": {}, "datasetId": {}, "snapshotId": {}, "sourcePlanSha256": {},
+            "partitionIndex": {"type": "integer", "minimum": 0},
+            "partitionId": {"type": "string", "pattern": "^blake3:[0-9a-f]{64}$"},
+            "factRunPath": {"const": "facts.nq"}, "factRunSha256": {"$ref": "#/$defs/sha256"},
+            "termRunPath": {"const": "terms.txt"}, "termRunSha256": {"$ref": "#/$defs/sha256"},
+            "factCount": {"type": "integer", "minimum": 0}, "termCount": {"type": "integer", "minimum": 0},
+            "graphCounts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}
+          }
+        }
+      ]
+    },
+    "reducer": {
+      "allOf": [
+        {"$ref": "#/$defs/base"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["formatVersion", "datasetId", "snapshotId", "sourcePlanSha256", "reducerIndex", "reducerCount", "partitionIndexes", "factRunPath", "factRunSha256", "termRunPath", "termRunSha256", "factCount", "termCount"],
+          "properties": {
+            "formatVersion": {}, "datasetId": {}, "snapshotId": {}, "sourcePlanSha256": {},
+            "reducerIndex": {"type": "integer", "minimum": 0}, "reducerCount": {"type": "integer", "minimum": 1},
+            "partitionIndexes": {"type": "array", "uniqueItems": true, "items": {"type": "integer", "minimum": 0}},
+            "factRunPath": {"const": "facts.nq"}, "factRunSha256": {"$ref": "#/$defs/sha256"},
+            "termRunPath": {"const": "terms.txt"}, "termRunSha256": {"$ref": "#/$defs/sha256"},
+            "factCount": {"type": "integer", "minimum": 0}, "termCount": {"type": "integer", "minimum": 0}
+          }
+        }
+      ]
+    },
+    "root": {
+      "allOf": [
+        {"$ref": "#/$defs/base"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["formatVersion", "datasetId", "snapshotId", "sourcePlanSha256", "canonicalSourcePath", "canonicalSourceSha256", "dictionaryPath", "dictionarySha256", "factCount", "termCount", "reducerCount", "semanticContentSha256"],
+          "properties": {
+            "formatVersion": {}, "datasetId": {}, "snapshotId": {}, "sourcePlanSha256": {},
+            "canonicalSourcePath": {"const": "canonical-source.nq"}, "canonicalSourceSha256": {"$ref": "#/$defs/sha256"},
+            "dictionaryPath": {"const": "dictionary.tsv"}, "dictionarySha256": {"$ref": "#/$defs/sha256"},
+            "factCount": {"type": "integer", "minimum": 0}, "termCount": {"type": "integer", "minimum": 0},
+            "reducerCount": {"type": "integer", "minimum": 1}, "semanticContentSha256": {"$ref": "#/$defs/sha256"}
+          }
+        }
+      ]
+    }
+  }
+}

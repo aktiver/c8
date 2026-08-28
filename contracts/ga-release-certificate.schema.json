@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/ga-release-certificate.schema.json",
+  "title": "NGKG 1.0.0 General Availability certificate",
+  "type": "object", "additionalProperties": false,
+  "required": ["formatVersion", "releaseVersion", "releaseSha256", "qualificationLedgerSha256", "defectLedgerSha256", "freezeManifestSha256", "runtimeAuditSha256", "artifactRootSha256", "supportMatrixSha256", "knownIssuesSha256", "acceptancePlanSha256", "failureCount", "decision", "publishable", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1}, "releaseVersion": {"const": "1.0.0"},
+    "releaseSha256": {"$ref": "#/$defs/sha256"}, "qualificationLedgerSha256": {"$ref": "#/$defs/sha256"},
+    "defectLedgerSha256": {"$ref": "#/$defs/sha256"}, "freezeManifestSha256": {"$ref": "#/$defs/sha256"},
+    "runtimeAuditSha256": {"$ref": "#/$defs/sha256"}, "artifactRootSha256": {"$ref": "#/$defs/sha256"},
+    "supportMatrixSha256": {"$ref": "#/$defs/sha256"}, "knownIssuesSha256": {"$ref": "#/$defs/sha256"},
+    "acceptancePlanSha256": {"$ref": "#/$defs/sha256"}, "failureCount": {"const": 0},
+    "decision": {"const": "go"}, "publishable": {"const": true}, "complete": {"const": true}
+  }, "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

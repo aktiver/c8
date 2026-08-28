@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["policyId", "includeQueryEdges", "includeProofEdges", "includeNamedGraphIdentity", "includeProvenance", "allowedOptionalPredicateIds", "maxOptionalEntities", "maxOptionalEdges", "allowedHydrationPredicateIds", "maxPayloadBytes", "allowOptionalContextTruncation"],
+  "properties": {
+    "policyId": {"type": "string", "format": "uri"},
+    "includeQueryEdges": {"const": true},
+    "includeProofEdges": {"type": "boolean"},
+    "includeNamedGraphIdentity": {"const": true},
+    "includeProvenance": {"type": "boolean"},
+    "allowedOptionalPredicateIds": {"type": "array", "uniqueItems": true, "items": {"type": "integer", "minimum": 0}},
+    "maxOptionalEntities": {"type": "integer", "minimum": 0},
+    "maxOptionalEdges": {"type": "integer", "minimum": 0},
+    "allowedHydrationPredicateIds": {"type": "array", "uniqueItems": true, "items": {"type": "integer", "minimum": 0}},
+    "maxPayloadBytes": {"type": "integer", "minimum": 0},
+    "allowOptionalContextTruncation": {"type": "boolean"}
+  }
+}
+

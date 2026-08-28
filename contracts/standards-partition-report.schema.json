@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/standards-partition-report.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "planSha256", "partition", "workerId", "observations", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "planSha256": {"$ref": "#/$defs/sha256"},
+    "partition": {"type": "integer", "minimum": 0, "maximum": 65535},
+    "workerId": {"type": "string", "minLength": 1, "maxLength": 253},
+    "complete": {"const": true},
+    "observations": {"type": "array", "items": {"$ref": "#/$defs/observation"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "digestOrNull": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["caseId", "family", "partition", "ngkgOutcome", "oracleOutcome", "ngkgResultSha256", "oracleResultSha256", "ngkgErrorClass", "oracleErrorClass", "complete", "durationMilliseconds"],
+      "properties": {
+        "caseId": {"type": "string", "minLength": 1},
+        "family": {"enum": ["trig-syntax", "trig-evaluation", "sparql-syntax", "sparql-evaluation", "result-format", "sparql-protocol", "service-description", "federation", "owl-direct", "failure"]},
+        "partition": {"type": "integer", "minimum": 0},
+        "ngkgOutcome": {"enum": ["success", "failure"]},
+        "oracleOutcome": {"enum": ["success", "failure"]},
+        "ngkgResultSha256": {"$ref": "#/$defs/digestOrNull"},
+        "oracleResultSha256": {"$ref": "#/$defs/digestOrNull"},
+        "ngkgErrorClass": {"type": ["string", "null"], "maxLength": 128},
+        "oracleErrorClass": {"type": ["string", "null"], "maxLength": 128},
+        "complete": {"const": true},
+        "durationMilliseconds": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

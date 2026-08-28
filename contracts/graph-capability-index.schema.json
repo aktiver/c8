@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/graph-capability-index.schema.json",
+  "title": "NGKG Graph Capability Index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "datasetId",
+    "snapshotId",
+    "graphCatalogSha256",
+    "graphs",
+    "predicateToGraphs",
+    "classToGraphs",
+    "dependencies"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 2
+    },
+    "datasetId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "snapshotId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "graphCatalogSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "graphs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/graph"
+      }
+    },
+    "predicateToGraphs": {
+      "$ref": "#/$defs/capabilityMap"
+    },
+    "classToGraphs": {
+      "$ref": "#/$defs/capabilityMap"
+    },
+    "dependencies": {
+      "$ref": "#/$defs/capabilityMap"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "iri": {
+      "type": "string",
+      "format": "uri",
+      "minLength": 1
+    },
+    "authorizationLabel": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_.:/-]+$"
+    },
+    "graph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "graphId",
+        "graphIri",
+        "role",
+        "authorizationLabels",
+        "reasoningVisible",
+        "queryableFactCount"
+      ],
+      "properties": {
+        "graphId": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "graphIri": {
+          "$ref": "#/$defs/iri"
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "authorizationLabels": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/authorizationLabel"
+          }
+        },
+        "reasoningVisible": {
+          "type": "boolean"
+        },
+        "queryableFactCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "capabilityMap": {
+      "type": "object",
+      "propertyNames": {
+        "minLength": 1
+      },
+      "additionalProperties": {
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+          "$ref": "#/$defs/iri"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/rc1-freeze-manifest.schema.json",
+  "title": "NGKG 1.0.0-RC1 compatibility freeze",
+  "type": "object", "additionalProperties": false,
+  "required": ["formatVersion", "releaseVersion", "sourceManifestSha256", "entries", "changesRequireRcDefect", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1}, "releaseVersion": {"const": "1.0.0-rc.1"},
+    "sourceManifestSha256": {"$ref": "#/$defs/sha256"}, "changesRequireRcDefect": {"const": true}, "complete": {"const": true},
+    "entries": {"type": "array", "minItems": 8, "items": {"$ref": "#/$defs/entry"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "surface": {"enum": ["open-api", "json-schema", "crd", "helm", "environment", "database-migration", "object-layout", "semantic-artifact"]},
+    "entry": {"type": "object", "additionalProperties": false, "required": ["surface", "path", "sha256", "itemCount"],
+      "properties": {"surface": {"$ref": "#/$defs/surface"}, "path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}, "itemCount": {"type": "integer", "minimum": 1}}}
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/offline-reasoning-plan.schema.json",
+  "title": "NGKG Exact Offline Reasoning Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "datasetId", "snapshotId", "ontologyQualificationRootSha256", "finiteClosureSha256", "logicalPartitions", "inputConsequenceCount", "partitionRuns", "authority", "publicationState"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "datasetId": {"type": "string", "format": "uuid"},
+    "snapshotId": {"type": "string", "format": "uuid"},
+    "ontologyQualificationRootSha256": {"$ref": "#/$defs/sha256"},
+    "finiteClosureSha256": {"$ref": "#/$defs/sha256"},
+    "logicalPartitions": {"type": "integer", "minimum": 1},
+    "inputConsequenceCount": {"type": "integer", "minimum": 0},
+    "partitionRuns": {"type": "object", "additionalProperties": {"type": "array", "items": {"$ref": "#/$defs/artifact"}}},
+    "authority": {"const": "exact-hermit-finite-named-consequences"},
+    "publicationState": {"const": "inactive"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "artifact": {"type": "object", "additionalProperties": false, "required": ["relativePath", "sha256", "bytes", "rowCount"], "properties": {
+      "relativePath": {"type": "string", "pattern": "^runs/[0-9]{5}/run-[0-9]{8}\\.nt$"},
+      "sha256": {"$ref": "#/$defs/sha256"}, "bytes": {"type": "integer", "minimum": 0}, "rowCount": {"type": "integer", "minimum": 0}
+    }}
+  }
+}

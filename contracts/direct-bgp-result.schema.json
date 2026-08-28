@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.example/contracts/direct-bgp-result.schema.json",
+  "title": "NGKG Phase 40.3 Direct-BGP Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion", "datasetId", "snapshotId", "querySha256", "bgpSha256",
+    "activeDatasetSha256", "authorizedGraphSetSha256", "owlSignatureSha256",
+    "datatypePolicySha256", "entailmentRegime", "graphContext", "variables",
+    "candidateBindingCount", "solutionMultiplicityTotal", "solutions", "outcome"
+  ],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "datasetId": {"type": "string", "format": "uuid"},
+    "snapshotId": {"type": "string", "format": "uuid"},
+    "querySha256": {"$ref": "#/$defs/sha256"},
+    "bgpSha256": {"$ref": "#/$defs/sha256"},
+    "activeDatasetSha256": {"$ref": "#/$defs/sha256"},
+    "authorizedGraphSetSha256": {"$ref": "#/$defs/sha256"},
+    "owlSignatureSha256": {"$ref": "#/$defs/sha256"},
+    "datatypePolicySha256": {"$ref": "#/$defs/sha256"},
+    "entailmentRegime": {"const": "owl2-direct"},
+    "graphContext": {"$ref": "#/$defs/graphContext"},
+    "variables": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1, "maxLength": 1024},
+      "uniqueItems": true
+    },
+    "candidateBindingCount": {"type": "integer", "minimum": 0},
+    "solutionMultiplicityTotal": {"type": "integer", "minimum": 0},
+    "solutions": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/solution"}
+    },
+    "outcome": {"$ref": "#/$defs/outcome"},
+    "error": {"$ref": "#/$defs/failure"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"outcome": {"properties": {"status": {"const": "complete"}}}}},
+      "then": {
+        "properties": {
+          "outcome": {
+            "properties": {
+              "status": {"const": "complete"},
+              "exactness": {"const": "exact"},
+              "completeness": {"const": "complete"}
+            }
+          }
+        },
+        "not": {"required": ["error"]}
+      }
+    },
+    {
+      "if": {"properties": {"outcome": {"properties": {"status": {"const": "failed"}}}}},
+      "then": {
+        "required": ["error"],
+        "properties": {
+          "outcome": {
+            "properties": {
+              "status": {"const": "failed"},
+              "exactness": {"const": "not-established"},
+              "completeness": {"enum": ["incomplete", "not-established"]}
+            }
+          },
+          "solutionMultiplicityTotal": {"const": 0},
+          "solutions": {"maxItems": 0}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "graphContext": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scope", "activeDefaultGraphSha256"],
+          "properties": {
+            "scope": {"const": "default"},
+            "activeDefaultGraphSha256": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scope", "graphIri"],
+          "properties": {
+            "scope": {"const": "named"},
+            "graphIri": {"type": "string", "minLength": 3, "maxLength": 8192}
+          }
+        }
+      ]
+    },
+    "rdfTerm": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["termType", "value"],
+          "properties": {
+            "termType": {"const": "iri"},
+            "value": {"type": "string", "minLength": 3, "maxLength": 8192}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["termType", "value"],
+          "properties": {
+            "termType": {"const": "blankNode"},
+            "value": {"type": "string", "minLength": 1, "maxLength": 1024, "pattern": "^\\S+$"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["termType", "lexicalForm", "datatypeIri"],
+          "properties": {
+            "termType": {"const": "literal"},
+            "lexicalForm": {"type": "string", "maxLength": 1048576},
+            "datatypeIri": {"type": "string", "minLength": 3, "maxLength": 8192},
+            "language": {"type": "string", "minLength": 1, "maxLength": 63, "pattern": "^\\S+$"}
+          }
+        }
+      ]
+    },
+    "solution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bindings", "multiplicity"],
+      "properties": {
+        "bindings": {
+          "type": "object",
+          "propertyNames": {"type": "string", "minLength": 1, "maxLength": 1024},
+          "additionalProperties": {"$ref": "#/$defs/rdfTerm"}
+        },
+        "multiplicity": {"type": "integer", "minimum": 1}
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "exactness", "completeness"],
+      "properties": {
+        "status": {"enum": ["complete", "failed"]},
+        "exactness": {"enum": ["exact", "not-established"]},
+        "completeness": {"enum": ["complete", "incomplete", "not-established"]}
+      }
+    },
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "retryable", "detail"],
+      "properties": {
+        "code": {"enum": ["illegal-bgp", "inconsistent-ontology", "unsupported-datatype", "resource-exhausted", "timeout", "reasoner-failure", "integrity-failure", "not-covered"]},
+        "retryable": {"type": "boolean"},
+        "detail": {"type": "string", "minLength": 1, "maxLength": 4096}
+      }
+    }
+  }
+}

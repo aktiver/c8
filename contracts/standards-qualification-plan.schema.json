@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/standards-qualification-plan.schema.json",
+  "title": "NGKG Phase 40.13.22 standards qualification plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "suiteInventorySha256", "partitionCount", "cases"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "suiteInventorySha256": {"$ref": "#/$defs/sha256"},
+    "partitionCount": {"type": "integer", "minimum": 1, "maximum": 65536},
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/case"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "family": {"enum": ["trig-syntax", "trig-evaluation", "sparql-syntax", "sparql-evaluation", "result-format", "sparql-protocol", "service-description", "federation", "owl-direct", "failure"]},
+    "oracle": {"enum": ["w3c-expected", "apache-jena", "hermit"]},
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["caseId", "family", "inputSha256", "oracle", "expectedOutcome", "partition"],
+      "properties": {
+        "caseId": {"type": "string", "minLength": 1, "maxLength": 2048},
+        "family": {"$ref": "#/$defs/family"},
+        "inputSha256": {"$ref": "#/$defs/sha256"},
+        "oracle": {"$ref": "#/$defs/oracle"},
+        "expectedOutcome": {"enum": ["success", "failure"]},
+        "expectedResultSha256": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "expectedErrorClass": {"type": ["string", "null"], "maxLength": 128},
+        "partition": {"type": "integer", "minimum": 0, "maximum": 65535}
+      }
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/distributed-property-path-execution.schema.json",
+  "title": "NGKG Partition-Native Distributed Property-Path Execution",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "semanticRootSha256",
+    "planSetSha256",
+    "partitionCount",
+    "requireCompletePartitionSet",
+    "checkpointPublication",
+    "termination",
+    "scalarOracleEquivalenceRequired"
+  ],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "semanticRootSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "planSetSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "partitionCount": {"type": "integer", "minimum": 2, "maximum": 4294967295},
+    "requireCompletePartitionSet": {"const": true},
+    "checkpointPublication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["localAtomicRename", "immutableObjectStore", "checksumRequired", "boundedBytes"],
+      "properties": {
+        "localAtomicRename": {"const": true},
+        "immutableObjectStore": {"const": true},
+        "checksumRequired": {"const": true},
+        "boundedBytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "termination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["densePartitionBarrier", "denseWorkItemBarrier", "globalFrontierEmpty"],
+      "properties": {
+        "densePartitionBarrier": {"const": true},
+        "denseWorkItemBarrier": {"const": true},
+        "globalFrontierEmpty": {"const": true}
+      }
+    },
+    "scalarOracleEquivalenceRequired": {"const": true}
+  }
+}

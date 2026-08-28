@@ -1,0 +1,6 @@
+# Exact versions used by the Phase 40.13.3 W3C harness. Install into an
+# isolated environment; this is a version lock, not a wheel-hash lock.
+jsonschema==4.25.1
+PyYAML==6.0.3
+rdflib==7.6.0
+pyparsing==3.3.2

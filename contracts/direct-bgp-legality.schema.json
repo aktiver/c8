@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.example/contracts/direct-bgp-legality.schema.json",
+  "title": "NGKG Phase 40.7 OWL Direct-BGP Legality Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion", "datasetId", "snapshotId", "querySha256", "sparqlAlgebraSha256",
+    "activeDatasetSha256", "authorizedGraphSetSha256", "owlSignatureSha256",
+    "datatypePolicySha256", "owlProfileQualificationSha256", "owlConsistencyQualificationSha256",
+    "entailmentRegime", "classifier", "bgpCount", "allBgpsLegal",
+    "propertyPathsOutsideDirectBgps", "bgps"
+  ],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "datasetId": {"type": "string", "format": "uuid"},
+    "snapshotId": {"type": "string", "format": "uuid"},
+    "querySha256": {"$ref": "#/$defs/sha256"},
+    "sparqlAlgebraSha256": {"$ref": "#/$defs/sha256"},
+    "activeDatasetSha256": {"$ref": "#/$defs/sha256"},
+    "authorizedGraphSetSha256": {"$ref": "#/$defs/sha256"},
+    "owlSignatureSha256": {"$ref": "#/$defs/sha256"},
+    "datatypePolicySha256": {"$ref": "#/$defs/sha256"},
+    "owlProfileQualificationSha256": {"$ref": "#/$defs/sha256"},
+    "owlConsistencyQualificationSha256": {"$ref": "#/$defs/sha256"},
+    "entailmentRegime": {"const": "owl2-direct"},
+    "classifier": {"const": "w3c-owl2-direct-bgp-cp1-cp4-v1"},
+    "bgpCount": {"type": "integer", "minimum": 0, "maximum": 4096},
+    "allBgpsLegal": {"type": "boolean"},
+    "propertyPathsOutsideDirectBgps": {"type": "boolean"},
+    "bgps": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/bgp"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "variable": {"type": "string", "minLength": 1, "maxLength": 1024, "pattern": "^[^?$\\s][^\\s]*$"},
+    "scope": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["scope"], "properties": {"scope": {"const": "default"}}},
+        {"type": "object", "additionalProperties": false, "required": ["scope", "graphIri"], "properties": {"scope": {"const": "named"}, "graphIri": {"type": "string", "minLength": 3, "maxLength": 8192}}},
+        {"type": "object", "additionalProperties": false, "required": ["scope", "variable"], "properties": {"scope": {"const": "namedVariable"}, "variable": {"$ref": "#/$defs/variable"}}}
+      ]
+    },
+    "typing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["variable", "role", "source"],
+      "properties": {
+        "variable": {"$ref": "#/$defs/variable"},
+        "role": {"enum": ["class", "object-property", "data-property", "annotation-property", "datatype", "named-individual", "literal"]},
+        "source": {"enum": ["explicit-declaration", "structural-position"]}
+      }
+    },
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "detail"],
+      "properties": {
+        "code": {"enum": ["conflicting-variable-type", "ambiguous-variable-role", "undeclared-entity-variable", "unknown-predicate", "invalid-structural-shape", "unsupported-owl-structure", "invalid-graph-scope", "resource-limit-exceeded"]},
+        "detail": {"type": "string", "minLength": 1, "maxLength": 2048},
+        "tripleOrdinal": {"type": "integer", "minimum": 0},
+        "variable": {"$ref": "#/$defs/variable"}
+      }
+    },
+    "bgp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ordinal", "bgpSha256", "graphScope", "tripleCount", "recognizedForms", "variables", "status", "groundedOwl2dlCheckRequired"],
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 0},
+        "bgpSha256": {"$ref": "#/$defs/sha256"},
+        "graphScope": {"$ref": "#/$defs/scope"},
+        "tripleCount": {"type": "integer", "minimum": 0, "maximum": 65536},
+        "recognizedForms": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128}},
+        "variables": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/typing"}},
+        "status": {"enum": ["legal", "illegal"]},
+        "groundedOwl2dlCheckRequired": {"const": true},
+        "failure": {"$ref": "#/$defs/failure"}
+      },
+      "allOf": [
+        {"if": {"properties": {"status": {"const": "legal"}}}, "then": {"not": {"required": ["failure"]}}},
+        {"if": {"properties": {"status": {"const": "illegal"}}}, "then": {"required": ["failure"]}}
+      ]
+    }
+  }
+}

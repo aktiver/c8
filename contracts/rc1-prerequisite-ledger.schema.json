@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/rc1-prerequisite-ledger.schema.json",
+  "title": "NGKG 1.0.0-RC1 prerequisite ledger",
+  "type": "object", "additionalProperties": false,
+  "required": ["formatVersion", "releaseVersion", "releaseSha256", "prerequisites", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1}, "releaseVersion": {"const": "1.0.0-rc.1"},
+    "releaseSha256": {"$ref": "#/$defs/sha256"}, "complete": {"const": true},
+    "prerequisites": {"type": "array", "minItems": 14, "maxItems": 14, "items": {"$ref": "#/$defs/evidence"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "kind": {"enum": ["sparql11", "authorized-rdf-dataset", "owl2-dl", "distributed-reasoning", "distributed-query-runtime", "atomic-publication", "federation", "storage-recovery", "autoscaling", "enterprise-security", "standards", "performance-capacity", "kubernetes-release", "semantic-context-graph"]},
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "evidenceClass", "certificateSha256", "subjectSha256", "complete", "failureCount", "synthetic"],
+      "properties": {
+        "kind": {"$ref": "#/$defs/kind"}, "evidenceClass": {"const": "live-production-qualification"},
+        "certificateSha256": {"$ref": "#/$defs/sha256"}, "subjectSha256": {"$ref": "#/$defs/sha256"},
+        "complete": {"const": true}, "failureCount": {"const": 0}, "synthetic": {"const": false}
+      }
+    }
+  }
+}

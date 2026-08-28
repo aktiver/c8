@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/trig-source-metadata.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "tenantId",
+    "datasetId",
+    "sourceId",
+    "sourceSha256",
+    "sourceBytes",
+    "parsedQuadCount",
+    "defaultGraphQuadCount",
+    "namedGraphs"
+  ],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "tenantId": {"type": "string", "format": "uuid", "not": {"const": "00000000-0000-0000-0000-000000000000"}},
+    "datasetId": {"type": "string", "format": "uuid", "not": {"const": "00000000-0000-0000-0000-000000000000"}},
+    "sourceId": {"type": "string", "format": "uuid", "not": {"const": "00000000-0000-0000-0000-000000000000"}},
+    "sourceSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "sourceBytes": {"type": "integer", "minimum": 1},
+    "parsedQuadCount": {"type": "integer", "minimum": 1},
+    "defaultGraphQuadCount": {"type": "integer", "minimum": 0},
+    "namedGraphs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["graphIri", "parsedQuadCount"],
+        "properties": {
+          "graphIri": {"type": "string", "format": "uri"},
+          "parsedQuadCount": {"type": "integer", "minimum": 1}
+        }
+      }
+    }
+  }
+}

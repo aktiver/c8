@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/api-auth-tokens.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "tokens"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "tokens": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["tokenSha256", "tenantId", "principalId", "scopes"],
+        "properties": {
+          "tokenSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "tenantId": {"type": "string", "format": "uuid", "not": {"const": "00000000-0000-0000-0000-000000000000"}},
+          "principalId": {"type": "string", "minLength": 1, "maxLength": 256},
+          "scopes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": ["datasets:write", "sources:write", "ingestions:create", "jobs:read", "jobs:cancel", "snapshots:read", "snapshots:publish", "storage:read", "storage:write", "storage:restore", "queries:execute", "query-logs:read", "query-logs:read:text"]
+            }
+          },
+          "graphAuthorizationLabels": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:/-]+$"
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "scopes": {"contains": {"const": "queries:execute"}}
+              },
+              "required": ["scopes"]
+            },
+            "then": {
+              "required": ["graphAuthorizationLabels"],
+              "properties": {
+                "graphAuthorizationLabels": {"minItems": 1}
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

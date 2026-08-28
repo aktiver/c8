@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/offline-reasoning-partition.schema.json",
+  "title": "NGKG Exact Offline Reasoning Partition",
+  "type": "object", "additionalProperties": false,
+  "required": ["formatVersion", "datasetId", "snapshotId", "offlineReasoningPlanSha256", "ontologyQualificationRootSha256", "partitionIndex", "consequenceCount", "proofSupportCount", "artifacts", "semanticContentSha256"],
+  "properties": {
+    "formatVersion": {"const": 1}, "datasetId": {"type": "string", "format": "uuid"}, "snapshotId": {"type": "string", "format": "uuid"},
+    "offlineReasoningPlanSha256": {"$ref": "#/$defs/sha256"}, "ontologyQualificationRootSha256": {"$ref": "#/$defs/sha256"},
+    "partitionIndex": {"type": "integer", "minimum": 0}, "consequenceCount": {"type": "integer", "minimum": 0}, "proofSupportCount": {"type": "integer", "minimum": 0},
+    "artifacts": {"type": "array", "minItems": 9, "items": {"$ref": "#/$defs/artifact"}}, "semanticContentSha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "artifact": {"type": "object", "additionalProperties": false, "required": ["relativePath", "sha256", "bytes", "rowCount"], "properties": {
+    "relativePath": {"enum": ["closure.nt", "closure.nq", "closure.parquet", "class-extents.tsv", "property-extents.tsv", "class-hierarchy.tsv", "property-hierarchy.tsv", "sameas-membership.tsv", "proof-support.tsv"]},
+    "sha256": {"$ref": "#/$defs/sha256"}, "bytes": {"type": "integer", "minimum": 0}, "rowCount": {"type": "integer", "minimum": 0}
+  }}}
+}

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/performance-qualification-certificate.schema.json",
+  "title": "Phase 40.13.23 qualification certificate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "planSha256", "reportSetSha256", "scenarios", "qualifiedFamilies", "deterministicResults", "autoscalingEvidenceBound", "noExcludedTrials", "failedThresholdCount", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "planSha256": {"$ref": "#/$defs/sha256"},
+    "reportSetSha256": {"$ref": "#/$defs/sha256"},
+    "scenarios": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/scenarioStats"}},
+    "qualifiedFamilies": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["trig-ingestion", "semantic-compilation", "offline-reasoning", "property-path", "sparql-query", "concurrent-sparql", "recovery"]}},
+    "deterministicResults": {"const": true},
+    "autoscalingEvidenceBound": {"const": true},
+    "noExcludedTrials": {"const": true},
+    "failedThresholdCount": {"const": 0},
+    "complete": {"const": true}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "stats": {
+      "type": "object", "additionalProperties": false,
+      "required": ["engine", "measuredTrials", "p50Nanoseconds", "p95Nanoseconds", "p99Nanoseconds", "medianThroughputPerSecond", "medianCostMicroUsdPerMillion", "maximumNodesActivated", "maximumPeakRssBytes"],
+      "properties": {
+        "engine": {"enum": ["ngkg-rust", "external-apache-jena"]},
+        "measuredTrials": {"type": "integer", "minimum": 3},
+        "p50Nanoseconds": {"type": "integer", "minimum": 1},
+        "p95Nanoseconds": {"type": "integer", "minimum": 1},
+        "p99Nanoseconds": {"type": "integer", "minimum": 1},
+        "medianThroughputPerSecond": {"type": "integer", "minimum": 0},
+        "medianCostMicroUsdPerMillion": {"type": "integer", "minimum": 0},
+        "maximumNodesActivated": {"type": "integer", "minimum": 1},
+        "maximumPeakRssBytes": {"type": "integer", "minimum": 0}
+      }
+    },
+    "scenarioStats": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scenarioId", "ngkg", "externalJena", "speedupMilliX"],
+      "properties": {
+        "scenarioId": {"type": "string", "minLength": 1},
+        "ngkg": {"$ref": "#/$defs/stats"},
+        "externalJena": {"oneOf": [{"$ref": "#/$defs/stats"}, {"type": "null"}]},
+        "speedupMilliX": {"type": ["integer", "null"], "minimum": 0}
+      }
+    }
+  }
+}

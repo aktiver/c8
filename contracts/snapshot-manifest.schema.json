@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["dataset_id", "snapshot_id", "source_manifest", "ontology_bundle", "mapping_bundle", "compiled_plan_directory", "identity_registry_version", "table_snapshots", "semantic_spine_root", "dictionary_root", "semantic_index_root", "locator_root", "proof_root", "coverage_root", "graph_routing_root", "policy_hash", "expected_stage_manifests", "verification_report"],
+  "properties": {
+    "dataset_id": {"type": "string", "format": "uuid"},
+    "snapshot_id": {"type": "string", "format": "uuid"},
+    "parent_snapshot_id": {"type": ["string", "null"], "format": "uuid"},
+    "source_manifest": {"$ref": "#/$defs/artifact"},
+    "ontology_bundle": {"$ref": "#/$defs/artifact"},
+    "mapping_bundle": {"$ref": "#/$defs/artifact"},
+    "compiled_plan_directory": {"$ref": "#/$defs/artifact"},
+    "identity_registry_version": {"type": "string", "minLength": 1},
+    "table_snapshots": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["table_uri", "metadata"], "properties": {"table_uri": {"type": "string"}, "iceberg_snapshot_id": {"type": ["integer", "null"]}, "metadata": {"$ref": "#/$defs/artifact"}}}},
+    "semantic_spine_root": {"$ref": "#/$defs/artifact"},
+    "dictionary_root": {"$ref": "#/$defs/artifact"},
+    "semantic_index_root": {"$ref": "#/$defs/artifact"},
+    "locator_root": {"$ref": "#/$defs/artifact"},
+    "proof_root": {"$ref": "#/$defs/artifact"},
+    "coverage_root": {"$ref": "#/$defs/artifact"},
+    "graph_routing_root": {"$ref": "#/$defs/artifact"},
+    "policy_hash": {"type": "array", "minItems": 32, "maxItems": 32},
+    "expected_stage_manifests": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/artifact"}},
+    "verification_report": {"$ref": "#/$defs/artifact"}
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uri", "sha256"],
+      "properties": {"uri": {"type": "string", "minLength": 1}, "sha256": {"type": "array", "minItems": 32, "maxItems": 32}}
+    }
+  }
+}

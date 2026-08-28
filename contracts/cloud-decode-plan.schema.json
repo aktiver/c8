@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/cloud-decode-plan.schema.json",
+  "title": "C8 Next Generation whole-TriG distributed decode plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "planner", "tenantId", "datasetId", "operationId", "targetSnapshotId", "sourceManifestObjectKey", "sourceManifestSha256", "aggregateSourceSha256", "logicalPartitions", "targetWorkBytes", "workItems", "totalWorkItems", "totalObjects", "totalBytes", "totalQuads"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "planner": {"const": "whole-trig-lpt-v1"},
+    "tenantId": {"type": "string", "format": "uuid"},
+    "datasetId": {"type": "string", "format": "uuid"},
+    "operationId": {"type": "string", "format": "uuid"},
+    "targetSnapshotId": {"type": "string", "format": "uuid"},
+    "sourceManifestObjectKey": {"type": "string", "minLength": 1},
+    "sourceManifestSha256": {"$ref": "#/$defs/sha256"},
+    "aggregateSourceSha256": {"$ref": "#/$defs/sha256"},
+    "logicalPartitions": {"type": "integer", "minimum": 1, "maximum": 65536},
+    "targetWorkBytes": {"type": "integer", "minimum": 1},
+    "workItems": {"type": "array", "minItems": 1, "maxItems": 1000000, "items": {"$ref": "#/$defs/work"}},
+    "totalWorkItems": {"type": "integer", "minimum": 1, "maximum": 1000000},
+    "totalObjects": {"type": "integer", "minimum": 1, "maximum": 1000000},
+    "totalBytes": {"type": "integer", "minimum": 1},
+    "totalQuads": {"type": "integer", "minimum": 1}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "work": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["completionIndex", "workId", "totalBytes", "totalQuads", "objects"],
+      "properties": {
+        "completionIndex": {"type": "integer", "minimum": 0},
+        "workId": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "totalBytes": {"type": "integer", "minimum": 1},
+        "totalQuads": {"type": "integer", "minimum": 1},
+        "objects": {"type": "array", "minItems": 1, "items": {"$ref": "cloud-source-manifest.schema.json#/$defs/object"}}
+      }
+    }
+  }
+}

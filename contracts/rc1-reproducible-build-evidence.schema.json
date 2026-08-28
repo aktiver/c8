@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "https://c8-next-generation.io/contracts/rc1-reproducible-build-evidence.schema.json",
+  "title": "NGKG RC1 two-builder reproducibility evidence", "type": "object", "additionalProperties": false,
+  "required": ["builderAManifestSha256", "builderBManifestSha256", "sourceSha256", "networkControlled", "dependenciesLocked", "timestampsNormalized", "complete"],
+  "properties": {
+    "builderAManifestSha256": {"$ref": "#/$defs/sha256"}, "builderBManifestSha256": {"$ref": "#/$defs/sha256"}, "sourceSha256": {"$ref": "#/$defs/sha256"},
+    "networkControlled": {"const": true}, "dependenciesLocked": {"const": true}, "timestampsNormalized": {"const": true}, "complete": {"const": true}
+  }, "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

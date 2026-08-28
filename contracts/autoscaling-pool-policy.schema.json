@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/autoscaling-pool-policy.schema.json",
+  "title": "c8 Phase 40.13.20 autoscaling pool policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "workload", "poolName", "nodeLabel", "demandOwner", "minNodes", "maxNodes",
+    "scaleUpStep", "scaleDownStep", "cpuTargetPercent", "memoryTargetPercent",
+    "scaleFromZero", "drainRequiresCheckpoint"
+  ],
+  "properties": {
+    "workload": {"enum": ["source-ingestion", "semantic-projection", "semantic-artifact-build", "index-build", "offline-reasoning", "online-reasoning", "sparql-query", "sparql-fragment", "parquet-hydration", "storage-recovery"]},
+    "poolName": {"type": "string", "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$", "maxLength": 63},
+    "nodeLabel": {"type": "string", "pattern": "^ngkg\\.io/workload=[a-z0-9-]+$", "maxLength": 128},
+    "demandOwner": {"enum": ["hpa", "keda", "operator"]},
+    "minNodes": {"type": "integer", "minimum": 0, "maximum": 10000},
+    "maxNodes": {"type": "integer", "minimum": 1, "maximum": 10000},
+    "scaleUpStep": {"type": "integer", "minimum": 1, "maximum": 1000},
+    "scaleDownStep": {"type": "integer", "minimum": 1, "maximum": 1000},
+    "cpuTargetPercent": {"const": 80},
+    "memoryTargetPercent": {"const": 80},
+    "scaleFromZero": {"type": "boolean"},
+    "drainRequiresCheckpoint": {"type": "boolean"}
+  }
+}

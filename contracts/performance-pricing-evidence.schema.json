@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/performance-pricing-evidence.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "observedEpochSeconds", "provider", "region", "currency", "nodeMicroUsdPerHour", "objectReadMicroUsdPerMillion", "objectWriteMicroUsdPerMillion", "objectStorageMicroUsdPerGibMonth", "egressMicroUsdPerGib", "sourceUrlSha256", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "observedEpochSeconds": {"type": "integer", "minimum": 1},
+    "provider": {"enum": ["generic", "rke", "rke2", "eks", "aks", "gke"]},
+    "region": {"type": "string", "minLength": 1},
+    "currency": {"const": "USD"},
+    "nodeMicroUsdPerHour": {"type": "integer", "minimum": 0},
+    "objectReadMicroUsdPerMillion": {"type": "integer", "minimum": 0},
+    "objectWriteMicroUsdPerMillion": {"type": "integer", "minimum": 0},
+    "objectStorageMicroUsdPerGibMonth": {"type": "integer", "minimum": 0},
+    "egressMicroUsdPerGib": {"type": "integer", "minimum": 0},
+    "sourceUrlSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "complete": {"const": true}
+  }
+}

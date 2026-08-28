@@ -1,0 +1,187 @@
+{
+  "formatVersion": 1,
+  "standard": "https://www.w3.org/TR/sparql11-query/",
+  "claim": "inventory",
+  "scopeExclusions": [
+    "Ontology alignment is not database functionality and is not planned.",
+    "SPARQL 1.1 Update, Graph Store HTTP Protocol, Protocol and Service Description are separate W3C Recommendations and are not falsely claimed by this query-spec inventory."
+  ],
+  "features": [
+    {
+      "id": "query.select",
+      "name": "SELECT query form",
+      "section": "15",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-sparql-compiler/src/lib.rs", "crates/ngkg-reference/src/query.rs", "scripts/run_w3c_conformance.py"],
+      "nextAction": "Differentially qualify every SELECT algebra operator through the distributed and online paths against the zero-failure scalar oracle."
+    },
+    {
+      "id": "query.construct",
+      "name": "CONSTRUCT query form",
+      "section": "16",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-sparql-compiler/src/lib.rs", "crates/ngkg-reference/src/query.rs"],
+      "nextAction": "Qualify blank-node template scope, graph result equivalence and distributed serialization."
+    },
+    {
+      "id": "query.ask",
+      "name": "ASK query form",
+      "section": "17",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-sparql-compiler/src/lib.rs", "crates/ngkg-reference/src/query.rs"],
+      "nextAction": "Qualify distributed short-circuiting and online result negotiation."
+    },
+    {
+      "id": "query.describe",
+      "name": "DESCRIBE query form",
+      "section": "18",
+      "layers": {"parser": "implemented", "reference": "partial", "distributed": "not-implemented", "online": "partial"},
+      "evidence": ["crates/ngkg-sparql-compiler/src/lib.rs", "crates/ngkg-reference/src/query.rs"],
+      "nextAction": "Specify one deterministic DESCRIBE algorithm, expose its contract and add W3C-plus-product tests."
+    },
+    {
+      "id": "pattern.bgp",
+      "name": "Basic graph patterns and RDF term matching",
+      "section": "5",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "implemented", "online": "partial"},
+      "evidence": ["crates/ngkg-sparql-compiler/src/lib.rs", "crates/ngkg-query-executor/src/lib.rs", "services/online-serving/src/main.rs"],
+      "nextAction": "Complete W3C term-equality and active-dataset regressions on the online path."
+    },
+    {
+      "id": "pattern.group",
+      "name": "Group graph patterns",
+      "section": "5.2",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-sparql-compiler/src/lib.rs", "crates/ngkg-reference/src/query.rs"],
+      "nextAction": "Lower all nested group operators into distributed stages with multiset equivalence tests."
+    },
+    {
+      "id": "pattern.optional",
+      "name": "OPTIONAL and left join",
+      "section": "6",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-sparql-compiler/src/lib.rs", "crates/ngkg-query-executor/src/distributed_algebra.rs", "crates/ngkg-query-planner/src/lib.rs"],
+      "nextAction": "Native-build and differentially qualify expression-free left join; expression-bearing OPTIONAL remains scalar-oracle partitioned until its worker protocol is qualified."
+    },
+    {
+      "id": "pattern.union",
+      "name": "UNION",
+      "section": "7",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-sparql-compiler/src/lib.rs", "crates/ngkg-query-executor/src/distributed_algebra.rs", "crates/ngkg-query-planner/src/lib.rs"],
+      "nextAction": "Qualify the native bag-union kernel and complete-partition barrier against the scalar oracle on a multinode cluster."
+    },
+    {
+      "id": "pattern.minus",
+      "name": "MINUS",
+      "section": "8.3",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-sparql-compiler/src/lib.rs", "crates/ngkg-query-executor/src/distributed_algebra.rs", "crates/ngkg-query-planner/src/lib.rs"],
+      "nextAction": "Native-build and differentially qualify partitioned MINUS compatibility, especially disjoint and partially-unbound domains."
+    },
+    {
+      "id": "pattern.graph",
+      "name": "GRAPH and graph variables",
+      "section": "13.3",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-dataset/src/lib.rs", "crates/ngkg-reference/src/query.rs", "scripts/qualify_phase39_3.sh"],
+      "nextAction": "Run every graph-variable and correlated-subquery case against authorization-filtered multinode snapshots."
+    },
+    {
+      "id": "pattern.service",
+      "name": "SERVICE and SERVICE SILENT",
+      "section": "3",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "implemented"},
+      "evidence": ["crates/ngkg-federation/src/lib.rs", "crates/ngkg-reference/src/query.rs", "services/online-serving/src/main.rs", "charts/ngkg-workloads/templates/network-policies.yaml"],
+      "nextAction": "Run official federated-query and failure-injection cases against multiple allowlisted endpoint pods while query-shard HPA and cluster autoscaling change capacity."
+    },
+    {
+      "id": "pattern.bind",
+      "name": "BIND",
+      "section": "10.1",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-sparql-compiler/src/lib.rs", "crates/ngkg-reference/src/query.rs"],
+      "nextAction": "Close distributed expression-error and variable-scope tests."
+    },
+    {
+      "id": "pattern.values",
+      "name": "VALUES inline data",
+      "section": "10.2",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-sparql-compiler/src/lib.rs", "crates/ngkg-reference/src/query.rs"],
+      "nextAction": "Bound and distribute large VALUES tables while preserving active-GRAPH bindings and UNDEF semantics."
+    },
+    {
+      "id": "pattern.subquery",
+      "name": "Subqueries",
+      "section": "12",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-sparql-compiler/src/lib.rs", "crates/ngkg-query-planner/src/lib.rs", "crates/ngkg-reference/src/query.rs"],
+      "nextAction": "Execute checksum-bound scalar-oracle subquery stages on workers and qualify projected-variable scope across complete partition barriers."
+    },
+    {
+      "id": "path.property",
+      "name": "Property paths including arbitrary length",
+      "section": "9",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-sparql-compiler/src/lib.rs", "crates/ngkg-query-planner/src/lib.rs", "crates/ngkg-query-executor/src/distributed_path.rs", "services/online-serving/src/main.rs", "charts/ngkg-workloads/templates/autoscaling.yaml"],
+      "nextAction": "Native-build and differentially qualify NFA frontier exchange, endpoint-set equality, hot-vertex splits, checkpoint resume and all-partition termination against the scalar property-path oracle before enabling the online distributed lane."
+    },
+    {
+      "id": "expression.filter",
+      "name": "FILTER, expression errors and effective boolean value",
+      "section": "11",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-sparql-compiler/src/lib.rs", "crates/ngkg-reference/src/query.rs"],
+      "nextAction": "Build differential tests for every operator/function over numeric, temporal, language and error domains."
+    },
+    {
+      "id": "expression.functions",
+      "name": "SPARQL operator and function library",
+      "section": "17.4",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-reference/src/query.rs", "scripts/run_w3c_conformance.py"],
+      "nextAction": "Differentially qualify scalar function behavior through distributed expression stages and online serialization."
+    },
+    {
+      "id": "solution.aggregate",
+      "name": "Grouping and aggregates",
+      "section": "11",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-sparql-compiler/src/lib.rs", "crates/ngkg-query-executor/src/distributed_algebra.rs", "crates/ngkg-query-planner/src/lib.rs", "crates/ngkg-reference/src/query.rs"],
+      "nextAction": "Qualify group-owner repartitioning and worker scalar-oracle aggregation for DISTINCT, expression errors, datatype promotion and empty groups."
+    },
+    {
+      "id": "solution.modifiers",
+      "name": "ORDER BY, projection, DISTINCT/REDUCED, OFFSET and LIMIT",
+      "section": "15",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-sparql-compiler/src/lib.rs", "crates/ngkg-query-executor/src/distributed_algebra.rs", "crates/ngkg-query-planner/src/lib.rs", "crates/ngkg-reference/src/query.rs"],
+      "nextAction": "Qualify scalar-comparator range sorting, k-way merge, exact DISTINCT ownership, REDUCED bounds and global slicing on multinode spill workloads."
+    },
+    {
+      "id": "dataset.active",
+      "name": "FROM, FROM NAMED and active dataset",
+      "section": "13",
+      "layers": {"parser": "implemented", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-dataset/src/lib.rs", "crates/ngkg-reference/src/query.rs"],
+      "nextAction": "Unify protocol/query dataset precedence across gateway, planner and all workers."
+    },
+    {
+      "id": "results.formats",
+      "name": "SELECT/ASK and graph result serialization",
+      "section": "1.2.4",
+      "layers": {"parser": "not-applicable", "reference": "implemented", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-reference/src/bin/ngkg-w3c-case.rs", "services/online-serving/src/main.rs"],
+      "nextAction": "Qualify JSON, XML, CSV, TSV and RDF graph content negotiation across online and distributed result assembly."
+    },
+    {
+      "id": "entailment.query",
+      "name": "Entailment-regime query integration",
+      "section": "2.1",
+      "layers": {"parser": "implemented", "reference": "partial", "distributed": "partial", "online": "partial"},
+      "evidence": ["crates/ngkg-owl-direct/src/lib.rs", "crates/ngkg-direct-reasoner/src/lib.rs", "crates/ngkg-online-reasoning/src/lib.rs", "crates/ngkg-online-reasoning/src/algebra.rs", "crates/ngkg-reference/src/query.rs", "services/direct-reasoner-worker/src/main.rs", "services/online-serving/src/main.rs", "charts/ngkg-workloads/templates/online-reasoner.yaml"],
+      "nextAction": "Native-build the online slice, execute every applicable OWL Direct regime case, qualify failure injection and indexed/closure differential equality, then activate the checksum-bound service-description gate."
+    }
+  ]
+}

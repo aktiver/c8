@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/query-routing-certificate.schema.json",
+  "title": "NGKG Exact Query Routing Certificate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "capabilityIndexSha256",
+    "selectedGraphIris",
+    "totalGraphCount",
+    "selectionMode",
+    "datasetSelectionSource",
+    "defaultGraphIris",
+    "namedGraphIris",
+    "activeDatasetSha256",
+    "includeInternalClosure",
+    "routeArtifactRelativePath",
+    "routeArtifactSha256",
+    "routeArtifactBytes",
+    "routedResultSha256"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "capabilityIndexSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "selectedGraphIris": {
+      "type": "array",
+      "minItems": 0,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/iri"
+      }
+    },
+    "totalGraphCount": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    },
+    "selectionMode": {
+      "type": "string",
+      "enum": [
+        "typed_active_dataset",
+        "typed_declared_graph",
+        "typed_property_path_full_active_default",
+        "typed_active_default_no_capability",
+        "typed_capability_dependency",
+        "typed_active_dataset_fallback"
+      ]
+    },
+    "datasetSelectionSource": {
+      "enum": [
+        "service_default",
+        "query_dataset",
+        "protocol_dataset"
+      ]
+    },
+    "defaultGraphIris": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/iri"
+      }
+    },
+    "namedGraphIris": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/iri"
+      }
+    },
+    "activeDatasetSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "includeInternalClosure": {
+      "type": "boolean"
+    },
+    "routeArtifactRelativePath": {
+      "type": "string",
+      "pattern": "^data/routes/[0-9a-f]{64}\\.nq$"
+    },
+    "routeArtifactSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "routeArtifactBytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "routedResultSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "routedMultisetSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "distributed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "formatVersion",
+        "planArtifactRelativePath",
+        "planArtifactSha256",
+        "planArtifactBytes",
+        "fragmentCount",
+        "distributedMultisetSha256"
+      ],
+      "properties": {
+        "formatVersion": {
+          "const": 1
+        },
+        "planArtifactRelativePath": {
+          "type": "string",
+          "pattern": "^plans/distributed/[0-9a-f]{64}\\.json$"
+        },
+        "planArtifactSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "planArtifactBytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "fragmentCount": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 4294967295
+        },
+        "distributedMultisetSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "iri": {
+      "type": "string",
+      "format": "uri",
+      "minLength": 1
+    }
+  }
+}

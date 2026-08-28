@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/performance-hardware-evidence.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "collectedEpochSeconds", "kubernetesProvider", "region", "nodeType", "architecture", "cpuModel", "physicalCoresPerNode", "numaNodesPerNode", "memoryBytesPerNode", "networkBitsPerSecond", "storageClass", "kernelVersion", "cgroupVersion", "containerRuntime", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "collectedEpochSeconds": {"type": "integer", "minimum": 1},
+    "kubernetesProvider": {"enum": ["generic", "rke", "rke2", "eks", "aks", "gke"]},
+    "region": {"type": "string", "minLength": 1},
+    "nodeType": {"type": "string", "minLength": 1},
+    "architecture": {"enum": ["amd64", "arm64"]},
+    "cpuModel": {"type": "string", "minLength": 1},
+    "physicalCoresPerNode": {"type": "integer", "minimum": 1},
+    "numaNodesPerNode": {"type": "integer", "minimum": 1},
+    "memoryBytesPerNode": {"type": "integer", "minimum": 1073741824},
+    "networkBitsPerSecond": {"type": "integer", "minimum": 1000000000},
+    "storageClass": {"type": "string", "minLength": 1},
+    "kernelVersion": {"type": "string", "minLength": 1},
+    "cgroupVersion": {"const": 2},
+    "containerRuntime": {"type": "string", "minLength": 1},
+    "complete": {"const": true}
+  }
+}

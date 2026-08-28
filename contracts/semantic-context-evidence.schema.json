@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/semantic-context-evidence.schema.json",
+  "title": "NGKG cross-domain OWL 2 DL reasoned context graph evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["owl2DlQualificationSha256", "snapshotSha256", "authorizedGraphSetSha256", "querySha256", "resultGraphSha256", "scalarOracleGraphSha256", "reasoningCertificateSha256", "domainCount", "hopCount", "reasonedOutputTriples", "activatedNodes", "activatedCpuMillis", "activatedMemoryBytes", "queryForm", "complete", "proofCoverage"],
+  "properties": {
+    "owl2DlQualificationSha256": {"$ref": "#/$defs/sha256"},
+    "snapshotSha256": {"$ref": "#/$defs/sha256"},
+    "authorizedGraphSetSha256": {"$ref": "#/$defs/sha256"},
+    "querySha256": {"$ref": "#/$defs/sha256"},
+    "resultGraphSha256": {"$ref": "#/$defs/sha256"},
+    "scalarOracleGraphSha256": {"$ref": "#/$defs/sha256"},
+    "reasoningCertificateSha256": {"$ref": "#/$defs/sha256"},
+    "domainCount": {"type": "integer", "minimum": 3},
+    "hopCount": {"type": "integer", "minimum": 2},
+    "reasonedOutputTriples": {"type": "integer", "minimum": 1},
+    "activatedNodes": {"type": "integer", "minimum": 2},
+    "activatedCpuMillis": {"type": "integer", "minimum": 2000},
+    "activatedMemoryBytes": {"type": "integer", "minimum": 1},
+    "queryForm": {"enum": ["CONSTRUCT", "DESCRIBE"]},
+    "complete": {"const": true},
+    "proofCoverage": {"const": "complete"}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/ga-readiness.schema.json",
+  "title": "NGKG 1.0.0 GA readiness assessment",
+  "type": "object", "additionalProperties": false,
+  "required": ["formatVersion", "releaseVersion", "status", "publishable", "blockerCount", "blockers", "evidenceInspected", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1}, "releaseVersion": {"const": "1.0.0"},
+    "status": {"enum": ["blocked", "publishable"]}, "publishable": {"type": "boolean"},
+    "blockerCount": {"type": "integer", "minimum": 0}, "blockers": {"type": "array", "items": {"type": "string"}},
+    "evidenceInspected": {"type": "array", "items": {"type": "object"}}, "complete": {"const": true}
+  }
+}

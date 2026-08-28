@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/snapshot-backup-manifest.schema.json",
+  "title": "NGKG immutable snapshot backup manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "backupId", "tenantId", "datasetId", "sourceSnapshotId", "sourceStorageManifestSha256", "recoveryCertificateSha256", "destinationTarget", "artifacts", "totalBytes", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "backupId": {"type": "string", "format": "uuid"},
+    "tenantId": {"type": "string", "format": "uuid"},
+    "datasetId": {"type": "string", "format": "uuid"},
+    "sourceSnapshotId": {"type": "string", "format": "uuid"},
+    "sourceStorageManifestSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "recoveryCertificateSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "destinationTarget": {"type": "string", "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$"},
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sourceObjectKey", "backupObjectKey", "sha256", "bytes"],
+        "properties": {
+          "sourceObjectKey": {"type": "string", "minLength": 1, "maxLength": 1024},
+          "backupObjectKey": {"type": "string", "minLength": 1, "maxLength": 1024},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "bytes": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "totalBytes": {"type": "integer", "minimum": 0},
+    "complete": {"const": true}
+  }
+}

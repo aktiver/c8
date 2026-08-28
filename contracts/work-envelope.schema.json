@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/work-envelope.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["dataset_id", "target_snapshot_id", "stage", "partition_id", "source", "input_sha256", "mapping_version", "ontology_bundle_hash", "expected_schema_hash", "output_contract_hash", "retry_class", "resource_class"],
+  "properties": {
+    "dataset_id": {"type": "string", "format": "uuid"},
+    "target_snapshot_id": {"type": "string", "format": "uuid"},
+    "stage": {"enum": ["safe_scan", "projection", "dictionary_run", "index_run", "validation", "export"]},
+    "partition_id": {"type": "string", "pattern": "^blake3:[0-9a-f]{64}$"},
+    "source": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["kind", "object_uri", "shard_manifest_uri", "statement_count"], "properties": {"kind": {"const": "trig_shard"}, "object_uri": {"type": "string"}, "shard_manifest_uri": {"type": "string"}, "statement_count": {"type": "integer", "minimum": 1}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "object_uri", "row_groups", "required_columns"], "properties": {"kind": {"const": "parquet_row_groups"}, "object_uri": {"type": "string"}, "row_groups": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "integer", "minimum": 0}}, "required_columns": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "table_uri", "snapshot_id", "manifest_uri", "entry_ordinals"], "properties": {"kind": {"const": "iceberg_entries"}, "table_uri": {"type": "string"}, "snapshot_id": {"type": "integer"}, "manifest_uri": {"type": "string"}, "entry_ordinals": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "integer", "minimum": 0}}}}
+      ]
+    },
+    "input_sha256": {"type": "array", "minItems": 32, "maxItems": 32, "items": {"type": "integer", "minimum": 0, "maximum": 255}},
+    "mapping_version": {"type": "string", "minLength": 1},
+    "ontology_bundle_hash": {"type": "array", "minItems": 32, "maxItems": 32, "items": {"type": "integer", "minimum": 0, "maximum": 255}},
+    "expected_schema_hash": {"type": "array", "minItems": 32, "maxItems": 32, "items": {"type": "integer", "minimum": 0, "maximum": 255}},
+    "output_contract_hash": {"type": "array", "minItems": 32, "maxItems": 32, "items": {"type": "integer", "minimum": 0, "maximum": 255}},
+    "retry_class": {"enum": ["idempotent", "deterministic_failure"]},
+    "resource_class": {"enum": ["semantic_projection", "reasoning", "index_build", "sparql_query_processing", "parquet_hydration", "maintenance_export"]}
+  }
+}
+

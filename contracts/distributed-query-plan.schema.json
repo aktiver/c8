@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/distributed-query-plan.schema.json",
+  "title": "NGKG Certified Distributed Query Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "datasetId",
+    "snapshotId",
+    "querySha256",
+    "ordered",
+    "finalHead",
+    "joinOrder",
+    "fragments"
+  ],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "datasetId": {"type": "string", "format": "uuid"},
+    "snapshotId": {"type": "string", "format": "uuid"},
+    "querySha256": {"$ref": "#/$defs/sha256"},
+    "ordered": {"const": false},
+    "finalHead": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "joinOrder": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^fragment-[0-9]{4}$"}
+    },
+    "fragments": {
+      "type": "array",
+      "minItems": 2,
+      "items": {"$ref": "#/$defs/fragment"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "fragment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fragmentId",
+        "graphIri",
+        "datasetArtifactRelativePath",
+        "datasetArtifactSha256",
+        "datasetArtifactBytes",
+        "queryArtifactRelativePath",
+        "queryArtifactSha256",
+        "queryArtifactBytes",
+        "head",
+        "rowCount",
+        "observedMultisetSha256"
+      ],
+      "properties": {
+        "fragmentId": {"type": "string", "pattern": "^fragment-[0-9]{4}$"},
+        "graphIri": {"type": "string", "format": "uri", "minLength": 1},
+        "datasetArtifactRelativePath": {
+          "type": "string",
+          "pattern": "^data/distributed/[0-9a-f]{64}/fragment-[0-9]{4}\\.nq$"
+        },
+        "datasetArtifactSha256": {"$ref": "#/$defs/sha256"},
+        "datasetArtifactBytes": {"type": "integer", "minimum": 1},
+        "queryArtifactRelativePath": {
+          "type": "string",
+          "pattern": "^queries/distributed/[0-9a-f]{64}/fragment-[0-9]{4}\\.rq$"
+        },
+        "queryArtifactSha256": {"$ref": "#/$defs/sha256"},
+        "queryArtifactBytes": {"type": "integer", "minimum": 1},
+        "head": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "rowCount": {"type": "integer", "minimum": 0},
+        "observedMultisetSha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/owl-consistency-qualification.schema.json",
+  "title": "NGKG OWL 2 DL Consistency Qualification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion", "datasetId", "snapshotId", "aggregateInputSha256",
+    "owlSignatureSha256", "datatypePolicySha256", "owlProfileQualificationSha256",
+    "owlProfile", "directSemantics", "reasonerName", "reasonerVersion",
+    "consistencyMethod", "inputDocumentCount", "loadedOntologyCount", "mergedAxiomCount",
+    "consistencyChecked", "consistent", "publicationPermitted", "inconsistentOntologyHandling"
+  ],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "datasetId": {"type": "string", "format": "uuid"},
+    "snapshotId": {"type": "string", "format": "uuid"},
+    "aggregateInputSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "owlSignatureSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "datatypePolicySha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "owlProfileQualificationSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "owlProfile": {"const": "OWL 2 DL"},
+    "directSemantics": {"const": true},
+    "reasonerName": {"type": "string", "minLength": 1, "maxLength": 128},
+    "reasonerVersion": {"type": "string", "minLength": 1, "maxLength": 128},
+    "consistencyMethod": {"const": "OWLReasoner.isConsistent"},
+    "inputDocumentCount": {"type": "integer", "minimum": 1},
+    "loadedOntologyCount": {"type": "integer", "minimum": 1},
+    "mergedAxiomCount": {"type": "integer", "minimum": 0},
+    "consistencyChecked": {"type": "boolean"},
+    "consistent": {"type": "boolean"},
+    "publicationPermitted": {"type": "boolean"},
+    "inconsistentOntologyHandling": {"const": "reject_snapshot"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"consistencyChecked": {"const": false}}, "required": ["consistencyChecked"]},
+      "then": {"properties": {"consistent": {"const": false}, "publicationPermitted": {"const": false}}}
+    },
+    {
+      "if": {"properties": {"consistencyChecked": {"const": true}, "consistent": {"const": true}}, "required": ["consistencyChecked", "consistent"]},
+      "then": {"properties": {"publicationPermitted": {"const": true}}}
+    },
+    {
+      "if": {"properties": {"consistencyChecked": {"const": true}, "consistent": {"const": false}}, "required": ["consistencyChecked", "consistent"]},
+      "then": {"properties": {"publicationPermitted": {"const": false}}}
+    }
+  ]
+}

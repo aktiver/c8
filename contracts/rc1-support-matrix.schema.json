@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/rc1-support-matrix.schema.json",
+  "title": "NGKG RC1 exact Kubernetes support matrix",
+  "type": "object", "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": {"const": "release.c8-next-generation.io/v1"}, "kind": {"const": "SupportedKubernetesMatrix"},
+    "metadata": {"type": "object", "additionalProperties": false, "required": ["releaseVersion", "status"], "properties": {"releaseVersion": {"const": "1.0.0-rc.1"}, "status": {"enum": ["awaiting-live-qualification", "qualified"]}}},
+    "spec": {"type": "object", "additionalProperties": false, "required": ["commonRequirements", "providers", "publicationRule"], "properties": {
+      "commonRequirements": {"type": "object", "additionalProperties": false,
+        "required": ["minimumWorkerNodes", "minimumZonesWhenAvailable", "minimumCpuCoresPerWorker", "minimumMemoryBytesPerWorker", "cgroupVersion", "containerRuntime", "autoscalingCpuPercent", "autoscalingMemoryPercent", "components"],
+        "properties": {
+          "minimumWorkerNodes": {"type": "integer", "minimum": 3}, "minimumZonesWhenAvailable": {"type": "integer", "minimum": 2},
+          "minimumCpuCoresPerWorker": {"type": "integer", "minimum": 4}, "minimumMemoryBytesPerWorker": {"type": "integer", "minimum": 17179869184},
+          "cgroupVersion": {"const": 2}, "containerRuntime": {"const": "containerd"}, "autoscalingCpuPercent": {"const": 80}, "autoscalingMemoryPercent": {"const": 80},
+          "components": {"type": "array", "minItems": 6, "uniqueItems": true, "items": {"enum": ["metrics-server", "prometheus", "keda", "kueue", "hpa", "node-autoscaler"]}}
+        }},
+      "providers": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"$ref": "#/$defs/provider"}},
+      "publicationRule": {"const": "every-provider-qualified-with-exact-version-and-evidence-digest"}
+    }}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "provider": {
+      "type": "object", "additionalProperties": false,
+      "required": ["provider", "qualified", "testedKubernetesVersions", "identity", "objectStorage"],
+      "properties": {
+        "provider": {"enum": ["rke", "rke2", "eks", "aks", "gke"]}, "qualified": {"type": "boolean"},
+        "testedKubernetesVersions": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "identity": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+        "objectStorage": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+        "evidenceSha256": {"$ref": "#/$defs/sha256"}
+      },
+      "allOf": [{"if": {"properties": {"qualified": {"const": true}}}, "then": {"required": ["evidenceSha256"], "properties": {"testedKubernetesVersions": {"minItems": 1}}}}]
+    }
+  }
+}

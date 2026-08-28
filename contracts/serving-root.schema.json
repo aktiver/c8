@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/serving-root.schema.json",
+  "title": "NGKG Immutable Serving Root",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "datasetId",
+    "snapshotId",
+    "artifactRootObjectKey",
+    "artifactRootSha256",
+    "dictionaryObjectKey",
+    "dictionarySha256",
+    "sourceLocatorObjectKey",
+    "sourceLocatorSha256",
+    "binaryLocatorObjectKey",
+    "binaryLocatorSha256",
+    "semanticContentSha256",
+    "rowGroupRows",
+    "locatorRecordCount",
+    "partitions"
+  ],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "datasetId": {"type": "string", "format": "uuid"},
+    "snapshotId": {"type": "string", "format": "uuid"},
+    "artifactRootObjectKey": {"type": "string", "minLength": 1},
+    "artifactRootSha256": {"$ref": "#/$defs/sha256"},
+    "dictionaryObjectKey": {"type": "string", "minLength": 1},
+    "dictionarySha256": {"$ref": "#/$defs/sha256"},
+    "sourceLocatorObjectKey": {"type": "string", "minLength": 1},
+    "sourceLocatorSha256": {"$ref": "#/$defs/sha256"},
+    "binaryLocatorObjectKey": {"type": "string", "minLength": 1},
+    "binaryLocatorSha256": {"$ref": "#/$defs/sha256"},
+    "semanticContentSha256": {"$ref": "#/$defs/sha256"},
+    "rowGroupRows": {"type": "integer", "minimum": 1},
+    "locatorRecordCount": {"type": "integer", "minimum": 0},
+    "partitions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/partition"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "partition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "partitionIndex",
+        "manifestObjectKey",
+        "manifestSha256",
+        "payloadObjectKey",
+        "payloadSha256",
+        "payloadBytes",
+        "payloadRowCount"
+      ],
+      "properties": {
+        "partitionIndex": {"type": "integer", "minimum": 0},
+        "manifestObjectKey": {"type": "string", "minLength": 1},
+        "manifestSha256": {"$ref": "#/$defs/sha256"},
+        "payloadObjectKey": {"type": "string", "minLength": 1},
+        "payloadSha256": {"$ref": "#/$defs/sha256"},
+        "payloadBytes": {"type": "integer", "minimum": 0},
+        "payloadRowCount": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

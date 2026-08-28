@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/release-partition-report.schema.json",
+  "title": "NGKG Phase 40.13.24 partition report",
+  "type": "object", "additionalProperties": false,
+  "required": ["formatVersion", "planSha256", "partition", "workerId", "observations", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1}, "planSha256": {"$ref": "#/$defs/sha256"},
+    "partition": {"type": "integer", "minimum": 0}, "workerId": {"type": "string", "minLength": 1},
+    "observations": {"type": "array", "items": {"$ref": "#/$defs/observation"}}, "complete": {"const": true}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "provider": {"enum": ["rke", "rke2", "eks", "aks", "gke"]},
+    "gate": {"enum": ["semantic-context-graph", "multinode-soak", "compute-chaos", "network-chaos", "storage-chaos", "upgrade", "rollback", "backup-restore", "helm", "image-provenance", "sbom", "cve", "license", "reproducible-build", "provider-portability"]},
+    "observation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scenarioId", "provider", "gate", "outputSha256", "evidenceSha256", "activatedNodes", "activatedCpuMillis", "activatedMemoryBytes", "durationSeconds", "injectedFailures", "recoveredFailures", "postRecoveryResultSha256", "complete"],
+      "properties": {
+        "scenarioId": {"type": "string", "minLength": 1}, "provider": {"$ref": "#/$defs/provider"}, "gate": {"$ref": "#/$defs/gate"},
+        "outputSha256": {"$ref": "#/$defs/sha256"}, "evidenceSha256": {"$ref": "#/$defs/sha256"},
+        "activatedNodes": {"type": "integer", "minimum": 1}, "activatedCpuMillis": {"type": "integer", "minimum": 1},
+        "activatedMemoryBytes": {"type": "integer", "minimum": 1}, "durationSeconds": {"type": "integer", "minimum": 0},
+        "injectedFailures": {"type": "integer", "minimum": 0}, "recoveredFailures": {"type": "integer", "minimum": 0},
+        "postRecoveryResultSha256": {"$ref": "#/$defs/sha256"}, "complete": {"const": true}
+      }
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.5",
+  "scope": "Pinned official SPARQL 1.1 query and result-format manifests",
+  "baseline": {
+    "total": 338,
+    "pass": 338,
+    "fail": 0
+  },
+  "closedFromPhase40_13_4": {
+    "count": 12,
+    "categories": [
+      "GROUP_CONCAT simple-literal semantics",
+      "GRAPH aggregate and VALUES scope",
+      "BNODE(string) solution scope",
+      "MINUS domain compatibility under GRAPH",
+      "zero-length constant property paths",
+      "lossless numeric lexical and datatype identity"
+    ]
+  },
+  "gaps": [],
+  "separateUnsupportedSuites": {
+    "entailmentRegime": 70,
+    "protocolAndServiceDescription": 37
+  },
+  "claim": "zero failures only for the 338 pinned executable query/result cases; this is not full SPARQL, distributed, entailment, protocol, or production qualification"
+}

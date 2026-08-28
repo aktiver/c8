@@ -1,0 +1,13 @@
+{
+  "formatVersion": 1,
+  "repository": "https://github.com/w3c/rdf-tests.git",
+  "commit": "8af71fed933539d09d5f4658fb1ea7ba4c8e30b9",
+  "requiredManifests": [
+    "rdf/rdf11/rdf-trig/manifest.ttl",
+    "sparql/sparql11/manifest-sparql11-query.ttl",
+    "sparql/sparql11/manifest-sparql11-results.ttl",
+    "sparql/sparql11/protocol/manifest.ttl",
+    "sparql/sparql11/service-description/manifest.ttl",
+    "sparql/sparql11/entailment/manifest.ttl"
+  ]
+}

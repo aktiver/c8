@@ -1,0 +1,212 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/direct-proof-manifest.schema.json",
+  "title": "NGKG Phase 40.9 Direct-BGP Proof/Support Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "datasetId",
+    "snapshotId",
+    "querySha256",
+    "bgpSha256",
+    "activeDatasetSha256",
+    "authorizedGraphSetSha256",
+    "owlSignatureSha256",
+    "datatypePolicySha256",
+    "entailmentRegime",
+    "graphContext",
+    "directBgpResultSha256",
+    "candidateSpaceSha256",
+    "executionRootSha256",
+    "reasonerEngine",
+    "reasonerVersion",
+    "adapterVersion",
+    "completionSupportId",
+    "ontologyInputs",
+    "answerProofs"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "datasetId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "snapshotId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "querySha256": {
+      "$ref": "#/$defs/sha"
+    },
+    "bgpSha256": {
+      "$ref": "#/$defs/sha"
+    },
+    "activeDatasetSha256": {
+      "$ref": "#/$defs/sha"
+    },
+    "authorizedGraphSetSha256": {
+      "$ref": "#/$defs/sha"
+    },
+    "owlSignatureSha256": {
+      "$ref": "#/$defs/sha"
+    },
+    "datatypePolicySha256": {
+      "$ref": "#/$defs/sha"
+    },
+    "entailmentRegime": {
+      "const": "owl2-direct"
+    },
+    "graphContext": {
+      "$ref": "#/$defs/graphContext"
+    },
+    "directBgpResultSha256": {
+      "$ref": "#/$defs/sha"
+    },
+    "candidateSpaceSha256": {
+      "$ref": "#/$defs/sha"
+    },
+    "executionRootSha256": {
+      "$ref": "#/$defs/sha"
+    },
+    "reasonerEngine": {
+      "const": "HermiT"
+    },
+    "reasonerVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "adapterVersion": {
+      "const": "40.9"
+    },
+    "completionSupportId": {
+      "$ref": "#/$defs/sha"
+    },
+    "ontologyInputs": {
+      "type": "array",
+      "maxItems": 1000000,
+      "items": {
+        "$ref": "#/$defs/input"
+      }
+    },
+    "answerProofs": {
+      "type": "array",
+      "maxItems": 1000000,
+      "items": {
+        "$ref": "#/$defs/proof"
+      }
+    }
+  },
+  "$defs": {
+    "sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "graphContext": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scope",
+            "activeDefaultGraphSha256"
+          ],
+          "properties": {
+            "scope": {
+              "const": "default"
+            },
+            "activeDefaultGraphSha256": {
+              "$ref": "#/$defs/sha"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scope",
+            "graphIri"
+          ],
+          "properties": {
+            "scope": {
+              "const": "named"
+            },
+            "graphIri": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 8192
+            }
+          }
+        }
+      ]
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sha256",
+        "ontologyIris"
+      ],
+      "properties": {
+        "sha256": {
+          "$ref": "#/$defs/sha"
+        },
+        "ontologyIris": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 8192
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "proof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supportId",
+        "candidateOrdinal",
+        "partitionIndex",
+        "requestSha256",
+        "bindingSha256",
+        "groundedRdfSha256",
+        "logicalAxiomsSha256",
+        "logicalAxiomCount"
+      ],
+      "properties": {
+        "supportId": {
+          "$ref": "#/$defs/sha"
+        },
+        "candidateOrdinal": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "partitionIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "requestSha256": {
+          "$ref": "#/$defs/sha"
+        },
+        "bindingSha256": {
+          "$ref": "#/$defs/sha"
+        },
+        "groundedRdfSha256": {
+          "$ref": "#/$defs/sha"
+        },
+        "logicalAxiomsSha256": {
+          "$ref": "#/$defs/sha"
+        },
+        "logicalAxiomCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

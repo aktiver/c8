@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/artifact-partition-manifest.schema.json",
+  "title": "NGKG Artifact Partition Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "datasetId",
+    "snapshotId",
+    "sourcePlanSha256",
+    "dictionarySha256",
+    "partitionIndex",
+    "partitionId",
+    "artifacts",
+    "factCount",
+    "semanticRowCount",
+    "payloadRowCount",
+    "queryableFactCount",
+    "reasoningFactCount",
+    "locatorRecordCount",
+    "semanticContentSha256"
+  ],
+  "properties": {
+    "formatVersion": { "const": 1 },
+    "datasetId": { "type": "string", "format": "uuid" },
+    "snapshotId": { "type": "string", "format": "uuid" },
+    "sourcePlanSha256": { "$ref": "#/$defs/sha256" },
+    "dictionarySha256": { "$ref": "#/$defs/sha256" },
+    "partitionIndex": { "type": "integer", "minimum": 0 },
+    "partitionId": { "type": "string", "pattern": "^blake3:[0-9a-f]{64}$" },
+    "artifacts": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": { "$ref": "#/$defs/artifact" }
+    },
+    "factCount": { "type": "integer", "minimum": 0 },
+    "semanticRowCount": { "type": "integer", "minimum": 0 },
+    "payloadRowCount": { "type": "integer", "minimum": 0 },
+    "queryableFactCount": { "type": "integer", "minimum": 0 },
+    "reasoningFactCount": { "type": "integer", "minimum": 0 },
+    "locatorRecordCount": { "type": "integer", "minimum": 0 },
+    "semanticContentSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relativePath", "sha256", "bytes"],
+      "properties": {
+        "relativePath": {
+          "enum": [
+            "semantic-spine.parquet",
+            "payload.parquet",
+            "queryable.nq",
+            "reasoner-core.nt",
+            "locator-run.tsv"
+          ]
+        },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

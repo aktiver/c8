@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/owl-profile-qualification.schema.json",
+  "title": "NGKG OWL 2 DL Profile and Import Qualification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "datasetId",
+    "snapshotId",
+    "aggregateInputSha256",
+    "owlSignatureSha256",
+    "datatypePolicySha256",
+    "owlProfile",
+    "directSemantics",
+    "inputDocumentCount",
+    "ontologyDocumentCount",
+    "aboxDocumentCount",
+    "loadedOntologyCount",
+    "importDeclarationCount",
+    "resolvedImportCount",
+    "completeLocalImportClosure",
+    "mergedAxiomCount",
+    "ontologyDocuments",
+    "importResolutions",
+    "profileValid",
+    "profileViolationCount",
+    "profileViolationSamples"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "datasetId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "snapshotId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "aggregateInputSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "owlSignatureSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "datatypePolicySha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "owlProfile": {
+      "const": "OWL 2 DL"
+    },
+    "directSemantics": {
+      "const": true
+    },
+    "inputDocumentCount": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "ontologyDocumentCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "aboxDocumentCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "loadedOntologyCount": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "importDeclarationCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "resolvedImportCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "completeLocalImportClosure": {
+      "const": true
+    },
+    "mergedAxiomCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "ontologyDocuments": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ontologyDocument"
+      }
+    },
+    "importResolutions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/importResolution"
+      }
+    },
+    "profileValid": {
+      "type": "boolean"
+    },
+    "profileViolationCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "profileViolationSamples": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4097
+      }
+    }
+  },
+  "$defs": {
+    "ontologyDocument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sha256",
+        "ontologyIri"
+      ],
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "ontologyIri": {
+          "type": "string",
+          "format": "uri"
+        },
+        "versionIri": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        }
+      }
+    },
+    "importResolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceOntologyIri",
+        "importedIri",
+        "resolvedDocumentSha256"
+      ],
+      "properties": {
+        "sourceOntologyIri": {
+          "type": "string",
+          "format": "uri"
+        },
+        "importedIri": {
+          "type": "string",
+          "format": "uri"
+        },
+        "resolvedDocumentSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}

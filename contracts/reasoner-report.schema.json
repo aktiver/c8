@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/reasoner-report.schema.json",
+  "title": "NGKG HermiT OWL 2 DL Reasoner Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "datasetId",
+    "snapshotId",
+    "reasonerName",
+    "reasonerVersion",
+    "aggregateInputSha256",
+    "owlSignatureSha256",
+    "datatypePolicySha256",
+    "owlProfileQualificationSha256",
+    "owlConsistencyQualificationSha256",
+    "owlProfile",
+    "directSemantics",
+    "profileValid",
+    "profileViolationCount",
+    "profileViolationSamples",
+    "consistencyChecked",
+    "consistent",
+    "namedIndividualCount",
+    "emittedAxiomCount",
+    "proofDagAvailable",
+    "materializationScope"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 5
+    },
+    "datasetId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "snapshotId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "reasonerName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reasonerVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "aggregateInputSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "owlSignatureSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "datatypePolicySha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "owlProfileQualificationSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "owlConsistencyQualificationSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "owlProfile": {
+      "const": "OWL 2 DL"
+    },
+    "directSemantics": {
+      "const": true
+    },
+    "profileValid": {
+      "type": "boolean"
+    },
+    "profileViolationCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "profileViolationSamples": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4097
+      }
+    },
+    "consistencyChecked": {
+      "type": "boolean"
+    },
+    "consistent": {
+      "type": "boolean"
+    },
+    "namedIndividualCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "emittedAxiomCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "proofDagAvailable": {
+      "const": false
+    },
+    "materializationScope": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/serving-equivalence-report.schema.json",
+  "title": "NGKG Serving Equivalence Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "datasetId",
+    "snapshotId",
+    "servingRootSha256",
+    "binaryLocatorSha256",
+    "queries",
+    "equivalent"
+  ],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "datasetId": {"type": "string", "format": "uuid"},
+    "snapshotId": {"type": "string", "format": "uuid"},
+    "servingRootSha256": {"$ref": "#/$defs/sha256"},
+    "binaryLocatorSha256": {"$ref": "#/$defs/sha256"},
+    "queries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/query"}
+    },
+    "equivalent": {"const": true}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "query": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "queryId",
+        "querySha256",
+        "referenceRowCount",
+        "shardedRowCount",
+        "canonicalRowsSha256"
+      ],
+      "properties": {
+        "queryId": {"type": "string", "minLength": 1},
+        "querySha256": {"$ref": "#/$defs/sha256"},
+        "referenceRowCount": {"type": "integer", "minimum": 0},
+        "shardedRowCount": {"type": "integer", "minimum": 0},
+        "canonicalRowsSha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

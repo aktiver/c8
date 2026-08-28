@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/tenant-admission-policy.schema.json",
+  "title": "NGKG tenant admission policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "tenants"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "tenants": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/tenant"}
+    }
+  },
+  "$defs": {
+    "classPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxInFlight", "maxPending"],
+      "properties": {
+        "maxInFlight": {"type": "integer", "minimum": 1},
+        "maxPending": {"type": "integer", "minimum": 1}
+      }
+    },
+    "tenant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tenantId",
+        "query",
+        "fragment",
+        "shuffle",
+        "locator",
+        "hydration",
+        "fragmentWorkerMaxInFlight"
+      ],
+      "properties": {
+        "tenantId": {"type": "string", "format": "uuid"},
+        "query": {"$ref": "#/$defs/classPolicy"},
+        "fragment": {"$ref": "#/$defs/classPolicy"},
+        "shuffle": {"$ref": "#/$defs/classPolicy"},
+        "locator": {"$ref": "#/$defs/classPolicy"},
+        "hydration": {"$ref": "#/$defs/classPolicy"},
+        "fragmentWorkerMaxInFlight": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

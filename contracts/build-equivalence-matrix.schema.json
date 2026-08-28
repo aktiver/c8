@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ngkg.io/contracts/build-equivalence-matrix.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "logicalPartitionCounts", "projectionParallelism", "reducerCounts", "forcedEvents", "compare"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "logicalPartitionCounts": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "integer", "minimum": 1, "maximum": 65536}},
+    "projectionParallelism": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "integer", "minimum": 1}},
+    "reducerCounts": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "integer", "minimum": 1}},
+    "forcedEvents": {"type": "array", "uniqueItems": true, "items": {"enum": ["projection_retry", "duplicate_completion_index", "projection_node_loss", "reducer_retry", "reducer_node_loss", "coordinator_restart", "out_of_order_completion"]}},
+    "compare": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonicalSource", "dictionary", "semanticContentHash", "semanticSnapshotArtifacts", "certifiedQueryMultisets"],
+      "properties": {
+        "canonicalSource": {"const": true},
+        "dictionary": {"const": true},
+        "semanticContentHash": {"const": true},
+        "semanticSnapshotArtifacts": {"const": true},
+        "certifiedQueryMultisets": {"const": true}
+      }
+    }
+  }
+}
