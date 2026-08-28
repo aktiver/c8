@@ -1,0 +1,24 @@
+apiVersion: benchmark.ngkg.io/v1
+kind: QueryWorkload
+metadata:
+  name: cross-domain-production-v1
+spec:
+  datasetSnapshot: urn:ngkg:snapshot:cross-domain-production-v1
+  entailmentRegime: owl2-direct
+  resultComparison: sparql-multiset
+  cacheStates: [cold, warm, hot]
+  concurrencyLevels: [1, 8, 32]
+  querySets:
+    production:
+      manifest: test-corpus/queries/manifest.json
+    hot:
+      manifest: test-corpus/queries/hot-manifest.json
+  baselines:
+    - engine: jena-tdb2-with-certified-dl
+      configurationRef: benchmarks/baselines/jena-dl.yaml
+  requiredCorrectness:
+    answers: exact
+    authorization: exact
+    provenance: exact
+    snapshot: exact
+

@@ -1,0 +1,9 @@
+profileId: reference-dual-socket-v1
+architecture: amd64
+physicalSockets: 2
+physicalCoresPerSocket: 32
+memoryBytes: 549755813888
+networkBitsPerSecond: 100000000000
+storageClass: local-nvme-plus-remote-object-store
+numaPolicy: explicit
+

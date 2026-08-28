@@ -1,0 +1,18 @@
+apiVersion: test.ngkg.io/v1
+kind: FailureInjectionMatrix
+metadata:
+  name: release-fail-closed-v1
+spec:
+  boundaries:
+    - {name: upload-checksum, expected: incomplete-source}
+    - {name: safe-scan, expected: classified-failure-or-idempotent-retry}
+    - {name: projection-write, expected: no-published-output}
+    - {name: duplicate-partition-winner, expected: one-cas-winner}
+    - {name: reducer-node-loss, expected: retry-from-immutable-runs}
+    - {name: reasoner-timeout, expected: explicit-failure-no-partial-closure}
+    - {name: catalog-uncertain-commit, expected: read-by-idempotency-before-retry}
+    - {name: snapshot-cas-conflict, expected: one-winner-one-unpublished-candidate}
+    - {name: partial-flight-stream, expected: query-failure-not-empty-relation}
+    - {name: locator-corruption, expected: hydration-failure}
+    - {name: zone-loss, expected: replica-failover-or-explicit-unavailability}
+

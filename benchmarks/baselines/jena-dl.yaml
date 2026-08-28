@@ -1,0 +1,8 @@
+engine: jena-tdb2
+reasonerMode: certified-external-owl2-dl
+datasetPolicy: explicit-named-graphs
+resultComparison: sparql-multiset
+cacheResetCommandRef: benchmark-runner://cache/reset/jena-tdb2
+hardwareProfileRef: benchmarks/hardware/reference-dual-socket.yaml
+failedQueryPolicy: fail-workload
+

@@ -1,0 +1,70 @@
+apiVersion: benchmark.c8-next-generation.io/v1
+kind: PerformanceCapacityQualification
+metadata:
+  phase: 40.13.23
+  name: enterprise-performance-capacity-v1
+spec:
+  ngkgRuntime:
+    implementation: rust
+    version: 1.0.0
+    javaLinkedOrEmbedded: false
+  externalBaselines:
+    apacheJena:
+      version: 6.2.0
+      isolation: external-process-only
+      runtimeDependency: false
+      requiredFor: [property-path, sparql-query, concurrent-sparql]
+  requiredFamilies:
+    - trig-ingestion
+    - semantic-compilation
+    - offline-reasoning
+    - property-path
+    - sparql-query
+    - concurrent-sparql
+    - recovery
+  representativeDatasetMinimums:
+    distinctDatasets: 3
+    bytesPerEnterpriseDataset: 107374182400
+    namedGraphsPerDataset: 30
+    triplesPerDataset: 100000000
+    propertyPathEdgesPerDataset: 100000000
+    requireOwl2Dl: true
+    requirePinnedImports: true
+    requireProvenance: true
+    prohibitSyntheticOnlyQualification: true
+  trialPolicy:
+    minimumWarmupTrialsPerEngine: 3
+    minimumMeasuredTrialsPerEngine: 10
+    retainEveryFailure: true
+    allowOutlierRemoval: false
+    allowPartialResults: false
+    monotonicClockRequired: true
+  capacityPoints:
+    minimumNodeCounts: [1, 2, 4]
+    concurrencyLevels: [1, 8, 32, 100, 250]
+    autoscalingCpuPercent: 80
+    autoscalingMemoryPercent: 80
+    requireScaleFromZero: true
+    requireNodeLossTrial: true
+    requireDeterministicResultAcrossScale: true
+  claimGates:
+    ingest100GiBMaximumSeconds: 600
+    propertyPathMinimumEdgesPerSecond: 2000000
+    sustainedConcurrentUsers: 250
+    selectiveGeometricMeanSpeedupMilliX: 20000
+    hotQueryMedianSpeedupMilliX: 50000
+    requireSameHardwareFingerprint: true
+    requireExactResultEquality: true
+    requireCostNormalization: true
+  requiredEvidence:
+    - release-image-digests
+    - dataset-and-snapshot-digests
+    - hardware-and-numa-fingerprint
+    - compiler-and-kernel-versions
+    - kubernetes-provider-and-node-types
+    - cpu-memory-and-cgroup-envelopes
+    - cache-reset-evidence
+    - query-log-resource-evidence
+    - autoscaling-and-node-loss-evidence
+    - raw-trial-records
+    - normalized-cost-inputs

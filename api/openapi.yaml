@@ -1,0 +1,897 @@
+openapi: 3.1.0
+info:
+  title: NGKG Atomic Compilation Control API
+  version: 1.0.0
+  description: >-
+    Authenticated, asynchronous control plane for checksum-bound Phase 14 reference
+    compilations. Large TriG sources use a bounded streaming upload endpoint;
+    ontology, query, result and compilation-bundle artifacts remain checksum-bound
+    objects in the configured artifact store.
+servers: []
+security:
+  - bearerAuth: []
+paths:
+  /docs:
+    get:
+      security: []
+      operationId: swaggerUi
+      summary: Open the Swagger UI for the control-plane API
+      responses:
+        '200':
+          description: Vendored Swagger UI HTML and assets.
+          content:
+            text/html:
+              schema: {type: string}
+  /openapi.json:
+    get:
+      security: []
+      operationId: getOpenApiJson
+      summary: Retrieve the control-plane OpenAPI document as JSON
+      responses:
+        '200':
+          description: The exact embedded OpenAPI 3.1 control-plane contract.
+          content:
+            application/json:
+              schema: {type: object}
+  /openapi.yaml:
+    get:
+      security: []
+      operationId: getOpenApi
+      summary: Retrieve the control-plane OpenAPI document as YAML
+      responses:
+        '200':
+          description: The exact reviewed contract served by the running API.
+          content:
+            application/yaml:
+              schema: {type: string}
+  /health/live:
+    get:
+      security: []
+      operationId: live
+      summary: Report control-plane liveness
+      responses:
+        '204': {description: Process is live.}
+  /health/ready:
+    get:
+      security: []
+      operationId: ready
+      summary: Report control-plane dependency readiness
+      responses:
+        '204': {description: PostgreSQL schema and Kubernetes API are ready.}
+        '503': {description: A required dependency is unavailable.}
+  /v1/datasets:
+    post:
+      operationId: createNamedDataset
+      summary: Create a tenant dataset with a human-readable name
+      description: >-
+        Creates or returns a tenant-scoped dataset such as supply_chain,
+        clinical_nutrition, oncology, or loyalty_graph. The catalog generates and
+        tracks the internal UUID; the name carries no ontology-alignment semantics.
+      x-ngkg-required-scope: datasets:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateNamedDatasetRequest'}
+      responses:
+        '200':
+          description: Dataset identity and readable tenant-scoped name.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Dataset'}
+        '401': {$ref: '#/components/responses/Unauthenticated'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /v1/datasets/{datasetId}:
+    put:
+      operationId: createDataset
+      summary: Create or verify a tenant dataset
+      description: Idempotently create a client-selected dataset under the authenticated tenant.
+      x-ngkg-required-scope: datasets:write
+      parameters:
+        - $ref: '#/components/parameters/DatasetId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateDatasetRequest'}
+      responses:
+        '204': {description: Dataset exists with exactly the requested immutable identity fields.}
+        '401': {$ref: '#/components/responses/Unauthenticated'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /v1/datasets/{datasetId}/sources/{sourceId}:
+    put:
+      operationId: uploadTrigSource
+      summary: Upload and validate an immutable RDF 1.1 TriG source
+      description: >-
+        Stream one UTF-8 RDF 1.1 TriG source through bounded local scratch,
+        validate it as an RDF dataset, reject blank-node graph names under the
+        NGKG subdomain profile, verify X-NGKG-Content-SHA256, and publish the
+        content plus deterministic graph-summary metadata to immutable object storage.
+      x-ngkg-required-scope: sources:write
+      parameters:
+        - $ref: '#/components/parameters/DatasetId'
+        - $ref: '#/components/parameters/SourceId'
+        - $ref: '#/components/parameters/ContentSha256'
+      requestBody:
+        required: true
+        content:
+          application/trig:
+            schema: {type: string, contentMediaType: application/trig}
+      responses:
+        '201':
+          description: Source bytes and graph-summary metadata are checksum-bound in object storage.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TrigUploadResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthenticated'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '413': {$ref: '#/components/responses/PayloadTooLarge'}
+        '415': {$ref: '#/components/responses/UnsupportedMediaType'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /v1/datasets/{datasetId}/ingestions:
+    post:
+      operationId: createIngestion
+      summary: Start an immutable dataset compilation
+      description: >-
+        Durably register one immutable compilation and ensure its deterministic
+        NgkgCompilation resource exists. A 503 after catalog commit is safely
+        retried with the same Idempotency-Key.
+      x-ngkg-required-scope: ingestions:create
+      parameters:
+        - $ref: '#/components/parameters/DatasetId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateIngestionRequest'}
+      responses:
+        '202':
+          description: Durable operation accepted and desired state ensured.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/OperationAccepted'}
+        '401': {$ref: '#/components/responses/Unauthenticated'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /v1/datasets/{datasetName}/imports:
+    post:
+      operationId: createCloudImportByName
+      summary: Import existing TriG objects from a cloud bucket
+      description: >-
+        Resolves the tenant-scoped dataset name, creates immutable desired state,
+        and schedules a read-only CSI-mounted TriG discovery and validation job.
+        Credentials are never accepted in this request; identityRef names an
+        existing workload-identity-enabled Kubernetes ServiceAccount.
+      x-ngkg-required-scope: imports:create
+      parameters:
+        - $ref: '#/components/parameters/DatasetName'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateCloudImportRequest'}
+      responses:
+        '202':
+          description: Existing cloud-source discovery was accepted.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CloudImportAccepted'}
+        '401': {$ref: '#/components/responses/Unauthenticated'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /v1/datasets/{datasetName}/imports/{operationId}:
+    get:
+      operationId: getCloudImportByName
+      summary: Read existing-cloud TriG import status
+      description: Returns only an import bound to the authenticated tenant and readable dataset name.
+      x-ngkg-required-scope: imports:read
+      parameters:
+        - $ref: '#/components/parameters/DatasetName'
+        - $ref: '#/components/parameters/OperationId'
+      responses:
+        '200':
+          description: Current fail-closed discovery and manifest state.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CloudImportStatus'}
+        '401': {$ref: '#/components/responses/Unauthenticated'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /v1/datasets/by-id/{datasetId}/imports:
+    post:
+      operationId: createCloudImportById
+      summary: Import existing TriG objects using the internal dataset UUID
+      description: Internal/automation equivalent of the readable-name import route.
+      x-ngkg-required-scope: imports:create
+      parameters:
+        - $ref: '#/components/parameters/DatasetId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateCloudImportRequest'}
+      responses:
+        '202':
+          description: Existing cloud-source discovery was accepted.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CloudImportAccepted'}
+        '401': {$ref: '#/components/responses/Unauthenticated'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /v1/jobs/{operationId}:
+    get:
+      operationId: getJob
+      summary: Read durable compilation job state
+      x-ngkg-required-scope: jobs:read
+      parameters:
+        - $ref: '#/components/parameters/OperationId'
+      responses:
+        '200':
+          description: Durable operation and immutable request metadata.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Job'}
+        '401': {$ref: '#/components/responses/Unauthenticated'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /v1/jobs/{operationId}/cancel:
+    post:
+      operationId: cancelJob
+      summary: Cancel a durable compilation job
+      x-ngkg-required-scope: jobs:cancel
+      parameters:
+        - $ref: '#/components/parameters/OperationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CancelRequest'}
+      responses:
+        '200':
+          description: Operation durably cancelled; the operator removes active work.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Operation'}
+        '401': {$ref: '#/components/responses/Unauthenticated'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /v1/datasets/{datasetId}/snapshots/{snapshotId}:
+    get:
+      operationId: getSnapshot
+      summary: Read immutable snapshot metadata
+      x-ngkg-required-scope: snapshots:read
+      parameters:
+        - $ref: '#/components/parameters/DatasetId'
+        - $ref: '#/components/parameters/SnapshotId'
+      responses:
+        '200':
+          description: Immutable certified or published snapshot record.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Snapshot'}
+        '401': {$ref: '#/components/responses/Unauthenticated'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /v1/datasets/{datasetId}/snapshots/{snapshotId}/publish:
+    post:
+      operationId: publishSnapshot
+      summary: Atomically publish a qualified snapshot
+      description: Atomically publish only if the recorded predecessor remains active.
+      x-ngkg-required-scope: snapshots:publish
+      parameters:
+        - $ref: '#/components/parameters/DatasetId'
+        - $ref: '#/components/parameters/SnapshotId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PublishRequest'}
+      responses:
+        '200':
+          description: Snapshot is the active published snapshot.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Snapshot'}
+        '401': {$ref: '#/components/responses/Unauthenticated'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /v1/datasets/{datasetName}/snapshots/{snapshotId}/storage-operations:
+    post:
+      operationId: createStorageOperation
+      summary: Replicate, relocate, repair, or back up a certified snapshot
+      description: >-
+        Builds an immutable snapshot storage closure and deterministic Indexed Job plan.
+        The old replica remains readable through relocation; partial or corrupt replicas
+        never become eligible. Storage locations and credentials are operator-owned.
+      x-ngkg-required-scope: storage:write
+      parameters:
+        - $ref: '#/components/parameters/DatasetName'
+        - $ref: '#/components/parameters/SnapshotId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateStorageOperationRequest'}
+      responses:
+        '202':
+          description: Durable checksum-bound storage work accepted.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StorageOperationAccepted'}
+        '401': {$ref: '#/components/responses/Unauthenticated'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /v1/datasets/{datasetName}/restores:
+    post:
+      operationId: createRestore
+      summary: Restore a checksum-bound backup into inactive storage
+      description: >-
+        Resolves a cataloged backup ID, copies every artifact through a distributed
+        all-partitions barrier, and emits a restore certificate. Publication remains
+        separate, so partially restored bytes are never queryable.
+      x-ngkg-required-scope: storage:restore
+      parameters:
+        - $ref: '#/components/parameters/DatasetName'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateRestoreRequest'}
+      responses:
+        '202':
+          description: Distributed restore accepted.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StorageOperationAccepted'}
+        '401': {$ref: '#/components/responses/Unauthenticated'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /v1/storage-operations/{operationId}:
+    get:
+      operationId: getStorageOperation
+      summary: Read distributed storage operation status
+      x-ngkg-required-scope: storage:read
+      parameters:
+        - $ref: '#/components/parameters/OperationId'
+      responses:
+        '200':
+          description: Fail-closed transfer, backup, or restore status.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StorageOperationStatus'}
+        '401': {$ref: '#/components/responses/Unauthenticated'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: >-
+        Opaque secret whose SHA-256 maps to one tenant, principal and closed scope
+        set in the mounted operator-managed authentication file.
+  parameters:
+    DatasetId:
+      in: path
+      name: datasetId
+      required: true
+      schema: {type: string, format: uuid}
+    DatasetName:
+      in: path
+      name: datasetName
+      required: true
+      schema: {type: string, pattern: '^[a-z][a-z0-9_]{0,62}$'}
+    SnapshotId:
+      in: path
+      name: snapshotId
+      required: true
+      schema: {type: string, format: uuid}
+    SourceId:
+      in: path
+      name: sourceId
+      required: true
+      schema: {type: string, format: uuid}
+    ContentSha256:
+      in: header
+      name: X-NGKG-Content-SHA256
+      required: true
+      description: Lowercase SHA-256 of the exact request body bytes.
+      schema: {$ref: '#/components/schemas/Sha256'}
+    OperationId:
+      in: path
+      name: operationId
+      required: true
+      schema: {type: string, format: uuid}
+    IdempotencyKey:
+      in: header
+      name: Idempotency-Key
+      required: true
+      schema: {type: string, minLength: 16, maxLength: 128}
+  responses:
+    BadRequest:
+      description: The request body or HTTP framing is malformed.
+      content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+    PayloadTooLarge:
+      description: The configured byte, quad, graph-count, or scratch ceiling was exceeded.
+      content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+    UnsupportedMediaType:
+      description: The source media type or charset is unsupported.
+      content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+    TooManyRequests:
+      description: All bounded source-upload execution lanes are occupied.
+      content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+    Unauthenticated:
+      description: Bearer token is missing or invalid.
+      content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+    Forbidden:
+      description: Principal lacks the endpoint scope.
+      content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+    NotFound:
+      description: Resource does not exist inside the authorized tenant.
+      content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+    Conflict:
+      description: Idempotency, revision, immutable identity or publication CAS conflict.
+      content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+    InvalidRequest:
+      description: Closed request validation failed.
+      content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+    Unavailable:
+      description: Durable catalog or Kubernetes desired-state dependency is unavailable.
+      content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+  schemas:
+    CreateNamedDatasetRequest:
+      type: object
+      additionalProperties: false
+      required: [name, policyVersion]
+      properties:
+        name: {type: string, pattern: '^[a-z][a-z0-9_]{0,62}$'}
+        policyVersion: {type: string, minLength: 1, maxLength: 128}
+    Dataset:
+      type: object
+      additionalProperties: false
+      required: [datasetId, datasetName, identityNamespace, policyVersion]
+      properties:
+        datasetId: {type: string, format: uuid}
+        datasetName: {type: string}
+        identityNamespace: {type: string, format: uuid}
+        policyVersion: {type: string}
+    CreateDatasetRequest:
+      type: object
+      additionalProperties: false
+      required: [identityNamespace, policyVersion]
+      properties:
+        identityNamespace: {type: string, format: uuid}
+        policyVersion: {type: string, minLength: 1, maxLength: 128}
+    NamedGraphSummary:
+      type: object
+      additionalProperties: false
+      required: [graphIri, parsedQuadCount]
+      properties:
+        graphIri: {type: string, format: uri}
+        parsedQuadCount: {type: integer, minimum: 1}
+    TrigUploadResponse:
+      type: object
+      additionalProperties: false
+      required: [sourceId, datasetId, objectKey, sha256, bytes, parsedQuadCount, defaultGraphQuadCount, namedGraphs, metadataObjectKey, metadataSha256]
+      properties:
+        sourceId: {type: string, format: uuid}
+        datasetId: {type: string, format: uuid}
+        objectKey: {$ref: '#/components/schemas/ObjectKey'}
+        sha256: {$ref: '#/components/schemas/Sha256'}
+        bytes: {type: integer, minimum: 1}
+        parsedQuadCount: {type: integer, minimum: 1}
+        defaultGraphQuadCount: {type: integer, minimum: 0}
+        namedGraphs:
+          type: array
+          minItems: 1
+          items: {$ref: '#/components/schemas/NamedGraphSummary'}
+        metadataObjectKey: {$ref: '#/components/schemas/ObjectKey'}
+        metadataSha256: {$ref: '#/components/schemas/Sha256'}
+    CreateIngestionRequest:
+      type: object
+      additionalProperties: false
+      required: [bundleObjectKey, bundleSha256, parentSnapshotId, targetSnapshotId, publicationPolicy, resourceProfile]
+      properties:
+        bundleObjectKey: {$ref: '#/components/schemas/ObjectKey'}
+        bundleSha256: {$ref: '#/components/schemas/Sha256'}
+        parentSnapshotId: {type: [string, 'null'], format: uuid}
+        targetSnapshotId: {type: string, format: uuid}
+        publicationPolicy: {enum: [manual-after-certification, automatic-after-certification]}
+        resourceProfile: {type: string, minLength: 1, maxLength: 128}
+    CreateCloudImportRequest:
+      type: object
+      additionalProperties: false
+      required: [provider, bucket, identityRef, versionPolicy, parentSnapshotId, publicationPolicy, resourceProfile, maxSourceBytes, maxSourceObjects, logicalPartitions, ontologyQualificationRequestObjectKey, ontologyQualificationRequestSha256]
+      properties:
+        provider: {enum: [aws-s3, azure-blob, gcs]}
+        bucket: {type: string, minLength: 3, maxLength: 255}
+        accountName: {type: [string, 'null']}
+        prefix: {type: [string, 'null'], maxLength: 1024}
+        objectKeys:
+          type: array
+          uniqueItems: true
+          items: {type: string, minLength: 1, maxLength: 1024, pattern: '^[^/].*\.trig$'}
+        includePatterns:
+          type: array
+          items: {const: '**/*.trig'}
+          minItems: 1
+          maxItems: 1
+        excludeSegments:
+          type: array
+          uniqueItems: true
+          minItems: 3
+          items: {type: string, pattern: '^[a-z][a-z0-9_-]{0,62}$'}
+        identityRef: {type: string, pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'}
+        versionPolicy:
+          const: require-immutable-checksum
+          description: Provider-version proof remains closed until a provider metadata adapter is qualified.
+        targetSnapshotId:
+          type: [string, 'null']
+          format: uuid
+          description: Optional; NGKG deterministically generates it when omitted.
+        parentSnapshotId: {type: [string, 'null'], format: uuid}
+        publicationPolicy: {enum: [manual-after-certification, automatic-after-certification]}
+        resourceProfile: {type: string, minLength: 1, maxLength: 128}
+        maxSourceBytes: {type: integer, minimum: 1, maximum: 1125899906842624}
+        maxSourceObjects: {type: integer, minimum: 1, maximum: 1000000}
+        logicalPartitions: {type: integer, minimum: 1, maximum: 65536}
+        ontologyQualificationRequestObjectKey:
+          allOf: [{$ref: '#/components/schemas/ObjectKey'}]
+          description: Internal control-plane artifact selecting authorized asserted semkg graphs, pinned imports, and the datatype policy; it contains no credentials or alignment rules.
+        ontologyQualificationRequestSha256: {$ref: '#/components/schemas/Sha256'}
+      oneOf:
+        - required: [prefix]
+          properties:
+            objectKeys: {maxItems: 0}
+        - required: [objectKeys]
+          properties:
+            objectKeys: {minItems: 1}
+            prefix: {type: 'null'}
+    CloudImportAccepted:
+      type: object
+      additionalProperties: false
+      required: [operationId, targetSnapshotId, state]
+      properties:
+        operationId: {type: string, format: uuid}
+        targetSnapshotId: {type: string, format: uuid}
+        state: {const: SOURCE_DISCOVERY_PENDING}
+    CloudImportStatus:
+      type: object
+      additionalProperties: false
+      required: [operationId, datasetId, targetSnapshotId, status]
+      properties:
+        operationId: {type: string, format: uuid}
+        datasetId: {type: string, format: uuid}
+        targetSnapshotId: {type: string, format: uuid}
+        status:
+          type: object
+          additionalProperties: false
+          required: [observedGeneration, jobName, sourceManifestObjectKey, sourceManifestSha256, decodePlanObjectKey, decodePlanSha256, decodeWorkItemCount, decodeJobName, finalizeJobName, compilerHandoffObjectKey, compilerHandoffSha256, semanticMapJobName, semanticDictionaryJobName, semanticDictionaryObjectKey, semanticDictionarySha256, semanticPartitionJobName, semanticFinalizeJobName, semanticCompilationRootObjectKey, semanticCompilationRootSha256, compiledFactCount, ontologyProjectionJobName, ontologyAssemblyJobName, ontologyAssemblyObjectKey, ontologyAssemblySha256, ontologyQualificationJobName, ontologyQualificationRootObjectKey, ontologyQualificationRootSha256, offlineReasoningPlanJobName, offlineReasoningPlanObjectKey, offlineReasoningPlanSha256, offlineReasoningPartitionCount, offlineReasoningPartitionJobName, offlineReasoningFinalizeJobName, offlineReasoningRootObjectKey, offlineReasoningRootSha256, snapshotActivationJobName, snapshotActivationManifestObjectKey, snapshotActivationManifestSha256, snapshotPublicationState, selectedObjectCount, selectedSourceBytes, parsedQuadCount, condition]
+          properties:
+            observedGeneration: {type: [integer, 'null']}
+            jobName: {type: [string, 'null']}
+            sourceManifestObjectKey: {type: [string, 'null']}
+            sourceManifestSha256:
+              oneOf:
+                - {$ref: '#/components/schemas/Sha256'}
+                - {type: 'null'}
+            decodePlanObjectKey: {type: [string, 'null']}
+            decodePlanSha256:
+              oneOf:
+                - {$ref: '#/components/schemas/Sha256'}
+                - {type: 'null'}
+            decodeWorkItemCount: {type: [integer, 'null'], minimum: 1}
+            decodeJobName: {type: [string, 'null']}
+            semanticMapJobName: {type: [string, 'null']}
+            semanticDictionaryJobName: {type: [string, 'null']}
+            semanticDictionaryObjectKey: {type: [string, 'null']}
+            semanticDictionarySha256:
+              oneOf: [{$ref: '#/components/schemas/Sha256'}, {type: 'null'}]
+            semanticPartitionJobName: {type: [string, 'null']}
+            semanticFinalizeJobName: {type: [string, 'null']}
+            semanticCompilationRootObjectKey: {type: [string, 'null']}
+            semanticCompilationRootSha256:
+              oneOf: [{$ref: '#/components/schemas/Sha256'}, {type: 'null'}]
+            compiledFactCount: {type: [integer, 'null'], minimum: 0}
+            ontologyProjectionJobName: {type: [string, 'null']}
+            ontologyAssemblyJobName: {type: [string, 'null']}
+            ontologyAssemblyObjectKey: {type: [string, 'null']}
+            ontologyAssemblySha256:
+              oneOf: [{$ref: '#/components/schemas/Sha256'}, {type: 'null'}]
+            ontologyQualificationJobName: {type: [string, 'null']}
+            ontologyQualificationRootObjectKey: {type: [string, 'null']}
+            ontologyQualificationRootSha256:
+              oneOf: [{$ref: '#/components/schemas/Sha256'}, {type: 'null'}]
+            offlineReasoningPlanJobName: {type: [string, 'null']}
+            offlineReasoningPlanObjectKey: {type: [string, 'null']}
+            offlineReasoningPlanSha256:
+              oneOf: [{$ref: '#/components/schemas/Sha256'}, {type: 'null'}]
+            offlineReasoningPartitionCount: {type: [integer, 'null'], minimum: 1, maximum: 65536}
+            offlineReasoningPartitionJobName: {type: [string, 'null']}
+            offlineReasoningFinalizeJobName: {type: [string, 'null']}
+            offlineReasoningRootObjectKey: {type: [string, 'null']}
+            offlineReasoningRootSha256:
+              oneOf: [{$ref: '#/components/schemas/Sha256'}, {type: 'null'}]
+            snapshotActivationJobName: {type: [string, 'null']}
+            snapshotActivationManifestObjectKey: {type: [string, 'null']}
+            snapshotActivationManifestSha256:
+              oneOf: [{$ref: '#/components/schemas/Sha256'}, {type: 'null'}]
+            snapshotPublicationState:
+              type: [string, 'null']
+              enum: [CERTIFIED, PUBLISHED, null]
+            finalizeJobName: {type: [string, 'null']}
+            compilerHandoffObjectKey: {type: [string, 'null']}
+            compilerHandoffSha256:
+              oneOf:
+                - {$ref: '#/components/schemas/Sha256'}
+                - {type: 'null'}
+            selectedObjectCount: {type: [integer, 'null'], minimum: 0}
+            selectedSourceBytes: {type: [integer, 'null'], minimum: 0}
+            parsedQuadCount: {type: [integer, 'null'], minimum: 0}
+            condition: {type: [string, 'null']}
+    OperationAccepted:
+      type: object
+      additionalProperties: false
+      required: [operationId, state, revision, targetSnapshotId]
+      properties:
+        operationId: {type: string, format: uuid}
+        state:
+          enum: [REGISTERED, SOURCE_PLANNED, MAPPING_VALIDATED, PARTITIONED, PROJECTED, IDENTIFIED, SPINE_WRITTEN, INDEXED, REASONED, CERTIFIED, PUBLISHED, FAILED, CANCELLED]
+        revision: {type: integer, minimum: 0}
+        targetSnapshotId: {type: string, format: uuid}
+    Job:
+      type: object
+      additionalProperties: false
+      required: [operation, bundleObjectKey, bundleSha256, parentSnapshotId, publicationPolicy, resourceProfile, distributedBuild, distributedArtifacts, distributedArtifactRoot, distributedServingRoot, distributedServingCertification]
+      properties:
+        operation: {$ref: '#/components/schemas/Operation'}
+        bundleObjectKey: {$ref: '#/components/schemas/ObjectKey'}
+        bundleSha256: {$ref: '#/components/schemas/Sha256'}
+        parentSnapshotId: {type: [string, 'null'], format: uuid}
+        publicationPolicy: {enum: [manual-after-certification, automatic-after-certification]}
+        resourceProfile: {type: string}
+        distributedBuild:
+          oneOf:
+            - {$ref: '#/components/schemas/DistributedBuild'}
+            - {type: 'null'}
+        distributedArtifacts:
+          oneOf:
+            - {$ref: '#/components/schemas/DistributedArtifacts'}
+            - {type: 'null'}
+        distributedArtifactRoot:
+          oneOf:
+            - {$ref: '#/components/schemas/DistributedArtifactRoot'}
+            - {type: 'null'}
+        distributedServingRoot:
+          oneOf:
+            - {$ref: '#/components/schemas/DistributedServingRoot'}
+            - {type: 'null'}
+        distributedServingCertification:
+          oneOf:
+            - {$ref: '#/components/schemas/ServingCertification'}
+            - {type: 'null'}
+    DistributedBuild:
+      type: object
+      additionalProperties: false
+      required: [sourcePlanObjectKey, sourcePlanSha256, logicalPartitionCount, reducerCount, factCount, layoutProfile, succeededProjections, succeededReducers, failedWork]
+      properties:
+        sourcePlanObjectKey: {$ref: '#/components/schemas/ObjectKey'}
+        sourcePlanSha256: {$ref: '#/components/schemas/Sha256'}
+        logicalPartitionCount: {type: integer, minimum: 1, maximum: 65536}
+        reducerCount: {type: integer, minimum: 1, maximum: 65536}
+        factCount: {type: integer, minimum: 0}
+        layoutProfile: {type: string}
+        succeededProjections: {type: integer, minimum: 0}
+        succeededReducers: {type: integer, minimum: 0}
+        failedWork: {type: integer, minimum: 0}
+    DistributedArtifacts:
+      type: object
+      additionalProperties: false
+      required: [sourcePlanObjectKey, sourcePlanSha256, dictionaryObjectKey, dictionarySha256, artifactPlanObjectKey, artifactPlanSha256, partitionCount, rowGroupRows, succeededArtifacts, failedArtifacts]
+      properties:
+        sourcePlanObjectKey: {$ref: '#/components/schemas/ObjectKey'}
+        sourcePlanSha256: {$ref: '#/components/schemas/Sha256'}
+        dictionaryObjectKey: {$ref: '#/components/schemas/ObjectKey'}
+        dictionarySha256: {$ref: '#/components/schemas/Sha256'}
+        artifactPlanObjectKey: {$ref: '#/components/schemas/ObjectKey'}
+        artifactPlanSha256: {$ref: '#/components/schemas/Sha256'}
+        partitionCount: {type: integer, minimum: 1, maximum: 65536}
+        rowGroupRows: {type: integer, minimum: 1}
+        succeededArtifacts: {type: integer, minimum: 0}
+        failedArtifacts: {type: integer, minimum: 0}
+    DistributedArtifactRoot:
+      type: object
+      additionalProperties: false
+      required: [rootManifestObjectKey, rootManifestSha256, locatorObjectKey, locatorSha256, semanticContentSha256, factCount, semanticRowCount, payloadRowCount, locatorRecordCount]
+      properties:
+        rootManifestObjectKey: {$ref: '#/components/schemas/ObjectKey'}
+        rootManifestSha256: {$ref: '#/components/schemas/Sha256'}
+        locatorObjectKey: {$ref: '#/components/schemas/ObjectKey'}
+        locatorSha256: {$ref: '#/components/schemas/Sha256'}
+        semanticContentSha256: {$ref: '#/components/schemas/Sha256'}
+        factCount: {type: integer, minimum: 0}
+        semanticRowCount: {type: integer, minimum: 0}
+        payloadRowCount: {type: integer, minimum: 0}
+        locatorRecordCount: {type: integer, minimum: 0}
+    DistributedServingRoot:
+      type: object
+      additionalProperties: false
+      required: [servingRootObjectKey, servingRootSha256, binaryLocatorObjectKey, binaryLocatorSha256, sourceLocatorSha256, semanticContentSha256, partitionCount, rowGroupRows, locatorRecordCount]
+      properties:
+        servingRootObjectKey: {$ref: '#/components/schemas/ObjectKey'}
+        servingRootSha256: {$ref: '#/components/schemas/Sha256'}
+        binaryLocatorObjectKey: {$ref: '#/components/schemas/ObjectKey'}
+        binaryLocatorSha256: {$ref: '#/components/schemas/Sha256'}
+        sourceLocatorSha256: {$ref: '#/components/schemas/Sha256'}
+        semanticContentSha256: {$ref: '#/components/schemas/Sha256'}
+        partitionCount: {type: integer, minimum: 1, maximum: 65536}
+        rowGroupRows: {type: integer, minimum: 1}
+        locatorRecordCount: {type: integer, minimum: 0}
+    ServingCertification:
+      type: object
+      additionalProperties: false
+      required: [reportObjectKey, reportSha256, servingRootSha256, binaryLocatorSha256, referenceManifestObjectKey, referenceManifestSha256, certifiedQueryCount, hydratedRowCount]
+      properties:
+        reportObjectKey: {$ref: '#/components/schemas/ObjectKey'}
+        reportSha256: {$ref: '#/components/schemas/Sha256'}
+        servingRootSha256: {$ref: '#/components/schemas/Sha256'}
+        binaryLocatorSha256: {$ref: '#/components/schemas/Sha256'}
+        referenceManifestObjectKey: {$ref: '#/components/schemas/ObjectKey'}
+        referenceManifestSha256: {$ref: '#/components/schemas/Sha256'}
+        certifiedQueryCount: {type: integer, minimum: 1}
+        hydratedRowCount: {type: integer, minimum: 0}
+    Operation:
+      type: object
+      additionalProperties: false
+      required: [tenantId, operationId, datasetId, state, revision, targetSnapshotId, errorCode, errorArtifactUri]
+      properties:
+        tenantId: {type: string, format: uuid}
+        operationId: {type: string, format: uuid}
+        datasetId: {type: string, format: uuid}
+        state:
+          enum: [REGISTERED, SOURCE_PLANNED, MAPPING_VALIDATED, PARTITIONED, PROJECTED, IDENTIFIED, SPINE_WRITTEN, INDEXED, REASONED, CERTIFIED, PUBLISHED, FAILED, CANCELLED]
+        revision: {type: integer, minimum: 0}
+        targetSnapshotId: {type: string, format: uuid}
+        errorCode: {type: [string, 'null']}
+        errorArtifactUri: {type: [string, 'null']}
+    CancelRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedRevision]
+      properties:
+        expectedRevision: {type: integer, minimum: 0}
+    PublishRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedParentSnapshotId]
+      properties:
+        expectedParentSnapshotId: {type: [string, 'null'], format: uuid}
+    Snapshot:
+      type: object
+      additionalProperties: false
+      required: [tenantId, datasetId, snapshotId, parentSnapshotId, operationId, manifestObjectKey, manifestSha256, state]
+      properties:
+        tenantId: {type: string, format: uuid}
+        datasetId: {type: string, format: uuid}
+        snapshotId: {type: string, format: uuid}
+        parentSnapshotId: {type: [string, 'null'], format: uuid}
+        operationId: {type: string, format: uuid}
+        manifestObjectKey: {$ref: '#/components/schemas/ObjectKey'}
+        manifestSha256: {$ref: '#/components/schemas/Sha256'}
+        state: {enum: [CERTIFIED, PUBLISHED, RETIRED]}
+    CreateStorageOperationRequest:
+      type: object
+      additionalProperties: false
+      required: [kind, replicationFactor]
+      properties:
+        kind: {type: string, enum: [replicate, relocate, node-loss, backup]}
+        destinationTarget: {type: [string, 'null'], pattern: '^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$', maxLength: 63}
+        replicationFactor: {type: integer, minimum: 1, maximum: 16}
+        maxParallelism: {type: [integer, 'null'], minimum: 1, maximum: 4096}
+        maxInFlightBytes: {type: [integer, 'null'], minimum: 1}
+        resourceProfile: {type: [string, 'null'], minLength: 1, maxLength: 128}
+    CreateRestoreRequest:
+      type: object
+      additionalProperties: false
+      required: [backupId, destinationTarget]
+      properties:
+        backupId: {type: string, format: uuid}
+        destinationTarget: {type: string, pattern: '^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$', maxLength: 63}
+        restoredSnapshotId: {type: [string, 'null'], format: uuid}
+        maxParallelism: {type: [integer, 'null'], minimum: 1, maximum: 4096}
+        maxInFlightBytes: {type: [integer, 'null'], minimum: 1}
+        resourceProfile: {type: [string, 'null'], minLength: 1, maxLength: 128}
+    StorageOperationAccepted:
+      type: object
+      additionalProperties: false
+      required: [operationId, sourceSnapshotId, restoredSnapshotId, kind, taskCount, state]
+      properties:
+        operationId: {type: string, format: uuid}
+        sourceSnapshotId: {type: string, format: uuid}
+        restoredSnapshotId: {type: [string, 'null'], format: uuid}
+        kind: {type: string, enum: [replicate, relocate, node-loss, backup, restore]}
+        taskCount: {type: integer, minimum: 0}
+        state: {type: string, enum: [REGISTERED, PLANNED, RUNNING, VERIFYING, SUCCEEDED, FAILED, CANCELLED]}
+    StorageOperationStatus:
+      type: object
+      additionalProperties: false
+      required: [operationId, datasetId, sourceSnapshotId, restoredSnapshotId, kind, state, errorCode, status]
+      properties:
+        operationId: {type: string, format: uuid}
+        datasetId: {type: string, format: uuid}
+        sourceSnapshotId: {type: string, format: uuid}
+        restoredSnapshotId: {type: [string, 'null'], format: uuid}
+        kind: {type: string, enum: [replicate, relocate, node-loss, backup, restore]}
+        state: {type: string, enum: [REGISTERED, PLANNED, RUNNING, VERIFYING, SUCCEEDED, FAILED, CANCELLED]}
+        errorCode: {type: [string, 'null'], maxLength: 128}
+        status:
+          type: object
+          additionalProperties: false
+          properties:
+            observedGeneration: {type: [integer, 'null']}
+            transferJobName: {type: [string, 'null']}
+            finalizeJobName: {type: [string, 'null']}
+            recoveryCertificateObjectKey: {anyOf: [{$ref: '#/components/schemas/ObjectKey'}, {type: 'null'}]}
+            recoveryCertificateSha256: {anyOf: [{$ref: '#/components/schemas/Sha256'}, {type: 'null'}]}
+            backupManifestObjectKey: {anyOf: [{$ref: '#/components/schemas/ObjectKey'}, {type: 'null'}]}
+            backupManifestSha256: {anyOf: [{$ref: '#/components/schemas/Sha256'}, {type: 'null'}]}
+            restoreCertificateObjectKey: {anyOf: [{$ref: '#/components/schemas/ObjectKey'}, {type: 'null'}]}
+            restoreCertificateSha256: {anyOf: [{$ref: '#/components/schemas/Sha256'}, {type: 'null'}]}
+            quarantinedReplicaCount: {type: integer, minimum: 0}
+            condition: {type: [string, 'null']}
+    ObjectKey:
+      type: string
+      minLength: 1
+      maxLength: 1024
+      pattern: '^[A-Za-z0-9_][A-Za-z0-9._-]{0,254}(/[A-Za-z0-9_][A-Za-z0-9._-]{0,254})*$'
+    Sha256:
+      type: string
+      pattern: '^[0-9a-f]{64}$'
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code: {type: string}
+        message: {type: string}

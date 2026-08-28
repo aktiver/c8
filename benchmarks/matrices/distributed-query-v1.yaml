@@ -1,0 +1,15 @@
+apiVersion: test.ngkg.io/v1
+kind: DistributedQueryMatrix
+metadata:
+  name: cross-domain-conformance-v1
+spec:
+  shardCounts: [1, 3, 12]
+  graphReplicaFactors: [1, 2]
+  arrowBatchRows: [128, 4096, 65536]
+  forcedEvents: [fragment-retry, coordinator-restart, query-shard-loss, partial-flight-stream, spill, exact-reasoner-fallback]
+  compare:
+    reference: centralized-certified
+    mode: sparql-multiset
+    requireProofEquality: true
+    requireAuthorizationEquality: true
+
