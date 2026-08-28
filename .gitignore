@@ -3,3 +3,85 @@ _site/
 .jekyll-metadata
 .sass-cache/
 vendor/
+
+# Rust, Java, Python, and test outputs
+/target/
+/**/target/
+**/*.class
+/.cache/
+/.pytest_cache/
+/.mypy_cache/
+/.ruff_cache/
+**/__pycache__/
+**/*.py[cod]
+/.venv/
+/venv/
+/coverage/
+*.profraw
+*.profdata
+
+# Local release, package, and benchmark output
+/dist/
+/build/
+/out/
+/benchmarks/results/
+/qualification/local/
+/qualification/runs/
+*_CANDIDATE.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# NGKG local state and large generated data
+/.ngkg/
+/scratch/
+/spill/
+/checkpoints/
+/object-root/
+/backups/
+/restore-output/
+*.mmap
+*.prof
+
+# Rendered or machine-specific Kubernetes/Helm files
+/rendered/
+*-values.local.yaml
+*-values.private.yaml
+approved-*-values.yaml
+kubeconfig*
+*.kubeconfig
+
+# Credentials and developer-local configuration
+.env
+.env.*
+!.env.example
+tokens.json
+tenant-policy.json
+*-credentials.json
+*-cloud-config.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+
+# Terraform/OpenTofu state
+**/.terraform/
+*.tfstate
+*.tfstate.*
+
+# Editors and operating systems
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.orig
+
