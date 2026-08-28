@@ -1,0 +1,17 @@
+[package]
+name = "ngkg-grace-join"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+hex.workspace = true
+ngkg-query-executor = { path = "../ngkg-query-executor" }
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,22 @@
+[package]
+name = "ngkg-snapshot-activation"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+hex.workspace = true
+ngkg-dataset = { path = "../ngkg-dataset" }
+ngkg-offline-reasoner = { path = "../ngkg-offline-reasoner" }
+ngkg-ontology-qualifier = { path = "../ngkg-ontology-qualifier" }
+ngkg-reference = { path = "../ngkg-reference" }
+ngkg-semantic-compiler = { path = "../ngkg-semantic-compiler" }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,19 @@
+[package]
+name = "ngkg-direct-reasoner"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+hex.workspace = true
+ngkg-owl-direct = { path = "../ngkg-owl-direct" }
+ngkg-sparql-compiler = { path = "../ngkg-sparql-compiler" }
+ngkg-types = { path = "../ngkg-types" }
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

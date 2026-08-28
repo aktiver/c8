@@ -1,0 +1,21 @@
+[package]
+name = "ngkg-storage-recovery"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+blake3.workspace = true
+hex.workspace = true
+ngkg-artifact-store = { path = "../ngkg-artifact-store" }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

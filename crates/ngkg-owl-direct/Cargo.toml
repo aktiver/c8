@@ -1,0 +1,17 @@
+[package]
+name = "ngkg-owl-direct"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+hex.workspace = true
+ngkg-sparql-compiler = { path = "../ngkg-sparql-compiler" }
+ngkg-types = { path = "../ngkg-types" }
+sha2.workspace = true
+spargebra.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

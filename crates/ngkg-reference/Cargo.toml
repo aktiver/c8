@@ -1,0 +1,33 @@
+[package]
+name = "ngkg-reference"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+arrow-array.workspace = true
+arrow-schema.workspace = true
+hex.workspace = true
+ngkg-dataset = { path = "../ngkg-dataset" }
+ngkg-federation = { path = "../ngkg-federation" }
+ngkg-types = { path = "../ngkg-types" }
+ngkg-owl-direct = { path = "../ngkg-owl-direct" }
+ngkg-direct-reasoner = { path = "../ngkg-direct-reasoner" }
+ngkg-sparql-compiler = { path = "../ngkg-sparql-compiler" }
+ngkg-identity = { path = "../ngkg-identity" }
+ngkg-projection = { path = "../ngkg-projection" }
+ngkg-query-executor = { path = "../ngkg-query-executor" }
+oxigraph.workspace = true
+parquet.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+sha2.workspace = true
+spargebra.workspace = true
+thiserror.workspace = true
+url.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

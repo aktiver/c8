@@ -1,0 +1,18 @@
+[package]
+name = "ngkg-kube"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+kube.workspace = true
+k8s-openapi.workspace = true
+ngkg-types = { path = "../ngkg-types" }
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

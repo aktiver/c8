@@ -1,0 +1,18 @@
+[package]
+name = "ngkg-projection"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+arrow-array.workspace = true
+arrow-schema.workspace = true
+async-trait.workspace = true
+ngkg-source-planner = { path = "../ngkg-source-planner" }
+serde.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true
+

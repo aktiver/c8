@@ -1,0 +1,20 @@
+[package]
+name = "ngkg-hydration"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+arrow-array.workspace = true
+arrow-schema.workspace = true
+hex.workspace = true
+ngkg-locator = { path = "../ngkg-locator" }
+parquet.workspace = true
+serde.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true
