@@ -1,0 +1,32 @@
+{
+  "formatVersion": 1,
+  "phase": "40.10",
+  "status": "pass",
+  "requiredExactPartitions": 40,
+  "referenceWorkerCpu": 32.0,
+  "referenceWorkerMemoryBytes": 137438953472,
+  "reasonerHeapBudgetBytes": 34359738368,
+  "reasonerHeapBudgetPercent": 25.0,
+  "platformDirect": {
+    "maxCandidateBindings": 10000000,
+    "maxPartitionCandidates": 250000,
+    "maxExactPartitions": 4096,
+    "maxGroundedAxiomsPerCandidate": 65536,
+    "maxGroundedRdfBytesPerCandidate": 16777216,
+    "reasonerConcurrency": 8,
+    "reasonerHeapMiBPerLane": 4096,
+    "reasonerTimeoutSeconds": 300,
+    "maxCertificateBytes": 536870912,
+    "maxProofSupportIds": 1000000
+  },
+  "workloadsDirectAdmission": {
+    "maxBgps": 4096,
+    "maxTriplesPerBgp": 65536,
+    "maxClassificationCpuLanes": 32
+  },
+  "referenceWorkerRuntimeEnforcement": "40.11",
+  "onlineAdmissionRuntimeEnforcement": "40.12",
+  "runtimeWiringDeferredTo": [
+    "40.13"
+  ]
+}

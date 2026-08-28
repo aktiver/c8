@@ -1,0 +1,40 @@
+{
+  "formatVersion": 1,
+  "phase": "40.10",
+  "parentPhase": "40.9",
+  "phase40Gates": {
+    "40": "PASS",
+    "40.1": "PASS",
+    "40.2": "PASS",
+    "40.3": "PASS",
+    "40.4": "PASS",
+    "40.5": "PASS",
+    "40.6": "PASS",
+    "40.7": "PASS",
+    "40.8": "PASS",
+    "40.9": "PASS",
+    "40.10": "PASS"
+  },
+  "jsonSchemasMetaValid": 39,
+  "controlPlaneOpenApiOperations": 12,
+  "onlineDataPlaneOpenApiOperations": 15,
+  "openApiRouteParity": "PASS",
+  "structuralValidationErrors": 0,
+  "productionPlaceholderFindings": 0,
+  "editArtifactFindings": 0,
+  "parentInheritedPayloadFiles": 637,
+  "parentChangedFiles": 10,
+  "parentDeletedFiles": 0,
+  "phase40HelmCeilingValidation": "PASS",
+  "nativeQualification": {
+    "cargo": false,
+    "rustc": false,
+    "maven": false,
+    "helm": false,
+    "kubectl": false,
+    "rke2": false,
+    "javaAvailable": true,
+    "javacAvailable": true
+  },
+  "standardsClaimsEnabled": false
+}

@@ -1,0 +1,48 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.3",
+  "parentArtifactSha256": "f970190e6cf534ece9c2cacbca1591c7c4c3c696ef453d93a74ec25a23c1e45d",
+  "toolchain": {
+    "rustc": "1.97.1",
+    "cargo": "1.97.1",
+    "python": "3.12.13",
+    "rdflib": "7.6.0"
+  },
+  "nativeWorkspace": {
+    "command": "cargo test --locked --workspace --all-features",
+    "passed": 196,
+    "failed": 0
+  },
+  "w3c": {
+    "suiteCommit": "8af71fed933539d09d5f4658fb1ea7ba4c8e30b9",
+    "total": 802,
+    "executable": 695,
+    "passed": 644,
+    "failed": 51,
+    "unsupported": 107,
+    "trig": {"passed": 357, "failed": 0},
+    "queryAndResults": {"passed": 287, "failed": 51},
+    "unsupportedByReason": {"entailmentRegime": 70, "protocolOrServiceDescription": 37}
+  },
+  "staticGates": {
+    "phase39_2": "pass",
+    "phase40_13_1": "pass",
+    "phase40_13_3": "pass",
+    "sparqlFeatureMatrix": "pass",
+    "pythonHarnessTests": {"passed": 4, "failed": 0}
+  },
+  "kubernetesQualification": {
+    "staticAutoscalingContract": "pass",
+    "helmAvailable": false,
+    "kubectlAvailable": false,
+    "liveMultinodeQualified": false
+  },
+  "releaseQualified": false,
+  "releaseBlockers": [
+    "51 executable W3C SPARQL query/results failures",
+    "70 entailment-regime cases are not wired to exact online reasoning",
+    "37 protocol/service-description cases lack dedicated drivers",
+    "live multinode Kubernetes storage, joins, scheduling, autoscaling and failure tests not run"
+  ],
+  "ontologyAlignment": "absent-and-out-of-scope"
+}

@@ -1,0 +1,26 @@
+{
+  "phase": "40.13.22",
+  "status": "candidate",
+  "implemented": [
+    "content-bound standards suite inventory and case plans",
+    "stable cross-node Indexed Job partitioning",
+    "bounded NGKG, W3C, Apache Jena and HermiT driver protocol",
+    "canonical success-result and stable failure-class differential comparison",
+    "exact dense-partition completion barrier",
+    "zero-mismatch qualification certificate contract",
+    "Apache Jena 6.2.0 SPARQL syntax, TriG syntax and SELECT/ASK adapter"
+  ],
+  "observed": {
+    "parentManifestIntegrity": true,
+    "staticQualification": true,
+    "syntheticMultinodeBarrier": true,
+    "corruptEvidenceRejected": true,
+    "nativeBuild": false,
+    "pinnedW3cFullRun": false,
+    "jenaDifferentialRun": false,
+    "hermitDifferentialRun": false,
+    "liveHaKubernetes": false,
+    "zeroMismatchProductionCertificate": false
+  },
+  "complete": false
+}

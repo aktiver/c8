@@ -1,0 +1,54 @@
+{
+  "formatVersion": 1,
+  "phase": "40.10",
+  "requirements": [
+    {
+      "id": "P40-10-001",
+      "text": "Declare Direct-BGP admission ceilings in the workloads Helm chart."
+    },
+    {
+      "id": "P40-10-002",
+      "text": "Declare exact Direct reasoner ceilings in the platform Helm chart."
+    },
+    {
+      "id": "P40-10-003",
+      "text": "Schema-constrain every Phase 40 Helm ceiling with closed objects and bounded numeric ranges."
+    },
+    {
+      "id": "P40-10-004",
+      "text": "Match Helm declaration defaults to the temporary 40.7/40.8/40.9 runtime hard bounds."
+    },
+    {
+      "id": "P40-10-005",
+      "text": "Declare candidate-space and partition ceilings that guarantee bounded exhaustive partition planning."
+    },
+    {
+      "id": "P40-10-006",
+      "text": "Declare bounded CPU-lane and per-lane JVM heap ceilings for exact reasoning."
+    },
+    {
+      "id": "P40-10-007",
+      "text": "Prove default exact-reasoner lane/heap consumption fits inside the reference-worker memory budget with headroom."
+    },
+    {
+      "id": "P40-10-008",
+      "text": "Declare certificate byte and proof-support ceilings."
+    },
+    {
+      "id": "P40-10-009",
+      "text": "Keep runtime ceiling consumption explicitly deferred to phases 40.11 through 40.13."
+    },
+    {
+      "id": "P40-10-010",
+      "text": "Maintain a machine-readable ceiling registry mapping Helm paths to current runtime sources and wiring milestones."
+    },
+    {
+      "id": "P40-10-011",
+      "text": "Preserve every Phase 40.9 parent payload file unless explicitly checksum-accounted."
+    },
+    {
+      "id": "P40-10-012",
+      "text": "Keep OWL Direct standards claims disabled until later qualification gates pass."
+    }
+  ]
+}

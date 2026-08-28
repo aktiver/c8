@@ -1,0 +1,10 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13",
+  "ceilingCount": 10,
+  "bundleSha256": "5a6c84f87b725f3598a4a5fb3ba496aba0557b0f97495614a5b3f897d470de50",
+  "operatorPropagation": true,
+  "distributedReasonerPropagation": true,
+  "distributedNonReasonerPropagation": false,
+  "workerIndependentHashVerification": true
+}

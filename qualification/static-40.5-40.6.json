@@ -1,0 +1,17 @@
+{
+  "formatVersion": 1,
+  "records": [
+    {
+      "phase": "40.5",
+      "path": "scripts/verify_phase40_5_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.5 static verification passed; checksum-bound OWLAPI import closure and merged OWL 2 DL profile evidence are coherent"
+    },
+    {
+      "phase": "40.6",
+      "path": "scripts/verify_phase40_6_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.6 static verification passed; global OWL 2 DL consistency is checksum-bound and fail-closed"
+    }
+  ]
+}

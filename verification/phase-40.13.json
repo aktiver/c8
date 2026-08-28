@@ -1,0 +1,20 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13",
+  "status": "implementation-candidate-not-production-qualified",
+  "operatorReadsImmutablePhase40ConfigMap": true,
+  "distributedOperatorReadsImmutablePhase40ConfigMap": true,
+  "sharedOperatorCeilingContractImplemented": true,
+  "allTenExactCeilingsPropagated": true,
+  "referenceJobsReceiveCeilingEnvironment": true,
+  "distributedReasonerJobsReceiveCeilingEnvironment": true,
+  "nonReasonerDistributedJobsRemainUncoupled": true,
+  "ceilingBundleSha256Propagated": true,
+  "workSpecHashBindsCeilings": true,
+  "existingJobPolicyDriftRejected": true,
+  "referenceWorkerVerifiesOperatorBundleSha256": true,
+  "nativeCargoQualificationExecuted": false,
+  "nativeHelmQualificationExecuted": false,
+  "liveRke2QualificationExecuted": false,
+  "standardsClaimsEnabled": false
+}

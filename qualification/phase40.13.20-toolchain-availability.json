@@ -1,0 +1,12 @@
+{
+  "phase": "40.13.20",
+  "cargo": false,
+  "rustc": false,
+  "rustfmt": false,
+  "helm": false,
+  "kubectl": false,
+  "jsonschemaPythonModule": false,
+  "python3": true,
+  "jq": true,
+  "liveKubernetesCluster": false
+}

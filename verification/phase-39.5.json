@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "phase": "39.5",
+  "status": "stabilization-implementation-candidate-not-production-qualified",
+  "purpose": "cumulative-gate-governance",
+  "staticContractGate": "scripts/verify_phase39_5_static.py",
+  "qualificationGate": "scripts/qualify_phase39_5.sh",
+  "cumulativeStaticRange": "15-39.5",
+  "historicalLiveGateRange": "17-35",
+  "historicalLiveGatesAreExplicit": true,
+  "standardsClaimsEnabled": false
+}

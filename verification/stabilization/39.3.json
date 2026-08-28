@@ -1,0 +1,22 @@
+{
+  "changedParentFiles": [
+    {
+      "currentSha256": "a71a07d3658e261b625444ff1fb7c2a6db584553e99d8403f473c4412aaf2ca5",
+      "parentSha256": "3717450e721e0cfc739623bc9933755483da6c946fdd72b27a9501af5405d1e4",
+      "path": "acceptance/phase-gates.yaml"
+    },
+    {
+      "currentSha256": "8e4c783a01ad2a836ebaeaf462af8f25e6718a36053ad94d3f662c71b375479d",
+      "parentSha256": "374e0ae9a34a4f90f9b21d3ef841ec8cf73e47873a52e010ed590a78f0236998",
+      "path": "crates/ngkg-reference/src/query.rs"
+    }
+  ],
+  "currentLabel": "39.3",
+  "deletedFiles": [],
+  "embeddedParentManifest": "verification/stabilization/39.2-files.sha256",
+  "formatVersion": 1,
+  "parentArchiveSha256": "11c2cb02f71ef441b2fa86daf10cebd96749bb5c8024e7d8d9dea486f17d33c4",
+  "parentFileManifestSha256": "21392918e620694c83adbafe25d19c833114feb7a4722d67d8727a97cd70b33f",
+  "parentLabel": "39.2",
+  "parentPayloadFileCount": 347
+}

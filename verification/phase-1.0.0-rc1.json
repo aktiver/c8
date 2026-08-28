@@ -1,0 +1,29 @@
+{
+  "phase": "1.0.0-RC1",
+  "status": "source-implemented-publication-blocked",
+  "implemented": [
+    "1.0.0-rc.1 Cargo OpenAPI Helm and qualification version freeze",
+    "complete workspace Cargo.lock coverage",
+    "automatic public and operational compatibility inventory",
+    "live-only same-release prerequisite ledger",
+    "signed artifact and supply-chain certification contracts",
+    "two-builder deterministic equivalence gate",
+    "exact Kubernetes support declaration",
+    "metadata-normalized deterministic source archiver",
+    "final acceptance plan and operator guide",
+    "fail-closed RC1 publication certificate"
+  ],
+  "observed": {
+    "parentManifestIntegrity": true,
+    "staticQualification": true,
+    "syntheticPublicationRejected": true,
+    "reproducibilityMismatchRejected": true,
+    "deterministicArchiveHarness": true,
+    "nativeRustBuild": false,
+    "livePrerequisiteLedger": false,
+    "signedReleaseArtifacts": false,
+    "fiveProviderQualification": false,
+    "publishableRc1Certificate": false
+  },
+  "complete": false
+}

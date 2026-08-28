@@ -1,0 +1,28 @@
+[package]
+name = "ngkg-distributed-worker"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+blake3.workspace = true
+hex.workspace = true
+ngkg-artifact-store = { path = "../../crates/ngkg-artifact-store" }
+ngkg-catalog = { path = "../../crates/ngkg-catalog" }
+ngkg-distributed-build = { path = "../../crates/ngkg-distributed-build" }
+ngkg-distributed-artifacts = { path = "../../crates/ngkg-distributed-artifacts" }
+ngkg-hydration = { path = "../../crates/ngkg-hydration" }
+ngkg-locator = { path = "../../crates/ngkg-locator" }
+ngkg-reference = { path = "../../crates/ngkg-reference" }
+ngkg-semantic-compiler = { path = "../../crates/ngkg-semantic-compiler" }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "phase": "40.4",
+  "parent": "40.3",
+  "purpose": "direct-certificate-runtime-contract-and-json-schema",
+  "status": "phase-40.4-implementation-candidate-not-production-qualified",
+  "staticContractGate": "scripts/verify_phase40_4_static.py",
+  "qualificationGate": "scripts/qualify_phase40_4.sh",
+  "directCertificateRuntimeContractImplemented": true,
+  "schedulingIndependentResultDigestImplemented": true,
+  "exhaustiveCompletenessEvidenceContractImplemented": true,
+  "reasonerBoundaryCertificateVerificationImplemented": true,
+  "proofSupportVocabularyImplemented": true,
+  "proofSupportRuntimeWiringImplemented": false,
+  "directBgpLegalityImplemented": false,
+  "exactDirectReasonerFallbackImplemented": false,
+  "owlDirectArbitraryBgpCompleteness": false,
+  "standardsClaimsEnabled": false
+}

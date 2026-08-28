@@ -1,0 +1,38 @@
+{
+  "combinedOwl2DlProfileEvidenceImplemented": true,
+  "consistencyQualificationHardened": false,
+  "directBgpLegalityImplemented": false,
+  "exactDirectReasonerFallbackImplemented": false,
+  "formatVersion": 1,
+  "independentRustQualificationVerificationImplemented": true,
+  "ontologyHeaderPreflightHardened": true,
+  "owlDirectArbitraryBgpCompleteness": false,
+  "owlapiImportClosureEvidenceImplemented": true,
+  "parent": "40.4",
+  "phase": "40.5",
+  "profileQualificationShaBindingImplemented": true,
+  "purpose": "combined-owl2dl-profile-import-qualification-hardening",
+  "qualificationGate": "scripts/qualify_phase40_5.sh",
+  "standardsClaimsEnabled": false,
+  "staticContractGate": "scripts/verify_phase40_5_static.py",
+  "status": "phase-40.5-implementation-candidate-not-production-qualified",
+  "strictlySupersededAssertions": [
+    {
+      "assertion": "reasoner report formatVersion 3",
+      "phase": "40.2",
+      "replacement": "reasoner report formatVersion 4 retaining datatypePolicySha256 and adding owlProfileQualificationSha256"
+    },
+    {
+      "assertion": "historical 40.4 gate re-hashes changed parent files against every descendant tree",
+      "phase": "40.4",
+      "replacement": "historical 40.4 gate validates immutable 40.3\u219240.4 evidence; Phase 40.5 independently proves the current tree descends from the exact Phase 40.4 ZIP"
+    }
+  ],
+  "supersessions": [
+    {
+      "assertion": "reasoner report formatVersion 4",
+      "replacement": "Phase 40.6 reasoner report formatVersion 5 retains prior bindings and adds owlConsistencyQualificationSha256"
+    }
+  ],
+  "versionIriImportAliasResolutionImplemented": true
+}

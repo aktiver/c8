@@ -1,0 +1,69 @@
+{
+  "phase": "15",
+  "generatedAt": "2026-08-16T18:17:47-04:00",
+  "checks": {
+    "structural": {
+      "status": "passed",
+      "command": ["python3", "scripts/structural_validate.py", "--root", "."],
+      "summary": "All 188 checked-in files were inventoried; required Phase 15 artifacts were present; JSON, non-template YAML and TOML parsed; and unresolved forbidden tokens were absent."
+    },
+    "phase15StaticContracts": {
+      "status": "passed",
+      "command": ["python3", "scripts/verify_phase15_static.py"],
+      "summary": "Workspace membership, syntax-safe parsing calls, stable partition/reducer contracts, exact-key object access, Indexed Job settings, RLS tables, API status and topology matrix were present."
+    },
+    "pythonAndShellSyntax": {
+      "status": "passed",
+      "commands": [
+        "python3 -m py_compile scripts/*.py",
+        "bash -n scripts/*.sh (individually)"
+      ]
+    },
+    "gitWhitespace": {
+      "status": "passed",
+      "command": ["git", "diff", "--check"],
+      "exitCode": 0
+    },
+    "cargoFormatClippyTest": {
+      "status": "blocked",
+      "reason": "cargo, rustc and rustfmt are not installed, and the repository does not yet contain the dependency-resolved Cargo.lock required by the digest-built images.",
+      "requiredCommands": [
+        "cargo generate-lockfile",
+        "cargo fmt --all --check",
+        "cargo clippy --locked --workspace --all-targets --all-features -- -D warnings",
+        "cargo test --locked --workspace --all-features"
+      ]
+    },
+    "localOneVersusNEquivalence": {
+      "status": "blocked",
+      "reason": "The pinned Rust toolchain and reviewed Cargo.lock are unavailable in this workspace.",
+      "requiredCommand": "scripts/run_distributed_reference_slice.sh"
+    },
+    "postgresObjectStoreAndRls": {
+      "status": "blocked",
+      "reason": "PostgreSQL, psql, S3-compatible storage and container tooling are unavailable. Migration 3, forced RLS, catalog compare-and-swap, immutable upload ordering and no-listing policy were not simulated."
+    },
+    "helmAndKubernetes": {
+      "status": "blocked",
+      "reason": "Helm, kubectl, Kueue and a Kubernetes/RKE2 cluster are unavailable. Chart rendering, Indexed Jobs, responsibility placement, operator recovery and API smoke qualification did not run.",
+      "requiredCommands": [
+        "helm lint and template all charts with digest-pinned approved values",
+        "kubectl apply --dry-run=server for rendered resources",
+        "scripts/qualify_phase15.sh"
+      ]
+    },
+    "rke2AutoscalingAndFaultMatrix": {
+      "status": "blocked",
+      "reason": "No Rancher/RKE2 capacity provider is available. Projection/reducer scale-up, scale-from-zero, completion reordering, duplicate pod, operator restart, node loss, retry and scale-down evidence requires the supported qualification cluster."
+    },
+    "hermitAndCertifiedSnapshotEquivalence": {
+      "status": "blocked",
+      "reason": "Maven, the built HermiT adapter and the external services are unavailable. One-node versus N-node snapshot artifact and certified SPARQL multiset equality were not executed."
+    },
+    "endToEnd": {
+      "status": "blocked",
+      "reason": "The complete REST-to-catalog-to-Indexed-Jobs-to-object-store-to-HermiT-to-certified-snapshot path depends on the blocked toolchain and infrastructure gates. No generated success result was substituted."
+    }
+  },
+  "gateStatus": "blocked"
+}

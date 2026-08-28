@@ -1,0 +1,89 @@
+{
+  "formatVersion": 1,
+  "records": [
+    {
+      "phase": "31",
+      "path": "scripts/verify_phase31_static.py",
+      "exitCode": 0,
+      "output": "Phase 31 static contract verification passed"
+    },
+    {
+      "phase": "32",
+      "path": "scripts/verify_phase32_static.py",
+      "exitCode": 0,
+      "output": "Phase 32 static contract verification passed"
+    },
+    {
+      "phase": "33",
+      "path": "scripts/verify_phase33_static.py",
+      "exitCode": 0,
+      "output": "Phase 33 static contract verification passed"
+    },
+    {
+      "phase": "34",
+      "path": "scripts/verify_phase34_static.py",
+      "exitCode": 0,
+      "output": "Phase 34 static contract verification passed"
+    },
+    {
+      "phase": "35",
+      "path": "scripts/verify_phase35_static.py",
+      "exitCode": 0,
+      "output": "Phase 35 static contract verification passed"
+    },
+    {
+      "phase": "36",
+      "path": "scripts/verify_phase36_static.py",
+      "exitCode": 0,
+      "output": "Phase 36 static contract verification passed; live build/deploy gates remain mandatory"
+    },
+    {
+      "phase": "37",
+      "path": "scripts/verify_phase37_static.py",
+      "exitCode": 0,
+      "output": "Phase 37 static contract verification passed; runtime conformance gates remain mandatory"
+    },
+    {
+      "phase": "38",
+      "path": "scripts/verify_phase38_static.py",
+      "exitCode": 0,
+      "output": "Phase 38 static contract verification passed; Cargo/W3C/live RKE2 gates remain mandatory"
+    },
+    {
+      "phase": "39",
+      "path": "scripts/verify_phase39_static.py",
+      "exitCode": 0,
+      "output": "Phase 39 static contract verification passed; compiler/W3C/live RKE2 execution gates remain mandatory"
+    },
+    {
+      "phase": "39.1",
+      "path": "scripts/verify_phase39_1_static.py",
+      "exitCode": 0,
+      "output": "Phase 39.1 static contract verification passed; Cargo.lock still requires the pinned Cargo resolver"
+    },
+    {
+      "phase": "39.2",
+      "path": "scripts/verify_phase39_2_static.py",
+      "exitCode": 0,
+      "output": "Phase 39.2 static contract verification passed; actual W3C execution remains a native qualification gate"
+    },
+    {
+      "phase": "39.3",
+      "path": "scripts/verify_phase39_3_static.py",
+      "exitCode": 0,
+      "output": "Phase 39.3 static contract verification passed; Rust regression execution remains mandatory"
+    },
+    {
+      "phase": "39.4",
+      "path": "scripts/verify_phase39_4_static.py",
+      "exitCode": 0,
+      "output": "Phase 39.4 static contract verification passed; ad-hoc queries now have a bounded scalar exact-RDF path"
+    },
+    {
+      "phase": "39.5",
+      "path": "scripts/verify_phase39_5_static.py",
+      "exitCode": 0,
+      "output": "Phase 39.5 static contract verification passed; cumulative registry is complete through the stabilization phases"
+    }
+  ]
+}

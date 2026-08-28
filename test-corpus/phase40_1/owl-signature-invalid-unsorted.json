@@ -1,0 +1,40 @@
+{
+  "formatVersion": 1,
+  "datasetId": "4d2e1a82-c2bc-536a-a809-fda7643ef1f7",
+  "snapshotId": "91054ecb-2f68-5a63-b31a-137333c64a7c",
+  "aggregateInputSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "ontologyDocuments": [
+    {
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "ontologyIris": [
+        "https://example.test/ontology"
+      ]
+    },
+    {
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "ontologyIris": []
+    }
+  ],
+  "imports": [
+    "https://example.test/imported"
+  ],
+  "classes": [
+    "https://example.test/B",
+    "https://example.test/A"
+  ],
+  "objectProperties": [
+    "https://example.test/connectedTo"
+  ],
+  "dataProperties": [
+    "https://example.test/value"
+  ],
+  "annotationProperties": [
+    "http://www.w3.org/2000/01/rdf-schema#label"
+  ],
+  "namedIndividuals": [
+    "https://example.test/x"
+  ],
+  "datatypes": [
+    "http://www.w3.org/2001/XMLSchema#string"
+  ]
+}

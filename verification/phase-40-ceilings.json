@@ -1,0 +1,229 @@
+{
+  "formatVersion": 2,
+  "hpcMethodsPreserved": [
+    "Arrow IPC streaming",
+    "Parquet columnar storage",
+    "mmap locator index",
+    "NVMe bounded spooling",
+    "Grace hash joins",
+    "bounded Tokio concurrency",
+    "Kubernetes multi-pod partitioning",
+    "HPA/Kueue/RKE2 integration"
+  ],
+  "inheritedEnforced": [
+    {
+      "helmPath": "onlineServing.maxQueryResultRows",
+      "id": "queryResultRows",
+      "runtimeEnv": "NGKG_MAX_QUERY_RESULT_ROWS",
+      "value": "1000000"
+    },
+    {
+      "helmPath": "onlineServing.maxQueryGraphTriples",
+      "id": "queryGraphTriples",
+      "runtimeEnv": "NGKG_MAX_QUERY_GRAPH_TRIPLES",
+      "value": "1000000"
+    },
+    {
+      "helmPath": "onlineServing.maxQueryGraphBlankNodes",
+      "id": "queryGraphBlankNodes",
+      "runtimeEnv": "NGKG_MAX_QUERY_GRAPH_BLANK_NODES",
+      "value": "100000"
+    },
+    {
+      "helmPath": "onlineServing.queryTimeoutSeconds",
+      "id": "queryTimeoutSeconds",
+      "runtimeEnv": "NGKG_QUERY_TIMEOUT_SECONDS",
+      "value": "120"
+    },
+    {
+      "helmPath": "onlineServing.fragmentExchangeConcurrency",
+      "id": "fragmentExchangeConcurrency",
+      "runtimeEnv": "NGKG_FRAGMENT_EXCHANGE_CONCURRENCY",
+      "value": "16"
+    },
+    {
+      "helmPath": "onlineServing.shufflePartitions",
+      "id": "shufflePartitions",
+      "runtimeEnv": "NGKG_SHUFFLE_PARTITIONS",
+      "value": "64"
+    },
+    {
+      "helmPath": "onlineServing.shuffleExchangeConcurrency",
+      "id": "shuffleExchangeConcurrency",
+      "runtimeEnv": "NGKG_SHUFFLE_EXCHANGE_CONCURRENCY",
+      "value": "16"
+    },
+    {
+      "helmPath": "onlineServing.hydrationWorkerThreads",
+      "id": "hydrationWorkerThreads",
+      "runtimeEnv": "NGKG_HYDRATION_WORKER_THREADS",
+      "value": "6"
+    },
+    {
+      "helmPath": "hpcRuntime.nodeSaturationTargetPercent",
+      "id": "nodeSaturationTargetPercent",
+      "status": "configured-runtime-helper-unwired",
+      "value": 80
+    },
+    {
+      "helmPath": "hpcNodeGroups.reasoning_num_of_nodes",
+      "id": "reasoningNodeBaseline",
+      "status": "configured",
+      "value": 3
+    },
+    {
+      "helmPath": "autoscaling.reasoning.maxNodes",
+      "id": "reasoningAutoscaleMax",
+      "status": "configured-operator-owned",
+      "value": 12
+    }
+  ],
+  "phase": "40.13",
+  "plannedPhase40Unwired": [],
+  "phase40HelmDeclared": [
+    {
+      "id": "directBgpMaxBgps",
+      "helmChart": "ngkg-workloads",
+      "helmPath": "phase40.directAdmission.maxBgps",
+      "value": 4096,
+      "runtimeSource": "services/online-serving/src/phase40_limits.rs:TrustedPhase40AdmissionCeilings",
+      "status": "online-serving-enforced-static-qualified",
+      "runtimeEnv": "NGKG_PHASE40_DIRECT_ADMISSION_MAX_BGPS"
+    },
+    {
+      "id": "directBgpMaxTriplesPerBgp",
+      "helmChart": "ngkg-workloads",
+      "helmPath": "phase40.directAdmission.maxTriplesPerBgp",
+      "value": 65536,
+      "runtimeSource": "services/online-serving/src/phase40_limits.rs:TrustedPhase40AdmissionCeilings",
+      "status": "online-serving-enforced-static-qualified",
+      "runtimeEnv": "NGKG_PHASE40_DIRECT_ADMISSION_MAX_TRIPLES_PER_BGP"
+    },
+    {
+      "id": "directBgpClassificationCpuLanes",
+      "helmChart": "ngkg-workloads",
+      "helmPath": "phase40.directAdmission.maxClassificationCpuLanes",
+      "value": 32,
+      "runtimeSource": "services/online-serving/src/phase40_limits.rs:TrustedPhase40AdmissionCeilings",
+      "status": "online-serving-enforced-static-qualified",
+      "runtimeEnv": "NGKG_PHASE40_DIRECT_ADMISSION_MAX_CLASSIFICATION_CPU_LANES"
+    },
+    {
+      "id": "directBgpCandidateBindings",
+      "helmChart": "ngkg-platform",
+      "helmPath": "phase40.direct.maxCandidateBindings",
+      "value": 10000000,
+      "runtimeSource": "services/reference-worker/src/phase40_limits.rs:TrustedPhase40DirectCeilings",
+      "status": "reference-worker-enforced-operator-propagated-static-qualified",
+      "runtimeEnv": "NGKG_PHASE40_DIRECT_MAX_CANDIDATE_BINDINGS"
+    },
+    {
+      "id": "directBgpPartitionCandidates",
+      "helmChart": "ngkg-platform",
+      "helmPath": "phase40.direct.maxPartitionCandidates",
+      "value": 250000,
+      "runtimeSource": "services/reference-worker/src/phase40_limits.rs:TrustedPhase40DirectCeilings",
+      "status": "reference-worker-enforced-operator-propagated-static-qualified",
+      "runtimeEnv": "NGKG_PHASE40_DIRECT_MAX_PARTITION_CANDIDATES"
+    },
+    {
+      "id": "directExactPartitions",
+      "helmChart": "ngkg-platform",
+      "helmPath": "phase40.direct.maxExactPartitions",
+      "value": 4096,
+      "runtimeSource": "services/reference-worker/src/phase40_limits.rs:TrustedPhase40DirectCeilings",
+      "status": "reference-worker-enforced-operator-propagated-static-qualified",
+      "runtimeEnv": "NGKG_PHASE40_DIRECT_MAX_EXACT_PARTITIONS"
+    },
+    {
+      "id": "directBgpGroundedAxioms",
+      "helmChart": "ngkg-platform",
+      "helmPath": "phase40.direct.maxGroundedAxiomsPerCandidate",
+      "value": 65536,
+      "runtimeSource": "services/reference-worker/src/phase40_limits.rs:TrustedPhase40DirectCeilings",
+      "status": "reference-worker-enforced-operator-propagated-static-qualified",
+      "runtimeEnv": "NGKG_PHASE40_DIRECT_MAX_GROUNDED_AXIOMS_PER_CANDIDATE"
+    },
+    {
+      "id": "directBgpGroundedRdfBytes",
+      "helmChart": "ngkg-platform",
+      "helmPath": "phase40.direct.maxGroundedRdfBytesPerCandidate",
+      "value": 16777216,
+      "runtimeSource": "services/reference-worker/src/phase40_limits.rs:TrustedPhase40DirectCeilings",
+      "status": "reference-worker-enforced-operator-propagated-static-qualified",
+      "runtimeEnv": "NGKG_PHASE40_DIRECT_MAX_GROUNDED_RDF_BYTES_PER_CANDIDATE"
+    },
+    {
+      "id": "directReasonerConcurrency",
+      "helmChart": "ngkg-platform",
+      "helmPath": "phase40.direct.reasonerConcurrency",
+      "value": 8,
+      "runtimeSource": "services/reference-worker/src/phase40_limits.rs:TrustedPhase40DirectCeilings",
+      "status": "reference-worker-enforced-operator-propagated-static-qualified",
+      "runtimeEnv": "NGKG_PHASE40_DIRECT_REASONER_CONCURRENCY"
+    },
+    {
+      "id": "directReasonerHeapMiBPerLane",
+      "helmChart": "ngkg-platform",
+      "helmPath": "phase40.direct.reasonerHeapMiBPerLane",
+      "value": 4096,
+      "runtimeSource": "services/reference-worker/src/phase40_limits.rs:TrustedPhase40DirectCeilings",
+      "status": "reference-worker-enforced-operator-propagated-static-qualified",
+      "runtimeEnv": "NGKG_PHASE40_DIRECT_REASONER_HEAP_MIB_PER_LANE"
+    },
+    {
+      "id": "directReasonerTimeoutSeconds",
+      "helmChart": "ngkg-platform",
+      "helmPath": "phase40.direct.reasonerTimeoutSeconds",
+      "value": 300,
+      "runtimeSource": "services/reference-worker/src/phase40_limits.rs:TrustedPhase40DirectCeilings",
+      "status": "reference-worker-enforced-operator-propagated-static-qualified",
+      "runtimeEnv": "NGKG_PHASE40_DIRECT_REASONER_TIMEOUT_SECONDS"
+    },
+    {
+      "id": "directCertificateBytes",
+      "helmChart": "ngkg-platform",
+      "helmPath": "phase40.direct.maxCertificateBytes",
+      "value": 536870912,
+      "runtimeSource": "services/reference-worker/src/phase40_limits.rs:TrustedPhase40DirectCeilings",
+      "status": "reference-worker-enforced-operator-propagated-static-qualified",
+      "runtimeEnv": "NGKG_PHASE40_DIRECT_MAX_CERTIFICATE_BYTES"
+    },
+    {
+      "id": "directProofSupportIds",
+      "helmChart": "ngkg-platform",
+      "helmPath": "phase40.direct.maxProofSupportIds",
+      "value": 1000000,
+      "runtimeSource": "services/reference-worker/src/phase40_limits.rs:TrustedPhase40DirectCeilings",
+      "status": "reference-worker-enforced-operator-propagated-static-qualified",
+      "runtimeEnv": "NGKG_PHASE40_DIRECT_MAX_PROOF_SUPPORT_IDS"
+    }
+  ],
+  "referenceWorkerEnforcement": {
+    "phase": "40.11",
+    "configMapTemplate": "charts/ngkg-platform/templates/phase40-reference-ceilings.yaml",
+    "runtimeConsumer": "services/reference-worker/src/phase40_limits.rs",
+    "operatorPropagationDeferredTo": null,
+    "operatorPropagationCompletedIn": "40.13"
+  },
+  "onlineWorkerEnforcement": {
+    "phase": "40.12",
+    "configMapTemplate": "charts/ngkg-workloads/templates/phase40-online-ceilings.yaml",
+    "runtimeConsumer": "services/online-serving/src/phase40_limits.rs",
+    "queryClassifierConsumer": "services/online-serving/src/main.rs:validate_direct_bgps",
+    "distributedFragmentRole": "services/online-serving role=fragment validates the same immutable bundle at process startup",
+    "offlineDistributedBuildWorkerApplicability": "not-applicable-to-Direct-BGP-admission",
+    "operatorPropagationDeferredTo": "40.13"
+  },
+  "operatorPropagation": {
+    "phase": "40.13",
+    "sourceConfigMap": "charts/ngkg-platform/templates/phase40-reference-ceilings.yaml",
+    "sharedRuntimeContract": "crates/ngkg-operator-core/src/lib.rs:Phase40DirectCeilings",
+    "standardOperator": "services/operator/src/main.rs",
+    "distributedOperator": "services/distributed-operator/src/main.rs",
+    "jobAnnotation": "ngkg.io/phase40-direct-ceilings-sha256",
+    "jobEnvironmentHash": "NGKG_PHASE40_DIRECT_CEILINGS_SHA256",
+    "workSpecHashIncludesCeilings": true,
+    "reasonerStageOnlyForDistributedOperator": true
+  }
+}

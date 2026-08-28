@@ -1,0 +1,24 @@
+{
+  "formatVersion": 1,
+  "phase": "40.6",
+  "parent": "40.5",
+  "purpose": "global-owl2dl-consistency-qualification-hardening",
+  "status": "phase-40.6-implementation-candidate-not-production-qualified",
+  "staticContractGate": "scripts/verify_phase40_6_static.py",
+  "qualificationGate": "scripts/qualify_phase40_6.sh",
+  "globalMergedOntologyConsistencyEvidenceImplemented": true,
+  "consistencyQualificationShaBindingImplemented": true,
+  "independentRustConsistencyVerificationImplemented": true,
+  "inconsistentSnapshotPublicationRejected": true,
+  "perGraphConsistencySubstitutionProhibited": true,
+  "directBgpLegalityImplemented": false,
+  "exactDirectReasonerFallbackImplemented": false,
+  "owlDirectArbitraryBgpCompleteness": false,
+  "standardsClaimsEnabled": false,
+  "supersessions": [
+    {
+      "assertion": "reasoner request formatVersion 3 and report formatVersion 4",
+      "replacement": "reasoner request formatVersion 4 and report formatVersion 5 retaining prior bindings and adding owlConsistencyQualificationSha256"
+    }
+  ]
+}

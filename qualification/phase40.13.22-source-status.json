@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.22",
+  "status": "source-implemented",
+  "localExecutableBarrier": "passed",
+  "inheritedW3cReports": {
+    "trig": "qualification/w3c-phase40.13.3-trig.json",
+    "sparqlQueryResults": "qualification/w3c-phase40.13.5-query-results.json",
+    "treatedAsCompletePhase40_13_22Evidence": false
+  },
+  "externalQualification": {
+    "pinnedW3cCheckout": "not-run",
+    "apacheJena6_2_0": "not-built-or-run",
+    "hermit1_4_5_519": "not-built-or-run",
+    "haKubernetes": "not-run",
+    "certificate": null
+  },
+  "productionClaim": false
+}

@@ -1,0 +1,39 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.8",
+  "parent": "40.13.7",
+  "status": "distributed-algebra-source-candidate",
+  "implemented": {
+    "completeTypedAlgebraDag": true,
+    "deterministicPartitionWaves": true,
+    "nativeBagUnion": true,
+    "nativeExpressionFreeOptional": true,
+    "nativeMinus": true,
+    "nativeDistinctProjectionSlice": true,
+    "scalarOracleAggregateOrderSubqueryLanes": true,
+    "completePartitionBarrier": true,
+    "exactEntailmentEvidenceBinding": true,
+    "algebraBacklogAndSpillHpaSource": true,
+    "ontologyAlignment": false,
+    "rawDataMapping": false
+  },
+  "passedHere": {
+    "parentManifest": true,
+    "cumulativeStaticThrough40138": true,
+    "openapiParity": true,
+    "manifestAndSchemaParsing": true,
+    "cargoLockDependencyClosure": true
+  },
+  "unqualified": {
+    "rustNativeBuildAndTests": "cargo and rustc absent",
+    "mavenBuildAndTests": "maven absent",
+    "helmLintAndRender": "helm absent",
+    "operatorDifferentialExecution": "worker RPC and cluster qualification required",
+    "liveMultinodeAutoscaling": "kubectl and cluster absent"
+  },
+  "claimsEnabled": {
+    "completeDistributedSparql": false,
+    "fullEntailment": false,
+    "production": false
+  }
+}

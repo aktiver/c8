@@ -1,0 +1,54 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13",
+  "requirements": [
+    {
+      "id": "P40-13-001",
+      "text": "Both operator Deployments consume the immutable Phase 40 exact ceiling ConfigMap."
+    },
+    {
+      "id": "P40-13-002",
+      "text": "Both operators use one shared Rust ceiling contract and deterministic SHA algorithm."
+    },
+    {
+      "id": "P40-13-003",
+      "text": "All ten Phase 40 exact ceilings are required and cross-field validated at operator startup."
+    },
+    {
+      "id": "P40-13-004",
+      "text": "The standard operator injects all ten exact ceilings into generated reference-worker Jobs."
+    },
+    {
+      "id": "P40-13-005",
+      "text": "The distributed operator injects all ten exact ceilings only into Stage::Reasoner Jobs."
+    },
+    {
+      "id": "P40-13-006",
+      "text": "Non-reasoner distributed Jobs remain free of exact-reasoner ceiling environment variables."
+    },
+    {
+      "id": "P40-13-007",
+      "text": "Generated reasoner Jobs and Pods carry the Phase 40 ceiling-bundle SHA annotation."
+    },
+    {
+      "id": "P40-13-008",
+      "text": "Generated reasoner Jobs receive NGKG_PHASE40_DIRECT_CEILINGS_SHA256."
+    },
+    {
+      "id": "P40-13-009",
+      "text": "Work-spec SHA identity includes the exact Phase 40 ceiling bundle."
+    },
+    {
+      "id": "P40-13-010",
+      "text": "Reconciliation rejects pre-existing Jobs whose Phase 40 ceiling hash differs."
+    },
+    {
+      "id": "P40-13-011",
+      "text": "Reference-worker recomputes and verifies the operator-provided ceiling-bundle SHA before work."
+    },
+    {
+      "id": "P40-13-012",
+      "text": "Phase 40.12 online admission and Phase 40.11 worker enforcement remain unchanged."
+    }
+  ]
+}

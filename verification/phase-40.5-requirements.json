@@ -1,0 +1,34 @@
+{
+  "formatVersion": 1,
+  "phase": "40.5",
+  "requirements": [
+    {
+      "id": "P40-5-001",
+      "text": "Require exactly one ontology header and bind optional version IRI/import declarations to that header."
+    },
+    {
+      "id": "P40-5-002",
+      "text": "Resolve every owl:imports IRI only to one checksum-bound local ontology or version-IRI alias before reasoner invocation."
+    },
+    {
+      "id": "P40-5-003",
+      "text": "Emit deterministic evidence of the ontology/version identities and import edges OWLAPI actually loaded."
+    },
+    {
+      "id": "P40-5-004",
+      "text": "Run OWL2DLProfile over the complete merged ontology and record bounded profile evidence in the qualification artifact."
+    },
+    {
+      "id": "P40-5-005",
+      "text": "Bind the reasoner report and immutable snapshot to the exact profile/import qualification SHA-256 and verify it independently in Rust."
+    },
+    {
+      "id": "P40-5-006",
+      "text": "Fail closed on missing, mismatched, incomplete, unresolved, duplicate, or profile-invalid qualification evidence."
+    },
+    {
+      "id": "P40-5-007",
+      "text": "Provide strict schema, fixtures, Java/Rust regression tests, documentation, inheritance evidence and cumulative gates without overclaiming Phase 40.6+."
+    }
+  ]
+}

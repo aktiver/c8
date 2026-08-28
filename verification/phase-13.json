@@ -1,0 +1,52 @@
+{
+  "phase": "13",
+  "generatedAt": "2026-08-16T00:00:00-05:00",
+  "checks": {
+    "structural": {
+      "status": "passed",
+      "command": ["python3", "scripts/structural_validate.py", "--root", "."],
+      "exitCode": 0,
+      "summary": "All checked-in JSON, YAML and TOML parsed; required repository artifacts were present; no unresolved forbidden tokens were found."
+    },
+    "manifestGenerator": {
+      "status": "passed",
+      "command": ["python3", "scripts/create_reference_manifest.py", "<real corpus arguments>"],
+      "exitCode": 0,
+      "summary": "A checksum-complete manifest was generated from the checked-in TriG, ontology, query, expected result and projection policy; executable reasoner configuration was absent from the user manifest."
+    },
+    "pythonSyntax": {
+      "status": "passed",
+      "command": ["python3", "-m", "py_compile", "scripts/create_reference_manifest.py", "scripts/verify_reference_output.py"],
+      "exitCode": 0
+    },
+    "shellSyntax": {
+      "status": "passed",
+      "command": ["bash", "-n", "scripts/run_reference_slice.sh"],
+      "exitCode": 0
+    },
+    "cargoFormatCheckTest": {
+      "status": "blocked",
+      "reason": "Cargo and rustc are not installed in the creation environment.",
+      "requiredCommands": [
+        "cargo fmt --all --check",
+        "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+        "cargo test --workspace --all-features"
+      ]
+    },
+    "hermitAdapter": {
+      "status": "blocked",
+      "reason": "Java, javac and Maven are not installed in the creation environment.",
+      "requiredCommand": "mvn --batch-mode --no-transfer-progress -f adapters/hermit-reasoner/pom.xml clean package"
+    },
+    "referenceEndToEnd": {
+      "status": "blocked",
+      "reason": "The real reference run requires the blocked Rust and Java toolchains; no simulated reasoner or generated success result was substituted.",
+      "requiredCommand": "NGKG_REFERENCE_OUTPUT_ROOT=/absolute/empty/output scripts/run_reference_slice.sh"
+    },
+    "containerAndCluster": {
+      "status": "blocked",
+      "reason": "Docker, Helm, kubectl and an RKE2 qualification cluster are unavailable."
+    }
+  },
+  "gateStatus": "blocked"
+}

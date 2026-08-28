@@ -1,0 +1,80 @@
+{
+  "formatVersion": 1,
+  "phase": "40.2",
+  "status": "phase-40.2-implementation-candidate-not-production-qualified",
+  "parentArchiveSha256": "2b018851c617923f40551c1f777d497a3eb24c7e8d6a394c57eb8c22abf19028",
+  "parentPayloadFileCount": 409,
+  "changedParentFileCount": 14,
+  "deletedParentFiles": [],
+  "datatypePolicy": {
+    "policyId": "ngkg-owl2-direct-datatype-policy-v1",
+    "supportedDatatypeCount": 31,
+    "unsupportedDatatypeBehavior": "reject_snapshot",
+    "illTypedLiteralBehavior": "reject_snapshot",
+    "maxParallelValidationWorkers": 32,
+    "deterministicFailureOrder": "lowest normalized source fact index"
+  },
+  "reasonerContracts": {
+    "requestFormatVersion": 2,
+    "reportFormatVersion": 3,
+    "datatypePolicyHashBound": true
+  },
+  "staticVerification": {
+    "phase40_2": true,
+    "inheritedPhase15Through40_2PreviouslyExecutedCleanAfterSupersession": true
+  },
+  "schemaMetaValidation": {
+    "count": 28,
+    "errors": []
+  },
+  "apiOpenApiParity": {
+    "status": "pass",
+    "operationCounts": {
+      "control-plane": 12,
+      "online-data-plane": 14
+    }
+  },
+  "structuralValidation": {
+    "errorCount": 0
+  },
+  "placeholderProductionFindingCount": 0,
+  "editArtifactFindingCount": 0,
+  "nativeToolchains": {
+    "cargo": {
+      "available": false,
+      "path": null
+    },
+    "rustc": {
+      "available": false,
+      "path": null
+    },
+    "mvn": {
+      "available": false,
+      "path": null
+    },
+    "helm": {
+      "available": false,
+      "path": null
+    },
+    "kubectl": {
+      "available": false,
+      "path": null
+    },
+    "rke2": {
+      "available": false,
+      "path": null
+    },
+    "java": {
+      "available": true,
+      "path": "/usr/bin/java",
+      "versionOutput": "openjdk version \"21.0.11\" 2026-04-21 | OpenJDK Runtime Environment (build 21.0.11+10-1-deb13u2-Debian)"
+    },
+    "javac": {
+      "available": true,
+      "path": "/usr/bin/javac",
+      "versionOutput": "javac 21.0.11"
+    }
+  },
+  "nativeQualificationExecuted": false,
+  "owlDirectArbitraryBgpCompleteness": false
+}

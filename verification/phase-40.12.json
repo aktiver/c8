@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "phase": "40.12",
+  "status": "implementation-candidate-not-production-qualified",
+  "authoritativeWorkloadAdmissionCeilingsConsumed": true,
+  "immutableOnlineAdmissionConfigMapImplemented": true,
+  "allOnlineServingRolesValidateAdmissionBundle": true,
+  "queryDirectBgpClassifierUsesTrustedCeilings": true,
+  "classificationCpuOversubscriptionPrevented": true,
+  "admissionCeilingBundleSha256Logged": true,
+  "distributedFragmentRoleConsumesPolicyBundle": true,
+  "offlineDistributedBuildWorkerDirectAdmissionNotApplicable": true,
+  "referenceWorkerExactCeilingsPreserved": true,
+  "operatorJobPropagationImplemented": false,
+  "distributedOperatorJobPropagationImplemented": false,
+  "nativeHelmQualificationExecuted": false,
+  "standardsClaimsEnabled": false
+}

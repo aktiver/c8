@@ -1,0 +1,14 @@
+{
+  "head": {"vars": ["observation", "node", "failure"]},
+  "results": {"bindings": [
+    {
+      "observation": {"type": "uri", "value": "https://ngkg.io/id/observation-1"},
+      "node": {"type": "uri", "value": "https://ngkg.io/id/node-1"},
+      "failure": {"type": "uri", "value": "https://ngkg.io/id/failure-1"}
+    }
+  ]},
+  "ngkgProof": {
+    "requiredSourceIris": ["https://ngkg.io/id/source-1", "https://ngkg.io/id/source-2"],
+    "requiredNamedGraphs": ["urn:ngkg:graph:hdfs", "urn:ngkg:graph:operations"]
+  }
+}

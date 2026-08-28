@@ -1,0 +1,34 @@
+{
+  "formatVersion": 1,
+  "phase": "40.11",
+  "status": "implementation-candidate-not-production-qualified",
+  "parentPayloadFiles": 654,
+  "changedParentFiles": 14,
+  "deletedParentFiles": 0,
+  "affectedStaticGates": {
+    "40": "pass",
+    "40.8": "pass",
+    "40.9": "pass",
+    "40.10": "pass",
+    "40.11": "pass"
+  },
+  "jsonSchemasMetaValid": 39,
+  "schemaErrors": 0,
+  "structuralErrors": 0,
+  "placeholderFindings": 0,
+  "editArtifactFindings": 0,
+  "openApiParity": "pass",
+  "toolchains": {
+    "cargo": null,
+    "rustc": null,
+    "mvn": null,
+    "helm": null,
+    "kubectl": null,
+    "rke2": null,
+    "java": "/usr/bin/java",
+    "javac": "/usr/bin/javac"
+  },
+  "nativeQualificationExecuted": false,
+  "operatorPropagationDeferredTo": "40.13",
+  "distributedWorkerWiringDeferredTo": "40.12"
+}

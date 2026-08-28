@@ -1,0 +1,16 @@
+{
+  "formatVersion": 1,
+  "phase": 37,
+  "status": "implementation-candidate-not-production-qualified",
+  "staticContractGate": "scripts/verify_phase37_static.py",
+  "qualificationGate": "scripts/qualify_phase37.sh",
+  "standardsClaimsEnabled": false,
+  "liveGatesExecutedInThisBuildEnvironment": false,
+  "blockedLiveGates": [
+    "phase-36-live-qualification",
+    "rust-lossless-dataset-tests",
+    "helm-workload-autoscaling-render",
+    "live-rke2-autoscaling-and-authorization-tests",
+    "multiple-from-rdf-merge-blank-node-standardization-test"
+  ]
+}

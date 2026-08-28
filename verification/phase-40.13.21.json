@@ -1,0 +1,21 @@
+{
+  "phase": "40.13.21",
+  "status": "candidate",
+  "implemented": [
+    "tenant-scoped durable SPARQL query execution ledger",
+    "query log list and item REST routes",
+    "principal, epoch timing, human duration, result and resource-envelope evidence",
+    "self, auditor and query-text permission separation",
+    "forced PostgreSQL row-level security and exactly-once terminal finalization",
+    "JSON and SPARQL Protocol correlation header"
+  ],
+  "observed": {
+    "staticQualification": true,
+    "nativeBuild": false,
+    "postgresIntegration": false,
+    "helmRender": false,
+    "liveCluster": false,
+    "enterpriseSecurityQualification": false
+  },
+  "complete": false
+}

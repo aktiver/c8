@@ -1,0 +1,27 @@
+{
+  "phase": "40.13.24",
+  "status": "candidate",
+  "implemented": [
+    "cross-domain OWL 2 DL reasoned context-graph prerequisite",
+    "Rust fail-closed release-qualification core",
+    "RKE RKE2 EKS AKS and GKE closed release matrix",
+    "multi-node multi-core Kueue Indexed Job harness",
+    "explicitly approved serial disruption harness",
+    "soak chaos upgrade rollback backup restore and supply-chain gates",
+    "dense report barrier and deterministic release certificate"
+  ],
+  "observed": {
+    "sourceSemanticPathTrace": true,
+    "syntheticCrossDomainCorpus": true,
+    "syntheticFullProviderGateBarrier": true,
+    "corruptEvidenceRejected": true,
+    "ngkgRuntimeRustOnly": true,
+    "nativeRustBuild": false,
+    "liveHaKubernetesMatrix": false,
+    "live72HourSoak": false,
+    "liveChaosUpgradeRollbackRestore": false,
+    "signedSupplyChainEvidence": false,
+    "productionCertificate": false
+  },
+  "complete": false
+}

@@ -1,0 +1,11 @@
+{
+  "formatVersion": 1,
+  "phase": "39.2",
+  "status": "implementation-candidate-not-production-qualified",
+  "purpose": "executable-w3c-manifest-gate",
+  "staticContractGate": "scripts/verify_phase39_2_static.py",
+  "qualificationGate": "scripts/qualify_phase39_2.sh",
+  "evidence": "qualification/w3c-phase39.2.json",
+  "fetchOnlyPassForbidden": true,
+  "liveGatesExecutedInThisBuildEnvironment": false
+}

@@ -1,0 +1,22 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.1",
+  "rustToolchain": "1.97.1",
+  "workspaceCheck": {
+    "command": "cargo check --workspace --all-targets --all-features --exclude ngkg-online-serving",
+    "status": "passed"
+  },
+  "onlineServingCheck": {
+    "command": "cargo check -p ngkg-online-serving --all-targets",
+    "status": "failed",
+    "releaseBlocking": true,
+    "reason": "Axum handler futures are not yet proven generally Send across state-manager and catalog awaits"
+  },
+  "targetedTests": {
+    "command": "cargo test -p ngkg-sparql-compiler -p ngkg-owl-direct -p ngkg-direct-reasoner -p ngkg-hpc-runtime -p ngkg-query-planner -p ngkg-distributed-build -p ngkg-distributed-artifacts -p ngkg-hydration",
+    "status": "passed",
+    "passed": 32,
+    "failed": 0
+  },
+  "releaseGate": "failed"
+}

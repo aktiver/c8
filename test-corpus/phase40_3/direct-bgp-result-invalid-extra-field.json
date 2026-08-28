@@ -1,0 +1,58 @@
+{
+  "formatVersion": 1,
+  "datasetId": "00000000-0000-0000-0000-000000000001",
+  "snapshotId": "00000000-0000-0000-0000-000000000002",
+  "querySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "bgpSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "activeDatasetSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "authorizedGraphSetSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "owlSignatureSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "datatypePolicySha256": "6666666666666666666666666666666666666666666666666666666666666666",
+  "entailmentRegime": "owl2-direct",
+  "graphContext": {
+    "scope": "named",
+    "graphIri": "https://example.test/graph/clinical"
+  },
+  "variables": [
+    "patient",
+    "status"
+  ],
+  "candidateBindingCount": 14,
+  "solutionMultiplicityTotal": 3,
+  "solutions": [
+    {
+      "bindings": {
+        "patient": {
+          "termType": "iri",
+          "value": "https://example.test/patient/1"
+        },
+        "status": {
+          "termType": "literal",
+          "lexicalForm": "active",
+          "datatypeIri": "http://www.w3.org/2001/XMLSchema#string"
+        }
+      },
+      "multiplicity": 2
+    },
+    {
+      "bindings": {
+        "patient": {
+          "termType": "iri",
+          "value": "https://example.test/patient/2"
+        },
+        "status": {
+          "termType": "literal",
+          "lexicalForm": "active",
+          "datatypeIri": "http://www.w3.org/2001/XMLSchema#string"
+        }
+      },
+      "multiplicity": 1
+    }
+  ],
+  "outcome": {
+    "status": "complete",
+    "exactness": "exact",
+    "completeness": "complete"
+  },
+  "unexpectedField": true
+}

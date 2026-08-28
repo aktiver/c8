@@ -1,0 +1,86 @@
+{
+  "changedParentFiles": [
+    {
+      "currentSha256": "3d8e94ef7c59ba1f0244192ff8751b0d4f59d8e8820ba560c8b89ae31b6f755f",
+      "parentSha256": "dddbc37aff769b38f5f49e813e64afcf201c676fb7c47af07af5535a6e4bb7fc",
+      "path": "README.md"
+    },
+    {
+      "currentSha256": "0d19996f24340285a2da49a7aa3352ab800e62d07a8df23c131c177c819c6572",
+      "parentSha256": "d46786a0698f3ae8383afbf15696fe4446600ef9e011bca4272164418c38e263",
+      "path": "acceptance/phase-gates.yaml"
+    },
+    {
+      "currentSha256": "3b077624cd3ef62a80c8639d0fe9dd1ae945a56f92df98934a8637de4abba91d",
+      "parentSha256": "2037471885ee7731f53aa39d263755c381342e9b4fdeb5a8f251e5c01d586950",
+      "path": "crates/ngkg-reasoner-client/src/lib.rs"
+    },
+    {
+      "currentSha256": "6aaf63fc27510b2de4af60d5b9b8f295d073d6b473154a5ffbb131be70a3186c",
+      "parentSha256": "c34c4dc76659232928af47d0d86e9b020b27d4601411cc7feacdac7b04040875",
+      "path": "crates/ngkg-types/Cargo.toml"
+    },
+    {
+      "currentSha256": "e167762c588635e19392750b77a0fde867e73c0aa61babaf7e7959dd9846f83c",
+      "parentSha256": "1b4eb1accdef72eb33d8dd4a417599e6a31b8fe30de4c8e9d355422c21388d4e",
+      "path": "crates/ngkg-types/src/lib.rs"
+    },
+    {
+      "currentSha256": "24e288c2d48bfec08bc7f86b2e1e885fea07f61d41e58712515f413b77771bd2",
+      "parentSha256": "20959938dc4cd7686326010a6ec7b10426cafe543b25222c0e15323dc36a4e82",
+      "path": "scripts/ci_release.sh"
+    },
+    {
+      "currentSha256": "bb1661a2ff0d1a9b707ca313a585f7c49b117a61930e076bd1fac02a9e016f39",
+      "parentSha256": "b669db5031ad31b6ea8d4b3961454e1a3bfe6096d28d85a8afb80c5e9b2a6f8d",
+      "path": "scripts/structural_validate.py"
+    },
+    {
+      "currentSha256": "55f4a5b6a2eed9ee7129bd34a4f29a4682c795bfb5f3171aebe78e023b33575d",
+      "parentSha256": "c8aaa3feb61e1bf3ab837cbc48c55bb3518fb126d8a6898916f7fe4b081d0d86",
+      "path": "scripts/verify_phase40_3_static.py"
+    },
+    {
+      "currentSha256": "beb9846e66a199bcf2eb1ec828ec62ea38062a5028c11e728979eef355825242",
+      "parentSha256": "31f97a6f4bd4a996656052bad03ec8ff8d43f01df7c641ce18ecdc4be132f83f",
+      "path": "verification/phase-40-capability-status.json"
+    }
+  ],
+  "currentLabel": "phase-40.4",
+  "deletedFiles": [],
+  "embeddedParentManifest": "verification/stabilization/phase-40.3-files.sha256",
+  "formatVersion": 1,
+  "newFiles": [
+    "BUILD_STATUS_PHASE_40_4.md",
+    "contracts/direct-certificate.schema.json",
+    "crates/ngkg-types/src/direct_certificate.rs",
+    "docs/DIRECT_CERTIFICATE_CONTRACT.md",
+    "docs/phases/PHASE_40_4.md",
+    "qualification/cumulative-static-phase15-40.4.json",
+    "qualification/cumulative-static-phase40.1-40.4.json",
+    "qualification/phase40_4-api-openapi-parity.json",
+    "qualification/phase40_4-edit-artifact-scan.json",
+    "qualification/phase40_4-placeholder-scan.json",
+    "qualification/phase40_4-schema-meta.json",
+    "qualification/phase40_4-structural.json",
+    "qualification/phase40_4-toolchain-availability.json",
+    "scripts/qualify_phase40_4.sh",
+    "scripts/validate_direct_certificate.py",
+    "scripts/verify_phase40_4_static.py",
+    "test-corpus/phase40_4/direct-certificate-invalid-extra-field.json",
+    "test-corpus/phase40_4/direct-certificate-invalid-incomplete-partitions.json",
+    "test-corpus/phase40_4/direct-certificate-invalid-proof-coverage.json",
+    "test-corpus/phase40_4/direct-certificate-invalid-result-digest.json",
+    "test-corpus/phase40_4/direct-certificate-invalid-support-order.json",
+    "test-corpus/phase40_4/direct-certificate-valid.json",
+    "verification/phase-40.4-requirements.json",
+    "verification/phase-40.4-traceability.json",
+    "verification/phase-40.4.json",
+    "verification/stabilization/phase-40.3-files.sha256",
+    "verification/stabilization/phase-40.4.json"
+  ],
+  "parentArchiveSha256": "61fb9d2c4daf2fc38dace0663c9f1161b32ef5312b5f9ffa2f3ff4bee69d84c4",
+  "parentFileManifestSha256": "9c1c4478258e1108a720da67ae04bfd017226bbd00b85750177c6d5e809b34d6",
+  "parentLabel": "phase-40.3",
+  "parentPayloadFileCount": 467
+}

@@ -1,0 +1,40 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.10",
+  "status": "static-qualified-existing-cloud-source-acquisition-candidate",
+  "parent": {
+    "archive": "NGKG_PHASE_40_13_9_CANDIDATE(2).zip",
+    "sha256": "60cd6cf355d95d8ede8f64b47f9c3c548c01e3ffc3c43d999d6c709ecd0cdb67"
+  },
+  "delivered": [
+    "tenant-scoped generic dataset names with server-generated UUIDs",
+    "idempotent readable-name existing-cloud import REST route",
+    "tenant-bound cloud-import status REST route",
+    "credential-free immutable NgkgSourceImport CRD",
+    "read-only AWS S3, Azure Blob, and GCS CSI volume contracts",
+    "bounded concurrent streaming TriG parse and SHA-256 freezing",
+    "immutable per-object and aggregate source manifest",
+    "Kueue source-ingestion flavor and scale-from-zero node-pool contract"
+  ],
+  "static": {
+    "phase40131Through401310": "pass",
+    "controlPlaneOpenApiOperations": 16,
+    "onlineOpenApiOperations": 16,
+    "openApiParity": "pass",
+    "jsonAndNonTemplateYamlParse": "pass",
+    "workloadValuesCrossResourceValidation": "pass"
+  },
+  "native": {
+    "cargo": "blocked-tool-unavailable",
+    "helm": "blocked-tool-unavailable",
+    "kubernetes": "blocked-cluster-unavailable"
+  },
+  "notDelivered": [
+    "cloud-source-manifest to distributed compiler handoff",
+    "syntax-aware multinode parsing of one monolithic TriG object",
+    "provider object-version or generation proof",
+    "live CSI, Kueue, and cluster-autoscaler qualification",
+    "automatic queryable snapshot publication"
+  ],
+  "ontologyAlignment": "absent"
+}

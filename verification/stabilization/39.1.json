@@ -1,0 +1,17 @@
+{
+  "changedParentFiles": [
+    {
+      "currentSha256": "f8c5b574282b81dc5858a3bb07b68537f1db7e57d8d3dd92a3adca5532b899ad",
+      "parentSha256": "d9eec237fef490b5343e8ea8889c8df24514202d568ad0b04282c0f3f0b35ba1",
+      "path": "acceptance/phase-gates.yaml"
+    }
+  ],
+  "currentLabel": "39.1",
+  "deletedFiles": [],
+  "embeddedParentManifest": "verification/stabilization/39-files.sha256",
+  "formatVersion": 1,
+  "parentArchiveSha256": "03e199b301c5f69c94f52b09e4ce7b592e9b9141029b71d6e82ca05672ebdcc8",
+  "parentFileManifestSha256": "9c0f576e13a4cc33682edb2ded7823902fa6f91b46d70dd904c63734f99ddee5",
+  "parentLabel": "39",
+  "parentPayloadFileCount": 329
+}

@@ -1,0 +1,35 @@
+{
+  "cumulativeStatic": "PASS",
+  "editArtifactScan": "PASS",
+  "formatVersion": 1,
+  "jsonSchemaMetaValidation": {
+    "schemas": 28,
+    "status": "PASS"
+  },
+  "owlDirectRuntimeChangesIntroduced": false,
+  "phase": "40",
+  "placeholderScan": "PASS",
+  "pythonAstValidation": {
+    "files": 48,
+    "status": "PASS"
+  },
+  "restOpenApiParity": {
+    "controlPlaneOperations": 12,
+    "localRefs": "PASS",
+    "onlineOperations": 14,
+    "status": "PASS",
+    "swaggerLabels": "PASS"
+  },
+  "standardsClaimsEnabled": false,
+  "status": "static-qualified-native-not-qualified",
+  "toolchains": {
+    "cargo": false,
+    "helm": false,
+    "java": true,
+    "kubectl": false,
+    "mvn": false,
+    "python3": true,
+    "rke2": false,
+    "rustc": false
+  }
+}

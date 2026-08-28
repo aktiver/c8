@@ -1,0 +1,39 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.9",
+  "parent": "40.13.8",
+  "status": "distributed-property-path-source-candidate",
+  "implemented": {
+    "typedPropertyPathNfa": true,
+    "originPreservingFrontiers": true,
+    "stablePartitionOwnership": true,
+    "deterministicHotVertexSplits": true,
+    "endpointSetSemantics": true,
+    "completeWorkTerminationBarrier": true,
+    "boundedChecksumCheckpoints": true,
+    "onlinePlanEvidenceBinding": true,
+    "propertyPathWorkloadAwareHpaSource": true,
+    "ontologyAlignment": false,
+    "rawDataMapping": false
+  },
+  "passedHere": {
+    "parentManifest": true,
+    "cumulativeStaticThrough40139": true,
+    "openapiParity": true,
+    "manifestAndSchemaParsing": true,
+    "cargoLockDependencyClosure": true,
+    "helmCrossFieldValidation": true
+  },
+  "unqualified": {
+    "rustNativeBuildAndTests": "cargo and rustc absent",
+    "mavenBuildAndTests": "maven absent",
+    "helmLintAndRender": "helm absent",
+    "workerTransportAndAdjacencyIndexes": "runtime activation and differential qualification required",
+    "liveMultinodeAutoscaling": "kubectl and cluster absent"
+  },
+  "claimsEnabled": {
+    "distributedPropertyPaths": false,
+    "completeDistributedSparql": false,
+    "production": false
+  }
+}

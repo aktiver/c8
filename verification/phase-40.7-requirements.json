@@ -1,0 +1,38 @@
+{
+  "formatVersion": 1,
+  "phase": "40.7",
+  "requirements": [
+    {
+      "id": "P40-7-001",
+      "text": "Walk every BGP from the single typed SPARQL algebra and preserve default/named/GRAPH-variable active-graph scope."
+    },
+    {
+      "id": "P40-7-002",
+      "text": "Apply W3C OWL Direct BGP-local variable typing and checksum-bound OWL signature declarations without leaking typing across BGP boundaries."
+    },
+    {
+      "id": "P40-7-003",
+      "text": "Classify OWL declarations, assertions, class/property axioms, restrictions, structural RDF and datatype facets; reject ambiguous, conflicting, unknown or unsupported forms fail-closed."
+    },
+    {
+      "id": "P40-7-004",
+      "text": "Classify independent BGPs in bounded deterministic CPU lanes so parallel scheduling cannot change legality evidence."
+    },
+    {
+      "id": "P40-7-005",
+      "text": "Bind every legality report to dataset, snapshot, query/algebra, active dataset, authorization set, OWL signature, datatype policy, profile qualification and consistency qualification."
+    },
+    {
+      "id": "P40-7-006",
+      "text": "Expose authenticated POST /v1/datasets/{datasetId}/sparql/direct/validate in Swagger/OpenAPI with authorization and dataset precedence before semantic access."
+    },
+    {
+      "id": "P40-7-007",
+      "text": "Require Phase 40.8 reasoner clients to consume a legal, identity-matching Phase 40.7 BGP decision and retain grounded OWL 2 DL checking."
+    },
+    {
+      "id": "P40-7-008",
+      "text": "Provide strict JSON Schema, independent validator, positive/negative fixtures, Rust tests, ancestry evidence and cumulative gates without enabling OWL Direct standards claims."
+    }
+  ]
+}

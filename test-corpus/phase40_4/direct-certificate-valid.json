@@ -1,0 +1,44 @@
+{
+  "formatVersion": 1,
+  "datasetId": "00000000-0000-0000-0000-000000000001",
+  "snapshotId": "00000000-0000-0000-0000-000000000002",
+  "querySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "bgpSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "activeDatasetSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "authorizedGraphSetSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "owlSignatureSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "datatypePolicySha256": "6666666666666666666666666666666666666666666666666666666666666666",
+  "entailmentRegime": "owl2-direct",
+  "graphContext": {
+    "scope": "named",
+    "graphIri": "https://example.test/graph/clinical"
+  },
+  "certifiedOutcome": "exact-complete",
+  "directBgpResultSha256": "83edc07449ab182b887dc9f3392b50009381f3f3f6abd6647b9eab0f0ddcc00c",
+  "reasoner": {
+    "engine": "HermiT",
+    "engineVersion": "1.4.3.517",
+    "adapterName": "ngkg-hermit-adapter",
+    "adapterVersion": "40.4",
+    "requestSha256": "7777777777777777777777777777777777777777777777777777777777777777"
+  },
+  "completeness": {
+    "method": "exhaustive-candidate-entailment",
+    "candidateSpaceSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+    "candidateBindingCount": 14,
+    "checkedCandidateBindingCount": 14,
+    "partitionCount": 4,
+    "completedPartitionCount": 4,
+    "reasonerRequestCount": 14,
+    "successfulReasonerRequestCount": 14,
+    "executionRootSha256": "9999999999999999999999999999999999999999999999999999999999999999"
+  },
+  "proofCoverage": "partial",
+  "supportReferences": [
+    {
+      "supportId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "kind": "reasoner-check",
+      "artifactSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ]
+}

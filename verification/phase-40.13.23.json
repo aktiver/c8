@@ -1,0 +1,26 @@
+{
+  "phase": "40.13.23",
+  "status": "candidate",
+  "implemented": [
+    "Rust-only NGKG performance qualification core",
+    "external-only Apache Jena competitor boundary",
+    "content-bound enterprise workload and capacity plans",
+    "dense retained trial evidence and exact semantic equality",
+    "latency throughput resource scaling and normalized cost statistics",
+    "fail-closed performance and capacity certificate",
+    "Kueue-compatible sequential Indexed Job"
+  ],
+  "observed": {
+    "parentManifestIntegrity": true,
+    "staticQualification": true,
+    "syntheticAllFamilyBarrier": true,
+    "corruptEvidenceRejected": true,
+    "ngkgRuntimeRustOnly": true,
+    "nativeBuild": false,
+    "realEnterpriseDatasets": false,
+    "sameHardwareJenaComparison": false,
+    "liveMultinodeCapacity": false,
+    "productionCertificate": false
+  },
+  "complete": false
+}

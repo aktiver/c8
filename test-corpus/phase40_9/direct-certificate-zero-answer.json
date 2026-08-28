@@ -1,0 +1,46 @@
+{
+  "formatVersion": 2,
+  "datasetId": "00000000-0000-0000-0000-000000000091",
+  "snapshotId": "00000000-0000-0000-0000-000000000092",
+  "querySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "bgpSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "activeDatasetSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "authorizedGraphSetSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "owlSignatureSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "datatypePolicySha256": "6666666666666666666666666666666666666666666666666666666666666666",
+  "entailmentRegime": "owl2-direct",
+  "graphContext": {
+    "scope": "named",
+    "graphIri": "https://example.test/graph/clinical"
+  },
+  "certifiedOutcome": "exact-complete",
+  "directBgpResultSha256": "bfe9d530c6432b4ef6276515b194660a03b057f3a2cbc536371c4c40081c661c",
+  "proofManifestSha256": "4d91e93364a291e81678b9da70f21b09fad179fe72da6989ff031831a810ae73",
+  "reasoner": {
+    "engine": "HermiT",
+    "engineVersion": "1.4.5.519",
+    "adapterName": "ngkg-hermit-adapter",
+    "adapterVersion": "40.9",
+    "requestSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "completeness": {
+    "method": "exhaustive-candidate-entailment",
+    "candidateSpaceSha256": "7272727272727272727272727272727272727272727272727272727272727272",
+    "candidateBindingCount": 4,
+    "checkedCandidateBindingCount": 4,
+    "partitionCount": 2,
+    "completedPartitionCount": 2,
+    "reasonerRequestCount": 4,
+    "successfulReasonerRequestCount": 4,
+    "executionRootSha256": "8282828282828282828282828282828282828282828282828282828282828282"
+  },
+  "proofCoverage": "complete",
+  "supportReferences": [
+    {
+      "supportId": "a33953ee033ffd14b6b609b22073cb2c6ff434b0987db1944d057dadf0861cfc",
+      "kind": "reasoner-check",
+      "artifactSha256": "4d91e93364a291e81678b9da70f21b09fad179fe72da6989ff031831a810ae73",
+      "sourceGraphIri": "https://example.test/graph/clinical"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "phase": "40.13.20",
+  "status": "source-implemented-live-qualification-pending",
+  "parentArchiveSha256": "1475461b64344fa611e9c603f55d2c4c105b4a6d7cf3d1b2326400615bed3dd0",
+  "checks": {
+    "parentManifestVerification": "passed",
+    "phaseStaticContract": "passed",
+    "individualPhase40_13StaticContracts": "passed-20-of-20",
+    "controlOpenApiParity": {"status": "passed", "operations": 19},
+    "onlineOpenApiParity": {"status": "passed", "operations": 18},
+    "platformValuesValidation": "passed",
+    "workloadBaseValuesValidation": "passed",
+    "productionProviderOverlayValidation": "passed-generic-rke-rke2-eks-aks-gke",
+    "threeCloudTrigMountContracts": "passed-static-s3-azure-blob-gcs",
+    "pythonJsonYamlTomlParsing": "passed",
+    "structuralValidator": "failed-inherited-unresolved-tokens",
+    "rustWorkspaceBuildAndTests": "blocked-toolchain-unavailable",
+    "helmLintAndRender": "blocked-toolchain-unavailable",
+    "schemaMetaValidation": "blocked-jsonschema-tooling-unavailable",
+    "liveMetricsKueueProviderQualification": "not-run-cluster-unavailable",
+    "liveSelectedCsiMountQualification": "not-run-cluster-unavailable",
+    "scaleFromZeroNodeLossAndDeterminism": "not-run-cluster-unavailable"
+  },
+  "saturationTargetPercent": 80,
+  "releaseQualified": false
+}

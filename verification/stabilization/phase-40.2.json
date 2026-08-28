@@ -1,0 +1,82 @@
+{
+  "changedParentFiles": [
+    {
+      "currentSha256": "55991e41bc08a2d5fe2d286d034fe20ce9f81e9a338c95fa4dd20ea4b6ba0971",
+      "parentSha256": "5cad5a56ee6b94391f7e7d568aa7095a1a7f10f9fde6591a6f4e1521c4b52557",
+      "path": "README.md"
+    },
+    {
+      "currentSha256": "f3d1fc38ad4705c44bed65e5279a15814026be5bdea72e99ef23c6bda0079c42",
+      "parentSha256": "e5d7eaa577c3b23d800fb58695363ff18103ea437298a6028d8be455067f047d",
+      "path": "acceptance/phase-gates.yaml"
+    },
+    {
+      "currentSha256": "6e6b866ee3d78630640660a56ebb26f111ec51975fa3fa018bd626e9995d54f9",
+      "parentSha256": "0b7052c0f207e086dcdad8dadc33c608672e0dae6ca92aa6da016545f547ad93",
+      "path": "adapters/hermit-reasoner/README.md"
+    },
+    {
+      "currentSha256": "1b1cefadac2a194a10c0783fb890770644260e2ca9bdef3b7d9073cc2f8633c3",
+      "parentSha256": "4a0e83a806360af0ea1635df17d3fca4cd878080eb724ed080ed4e8b66a2e78a",
+      "path": "adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/Main.java"
+    },
+    {
+      "currentSha256": "26bddddfc1e7b76369062b680b86e82c8dac1601f5f8197463ef452348b3599c",
+      "parentSha256": "5b10cfc9355775e454cf31fc6afd67f8354b0b6a7e6af4366ea0c4aeee54ed22",
+      "path": "adapters/hermit-reasoner/src/test/java/io/ngkg/reasoner/MainTest.java"
+    },
+    {
+      "currentSha256": "f712c28ec58b5efa70e143df5aeeae7dd184dca91e2529d2e4bdbf513b312d4d",
+      "parentSha256": "91ee4df54ec6ee2b79e59d30e7df3421ff27752b45f6c36d2581bfd627acca3b",
+      "path": "contracts/reasoner-report.schema.json"
+    },
+    {
+      "currentSha256": "f7e41b0e25472642ecf5c45ca1d7a601ff71663054814ed21291d53a7a661241",
+      "parentSha256": "a3417454cd2977feab92da378e0690fd2dafe1ad86820bfe53f26b2b3ab69dd3",
+      "path": "crates/ngkg-reference/src/compiler.rs"
+    },
+    {
+      "currentSha256": "b06b9eb28a045a920b9cee1c06fd4303a8fa0a01bcf060d432b63cfff2d1e2bc",
+      "parentSha256": "e6a6692bc1605e30d9feffe3cc49a7d1a0b8fa141c74a9282898c9301be4497d",
+      "path": "crates/ngkg-reference/src/lib.rs"
+    },
+    {
+      "currentSha256": "1efaf73c57bf6db732caac210a40edc254a3e7f89b2c4228d0fb83ff59022bc7",
+      "parentSha256": "4d407b107cd11ab4f7f6f25e7d34adc46bc789bc43cada690d99fc8499ca0ac1",
+      "path": "crates/ngkg-reference/src/model.rs"
+    },
+    {
+      "currentSha256": "869518364725ce003c1ac5584db300e7eda5d5e7d43cf6bea49b07429425b329",
+      "parentSha256": "a3dc2c35afc97c889974aff28b5e55fd124043f73e8a1854b77cd05f763bf32e",
+      "path": "crates/ngkg-reference/src/reasoner.rs"
+    },
+    {
+      "currentSha256": "20959938dc4cd7686326010a6ec7b10426cafe543b25222c0e15323dc36a4e82",
+      "parentSha256": "8fde211f76b72166111eb153c94c4c397db702020a79c15f3398d60e42b901bb",
+      "path": "scripts/ci_release.sh"
+    },
+    {
+      "currentSha256": "b669db5031ad31b6ea8d4b3961454e1a3bfe6096d28d85a8afb80c5e9b2a6f8d",
+      "parentSha256": "50880d0a70d3ab30bf43d02901a516ca501b0e42262af3ebec3332efd6fbeeeb",
+      "path": "scripts/structural_validate.py"
+    },
+    {
+      "currentSha256": "98f37172b35bf6bc0b3b4b9c8c26c2e2d3ff2ad338e160f094d1b0db0c756940",
+      "parentSha256": "32e25165908e4430aa88352d12fca09f088a5c4a02c8369d9faf74ff36b63a63",
+      "path": "scripts/verify_phase36_static.py"
+    },
+    {
+      "currentSha256": "38d765db4808be715b5f16c085def9174db6be0cc607c47a40de6bf65cd33444",
+      "parentSha256": "c197fbbb337b60adf913bff04fb461287cbf9b70c1bc42d1ab8acd577b17007d",
+      "path": "scripts/verify_phase40_1_static.py"
+    }
+  ],
+  "currentLabel": "phase-40.2",
+  "deletedFiles": [],
+  "embeddedParentManifest": "verification/stabilization/phase-40.1-files.sha256",
+  "formatVersion": 1,
+  "parentArchiveSha256": "2b018851c617923f40551c1f777d497a3eb24c7e8d6a394c57eb8c22abf19028",
+  "parentFileManifestSha256": "e508f87e6ff318b5b2ec75434e42dd92e0f199a3e3d0d56e86ab00161f08d98c",
+  "parentLabel": "phase-40.1",
+  "parentPayloadFileCount": 409
+}

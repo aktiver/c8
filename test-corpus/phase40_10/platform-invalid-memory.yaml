@@ -1,0 +1,4 @@
+phase40:
+  direct:
+    reasonerConcurrency: 32
+    reasonerHeapMiBPerLane: 65536

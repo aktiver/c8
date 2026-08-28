@@ -1,0 +1,23 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.17",
+  "description": "Online partition-native path cases. Result truth remains owned by the Phase 40.13.16 scalar oracle while this matrix requires complete distributed traversal evidence.",
+  "cases": [
+    {
+      "id": "forward-zero-or-more",
+      "query": "SELECT ?s ?o WHERE { ?s (<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>)* ?o } LIMIT 100"
+    },
+    {
+      "id": "inverse-one-or-more",
+      "query": "ASK WHERE { ?s (^<http://www.w3.org/2000/01/rdf-schema#subClassOf>)+ ?o }"
+    },
+    {
+      "id": "sequence-alternative",
+      "query": "SELECT DISTINCT ?s ?o WHERE { ?s (<http://www.w3.org/2000/01/rdf-schema#subClassOf>|<http://www.w3.org/2002/07/owl#equivalentClass>)+ ?o } ORDER BY ?s ?o LIMIT 100"
+    },
+    {
+      "id": "named-graph-variable",
+      "query": "SELECT ?g ?s ?o WHERE { GRAPH ?g { ?s (<http://www.w3.org/2002/07/owl#sameAs>)* ?o } } LIMIT 100"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.14",
+  "candidateStatus": "source-implemented-static-qualified-native-and-cluster-blocked",
+  "parent": {
+    "archive": "NGKG_PHASE_40_13_13_CANDIDATE(1).zip",
+    "sha256": "7b9c1557ef978628ec52c22cb544f2ffe42d4f9900ee2ea71d78d9f065939f0a",
+    "manifestEntriesVerified": 928,
+    "manifestFailures": 0
+  },
+  "implemented": {
+    "semanticAuthority": "exact HermiT 1.4.5.519 finite named consequences",
+    "finiteClosureBoundInQualificationRoot": true,
+    "boundedExternalPlanSort": true,
+    "stableLogicalPartitions": 4096,
+    "indexedJobMaxParallelism": 256,
+    "offlineReducerCpu": 1,
+    "parquetClosureFacts": true,
+    "classAndPropertyExtents": true,
+    "hierarchyExtents": true,
+    "equalityComponents": true,
+    "deterministicSupportIds": true,
+    "allPartitionBarrier": true,
+    "remoteChecksumVerification": true,
+    "kueueReasoningFlavor": true,
+    "clusterAutoscalerCompatible": true,
+    "arbitraryOwl2DlComplete": false,
+    "unknownRoutesToExactHermit": true,
+    "publicationState": "inactive"
+  },
+  "executedChecks": [
+    {"name": "parent-archive-integrity", "status": "passed", "manifestEntries": 928},
+    {"name": "phase-40.13.1-through-40.13.14-static", "status": "passed", "phases": 14},
+    {"name": "phase-40.13.14-static", "status": "passed", "checks": 12},
+    {"name": "repository-json-duplicate-key-and-syntax", "status": "passed"},
+    {"name": "relevant-yaml-duplicate-key-and-syntax", "status": "passed"},
+    {"name": "helm-values-recursive-schema-keys", "status": "passed"},
+    {"name": "control-plane-openapi-route-parity", "status": "passed", "operations": 16},
+    {"name": "online-openapi-route-parity", "status": "passed", "operations": 16}
+  ],
+  "blockedChecks": [
+    {"name": "cargo-fmt", "reason": "Cargo/rustfmt unavailable"},
+    {"name": "cargo-check-workspace", "reason": "Cargo/rustc unavailable"},
+    {"name": "cargo-clippy-deny-warnings", "reason": "Cargo/rustc unavailable"},
+    {"name": "cargo-test-workspace", "reason": "Cargo/rustc unavailable"},
+    {"name": "maven-hermit-test-package", "reason": "Maven unavailable"},
+    {"name": "helm-lint-render", "reason": "Helm unavailable"},
+    {"name": "kubernetes-crd-dry-run", "reason": "kubectl and cluster unavailable"},
+    {"name": "object-store-failure-injection", "reason": "designated cloud environment unavailable"},
+    {"name": "kueue-cluster-autoscaler-multinode", "reason": "designated multinode cluster unavailable"},
+    {"name": "topology-independent-byte-equivalence", "reason": "designated multinode cluster unavailable"}
+  ],
+  "claims": {
+    "productionQualified": false,
+    "fullArbitraryOwl2DlMaterialization": false,
+    "snapshotPublished": false,
+    "ontologyAlignmentImplemented": false,
+    "rawDataMappingImplemented": false
+  }
+}

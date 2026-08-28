@@ -1,0 +1,204 @@
+{
+  "formatVersion": 1,
+  "phase": "40.8",
+  "constituentStaticGates": [
+    {
+      "phase": "15",
+      "path": "scripts/verify_phase15_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "16",
+      "path": "scripts/verify_phase16_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "17",
+      "path": "scripts/verify_phase17_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "18",
+      "path": "scripts/verify_phase18_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "19",
+      "path": "scripts/verify_phase19_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "20",
+      "path": "scripts/verify_phase20_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "21",
+      "path": "scripts/verify_phase21_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "22",
+      "path": "scripts/verify_phase22_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "23",
+      "path": "scripts/verify_phase23_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "24",
+      "path": "scripts/verify_phase24_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "25",
+      "path": "scripts/verify_phase25_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "26",
+      "path": "scripts/verify_phase26_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "27",
+      "path": "scripts/verify_phase27_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "28",
+      "path": "scripts/verify_phase28_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "29",
+      "path": "scripts/verify_phase29_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "30",
+      "path": "scripts/verify_phase30_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "31",
+      "path": "scripts/verify_phase31_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "32",
+      "path": "scripts/verify_phase32_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "33",
+      "path": "scripts/verify_phase33_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "34",
+      "path": "scripts/verify_phase34_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "35",
+      "path": "scripts/verify_phase35_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "36",
+      "path": "scripts/verify_phase36_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "37",
+      "path": "scripts/verify_phase37_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "38",
+      "path": "scripts/verify_phase38_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "39",
+      "path": "scripts/verify_phase39_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "39.1",
+      "path": "scripts/verify_phase39_1_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "39.2",
+      "path": "scripts/verify_phase39_2_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "39.3",
+      "path": "scripts/verify_phase39_3_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "39.4",
+      "path": "scripts/verify_phase39_4_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "39.5",
+      "path": "scripts/verify_phase39_5_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "40",
+      "path": "scripts/verify_phase40_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "40.1",
+      "path": "scripts/verify_phase40_1_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "40.2",
+      "path": "scripts/verify_phase40_2_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "40.3",
+      "path": "scripts/verify_phase40_3_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "40.4",
+      "path": "scripts/verify_phase40_4_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "40.5",
+      "path": "scripts/verify_phase40_5_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "40.6",
+      "path": "scripts/verify_phase40_6_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "40.7",
+      "path": "scripts/verify_phase40_7_static.py",
+      "status": "PASS"
+    },
+    {
+      "phase": "40.8",
+      "path": "scripts/verify_phase40_8_static.py",
+      "status": "PASS"
+    }
+  ],
+  "passed": 39,
+  "failed": 0,
+  "note": "Executed in bounded constituent ranges/individual gates because the environment terminates long aggregate commands."
+}

@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "phase": "40.3",
+  "parent": "40.2",
+  "purpose": "direct-bgp-result-runtime-contract-and-json-schema",
+  "status": "phase-40.3-implementation-candidate-not-production-qualified",
+  "staticContractGate": "scripts/verify_phase40_3_static.py",
+  "qualificationGate": "scripts/qualify_phase40_3.sh",
+  "directBgpResultRuntimeContractImplemented": true,
+  "losslessRdfTermIdentityImplemented": true,
+  "bagMultiplicityContractImplemented": true,
+  "graphSensitiveResultContextImplemented": true,
+  "deterministicParallelResultValidationImplemented": true,
+  "directCertificateImplemented": false,
+  "directBgpLegalityImplemented": false,
+  "exactDirectReasonerFallbackImplemented": false,
+  "owlDirectArbitraryBgpCompleteness": false,
+  "standardsClaimsEnabled": false
+}

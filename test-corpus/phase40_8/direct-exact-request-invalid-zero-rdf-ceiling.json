@@ -1,0 +1,64 @@
+{
+  "formatVersion": 1,
+  "datasetId": "4d2e1a82-c2bc-536a-a809-fda7643ef1f7",
+  "snapshotId": "91054ecb-2f68-5a63-b31a-137333c64a7c",
+  "querySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "sparqlAlgebraSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "bgpSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "activeDatasetSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "authorizedGraphSetSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "owlSignatureSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+  "datatypePolicySha256": "7777777777777777777777777777777777777777777777777777777777777777",
+  "owlProfileQualificationSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+  "owlConsistencyQualificationSha256": "9999999999999999999999999999999999999999999999999999999999999999",
+  "engine": "hermit-grounded-owl2dl-isentailed-v1",
+  "inputs": [
+    {
+      "path": "/snapshot/ontology/0000.owl",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "ontologyIris": [
+        "https://example.test/ontology"
+      ]
+    }
+  ],
+  "aggregateInputSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "template": {
+    "ordinal": 0,
+    "bgpSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    "graphScope": {
+      "scope": "default"
+    },
+    "variables": [
+      {
+        "name": "x",
+        "role": "named-individual",
+        "source": "explicit-declaration"
+      }
+    ],
+    "triples": [
+      {
+        "subject": {
+          "termType": "variable",
+          "name": "x"
+        },
+        "predicate": {
+          "termType": "iri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "object": {
+          "termType": "iri",
+          "value": "https://example.test/Person"
+        }
+      }
+    ]
+  },
+  "partition": {
+    "index": 0,
+    "count": 4
+  },
+  "maxCandidateBindings": 10000000,
+  "maxPartitionCandidates": 250000,
+  "maxGroundedAxiomsPerCandidate": 65536,
+  "outputPath": "/scratch/direct/partition-0000.result.json",
+  "maxGroundedRdfBytesPerCandidate": 0
+}

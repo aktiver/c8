@@ -1,0 +1,14 @@
+{
+  "cumulativeStaticRange": "15-40",
+  "formatVersion": 1,
+  "owlDirectRuntimeChangesIntroduced": false,
+  "parent": "39.5",
+  "phase": "40",
+  "purpose": "requirements-traceability-inheritance-api-contract-and-hpc-ceiling-baseline",
+  "qualificationGate": "scripts/qualify_phase40.sh",
+  "restOpenApiParityRequired": true,
+  "standardsClaimsEnabled": false,
+  "staticContractGate": "scripts/verify_phase40_static.py",
+  "status": "phase-40-baseline-implementation-candidate-not-production-qualified",
+  "swaggerUiRequired": true
+}

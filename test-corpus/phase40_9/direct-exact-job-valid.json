@@ -1,0 +1,47 @@
+{
+  "formatVersion": 1,
+  "snapshotRoot": "/snapshot",
+  "snapshotManifestPath": "/snapshot/snapshot-manifest.json",
+  "snapshotManifestSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "requestRoot": "/request",
+  "queryPath": "/request/query.rq",
+  "querySha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "legalityReportPath": "/request/direct-bgp-legality.json",
+  "resolvedDataset": {
+    "selectionSource": "service_default",
+    "defaultGraphIds": [
+      1,
+      2
+    ],
+    "namedGraphIds": [
+      1,
+      2
+    ],
+    "authorizedGraphIds": [
+      1,
+      2
+    ],
+    "authorizedGraphSetSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "activeDatasetSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "bgpOrdinal": 0,
+  "javaExecutable": "/usr/bin/java",
+  "reasonerAdapterJar": "/opt/ngkg/ngkg-hermit-adapter.jar",
+  "reasonerAdapterSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "reasonerAdapterVersion": "40.9",
+  "reasonerVersion": "1.4.5.519",
+  "workRoot": "/scratch",
+  "workDir": "/scratch/direct-job",
+  "outputResultPath": "/scratch/result.json",
+  "outputCertificatePath": "/scratch/certificate.json",
+  "limits": {
+    "maxCandidateBindings": 10000000,
+    "maxPartitionCandidates": 250000,
+    "maxGroundedAxiomsPerCandidate": 65536,
+    "maxGroundedRdfBytesPerCandidate": 16777216,
+    "maxLocalReasonerLanes": 8,
+    "reasonerHeapMibPerLane": 4096,
+    "reasonerTimeoutSeconds": 300
+  },
+  "outputProofManifestPath": "/scratch/proof-manifest.json"
+}

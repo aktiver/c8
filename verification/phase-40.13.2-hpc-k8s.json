@@ -1,0 +1,24 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.2",
+  "status": "static-contract-pass-live-qualification-pending",
+  "hpc": {
+    "cpusetAwareStartupValidation": true,
+    "sharedRustOpenmpBlasBudget": true,
+    "nestedParallelismForbidden": true,
+    "nodeSaturationMaximumPercent": 80,
+    "guaranteedQosCrossResourceValidationPassed": true
+  },
+  "autoscaling": {
+    "independentPools": ["query", "fragment", "hydration"],
+    "signals": ["cpu", "memory", "ngkg_admission_pending"],
+    "productionWorkloadMetricsEnabled": true,
+    "productionCustomMetricsApiRequired": true,
+    "scaleDownStabilizationConfigured": true,
+    "baseValuesValidationPassed": true,
+    "productionOverlayValidationPassed": true
+  },
+  "helmRenderingExecuted": false,
+  "liveMultinodeAutoscalingExecuted": false,
+  "productionQualified": false
+}

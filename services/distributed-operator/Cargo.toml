@@ -1,0 +1,26 @@
+[package]
+name = "ngkg-distributed-operator"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+futures.workspace = true
+hex.workspace = true
+k8s-openapi.workspace = true
+kube.workspace = true
+ngkg-catalog = { path = "../../crates/ngkg-catalog" }
+ngkg-kube = { path = "../../crates/ngkg-kube" }
+ngkg-operator-core = { path = "../../crates/ngkg-operator-core" }
+serde_json.workspace = true
+sha2.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[lints]
+workspace = true

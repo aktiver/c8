@@ -1,0 +1,50 @@
+{
+  "phase": "04",
+  "generatedAt": "2026-08-15T23:14:57.945566+00:00",
+  "checks": {
+    "structural": {
+      "status": "passed",
+      "command": [
+        "python3",
+        "scripts/structural_validate.py",
+        "--root",
+        "."
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"root\": \"/workspace/scratch/7b24dd5d606e/ngkg\",\n  \"files\": [\n    {\n      \"path\": \".gitignore\",\n      \"bytes\": 53,\n      \"sha256\": \"c49a824697e66c0711fb754915a01df19b71589d2b741cf036a6c575a403dac9\"\n    },\n    {\n      \"path\": \"Cargo.toml\",\n      \"bytes\": 1514,\n      \"sha256\": \"4912b2f0fea5fe1d568dd9a1533aa48b359802ca5c7f7ecce8bccbf239303f1f\"\n    },\n    {\n      \"path\": \"LICENSE\",\n      \"bytes\": 633,\n      \"sha256\": \"5e7e152919103460ebb206cf67165aef59f60f01ccc9205d1d945e68fd7e977e\"\n    },\n    {\n      \"path\": \"README.md\",\n      \"bytes\": 1836,\n      \"sha256\": \"f3caad2a5dc653eb530da77ba1b80c1f094d59d113720aff655cc7323592cc78\"\n    },\n    {\n      \"path\": \"api/openapi.yaml\",\n      \"bytes\": 2972,\n      \"sha256\": \"dcf879d9b1ab093fe304a2fd6ddfbe0cbf55b005ef642bbd7c21a77b9278846b\"\n    },\n    {\n      \"path\": \"benchmarks/baselines/jena-dl.yaml\",\n      \"bytes\": 294,\n      \"sha256\": \"ab9496e6e4a5932335698e1730011ee21ee15f25f3cc7c2385638c884bac1709\"\n    },\n    {\n      \"path\": \"benchmarks/hardware/reference-dual-socket.yaml\",\n      \"bytes\": 235,\n      \"sha256\": \"549cdb919fb346b5c1cc397bf310648c4bc79cfcd79ffc143d3700b34cd46a0d\"\n    },\n    {\n      \"path\": \"benchmarks/workloads/cross-domain-v1.yaml\",\n      \"bytes\": 666,\n      \"sha256\": \"bfe803ce2ab81cea6d4e3a06dfe6879b9e2f3afd8268351003dd8a0ffd2f962c\"\n    },\n    {\n      \"path\": \"contracts/query-workload.schema.json\",\n      \"bytes\": 2008,\n      \"sha256\": \"f882bd291469933a365711508954a7832fc5e351b00932e1e651e6b9edf5fef8\"\n    },\n    {\n      \"path\": \"contracts/semantic-projection.schema.json\",\n      \"bytes\": 1743,\n      \"sha256\": \"6d0adacacb290d6582e4008e633a11c81cb68422c9980582c29ab1fd7712ae66\"\n    },\n    {\n      \"path\": \"contracts/work-envelope.schema.json\",\n      \"bytes\": 2800,\n      \"sha256\": \"daf41f13db8786c15e5517950a9abb11422d5d8f386a0343d185af5a28699970\"\n    },\n    {\n      \"path\": \"crates/ngkg-catalog/Cargo.toml\",\n      \"bytes\": 320,\n      \"sha256\": \"01af0d15856af65224f8a8f418bd550aa83a9753194afe33db3b7d82ee85697e\"\n    },\n    {\n      \"path\": \"crates/ngkg-catalog/src/lib.rs\",\n      \"bytes\": 7225,\n      \"sha256\": \"7fa4682dbeccc66a3d4387fa784d251b70565d7cfe28a0b6fcf095e7e2b3d0ed\"\n    },\n    {\n      \"path\": \"crates/ngkg-identity/Cargo.toml\",\n      \"bytes\": 300,\n      \"sha256\": \"9dbea4017b2127a374d8a9591356ab9c6ecb48e0f1a92c9f6422edc7eba9bfcc\"\n    },\n    {\n      \"path\": \"crates/ngkg-identity/src/lib.rs\",\n      \"bytes\": 6136,\n      \"sha256\": \"db3b732e96318f61d79a561e182d432f0788693e8babdabd9daf7157a057c6d8\"\n    },\n    {\n      \"path\": \"crates/ngkg-mapping/Cargo.toml\",\n      \"bytes\": 327,\n      \"sha256\": \"f2f5e0755611588c0a0371a892c8819cb86b08289444b6294c83bc2711a3cc4d\"\n    },\n    {\n      \"path\": \"crates/ngkg-mapping/src/lib.rs\",\n      \"bytes\": 9038,\n      \"sha256\": \"d1059f1d2ed2e4e6bb42eea07c92b52897988d0c006e0b4b2cb38bf102e1ef83\"\n    },\n    {\n      \"path\": \"crates/ngkg-source-planner/Cargo.toml\",\n      \"bytes\": 283,\n      \"sha256\": \"9ad7b22b6baf7322bef999f41159fb7888333c767a1fa94b9f811608c819721b\"\n    },\n    {\n      \"path\": \"crates/ngkg-source-planner/src/lib.rs\",\n      \"bytes\": 6476,\n      \"sha256\": \"70d6cca2bbf6cafb4d28f9b1756e11682b0ef7f94ffb89c63462d5cbd396d0be\"\n    },\n    {\n      \"path\": \"crates/ngkg-types/Cargo.toml\",\n      \"bytes\": 250,\n      \"sha256\": \"7c94ddcc32b498e1e0b2efc445a35af098b0e752fd1e55ddcd8aef7f8e452e11\"\n    },\n    {\n      \"path\": \"crates/ngkg-types/src/lib.rs\",\n      \"bytes\": 2385,\n      \"sha256\": \"7e30d9c76488b3078fcafc2eb545b2da8e079c53f8d817b668a086ab08631070\"\n    },\n    {\n      \"path\": \"docs/ENGINEERING_SOURCE.md\",\n      \"bytes\": 515,\n      \"sha256\": \"c8c98f41fca2558f4f2560fbac4c2daf779ecd435a24e44054307f5de0ee10a9\"\n    },\n    {\n      \"path\": \"docs/phases/PHASE_00.md\",\n      \"bytes\": 927,\n      \"sha256\": \"62c0fdc9d1efeed5250e0d6d4bd8ff0b6c557451d064678a2eae4874e96161d7\"\n    },\n    {\n      \"path\": \"docs/phases/PHASE_01.md\",\n      \"bytes\": 556,\n      \"sha256\": \"a63cd4092b15b14edd7fcb70c22cc64b78b1e4056f2ba9f9495adef79af71cab\"\n    },\n    {\n      \"path\": \"docs/phases/PHASE_02.md\",\n      \"bytes\": 625,\n      \"sha256\": \"8acf3d40e8166900a8e39ee285ceec0bd6635016f8ce691a8bbf4fd62d854842\"\n    },\n    {\n      \"path\": \"docs/phases/PHASE_03.md\",\n      \"bytes\": 571,\n      \"sha256\": \"99c982b2381a6485f187cc0a26b851524caf9e962f2a9bb773fb2caed77c7102\"\n    },\n    {\n      \"path\": \"docs/phases/PHASE_04.md\",\n      \"bytes\": 609,\n      \"sha256\": \"a2abece674e513d1beb703c3aabedfc5598fc7c0e259cc101c745e681196976a\"\n    },\n    {\n      \"path\": \"migrations/0001_catalog.sql\",\n      \"bytes\": 3226,\n      \"sha256\": \"1f73860447ef54db5c5cf0870f237a9b85aeec207865cb480fc4717497506a26\"\n    },\n    {\n      \"path\": \"rust-toolchain.toml\",\n      \"bytes\": 87,\n      \"sha256\": \"da4fa49758e2d8da0f35f79049581134c98b02db0176e515e62367bf9242047c\"\n    },\n    {\n      \"path\": \"scripts/structural_validate.py\",\n      \"bytes\": 2549,\n      \"sha256\": \"d799b4c8a9498d77ba2a3f3264a412050763e115f37337a875e99316f55e621c\"\n    },\n    {\n      \"path\": \"scripts/verify_toolchain.py\",\n      \"bytes\": 2149,\n      \"sha256\": \"9ef66bd9ec2f89feae5f6ff030d8a3f23bc2627a68b008359175828e1be80fc1\"\n    },\n    {\n      \"path\": \"services/api/Cargo.toml\",\n      \"bytes\": 506,\n      \"sha256\": \"d78b5db2b4f55fbeb7f93fe4f73e315f3b8452bd0042c7e4e80a2cadb758c4af\"\n    },\n    {\n      \"path\": \"services/api/src/main.rs\",\n      \"bytes\": 3676,\n      \"sha256\": \"9a3080e5259da0297b1486558207f1014cdafa4a93d6e21970d4adeb5dcf659a\"\n    },\n    {\n      \"path\": \"test-corpus/datasets/cross-domain.trig\",\n      \"bytes\": 910,\n      \"sha256\": \"90709915ba7531ad5a106299db3857b1322f8af9c9f04599021970ef1630a05d\"\n    },\n    {\n      \"path\": \"test-corpus/expected/q01-cross-domain.srj\",\n      \"bytes\": 332,\n      \"sha256\": \"14e746c6eb0a64e7248546b6bf2d6807438b8b8cc7c3ea28380a8481faf716fa\"\n    },\n    {\n      \"path\": \"test-corpus/expected/q02-optional.srj\",\n      \"bytes\": 352,\n      \"sha256\": \"425c306b5adbbcb116fa289bb10efc52cea32470919d6066b62a519aa56fc161\"\n    },\n    {\n      \"path\": \"test-corpus/failures/invalid-syntax.trig\",\n      \"bytes\": 83,\n      \"sha256\": \"047d557c9e0ec9215e32bfecb6ca2470f733e31e8a02f8d3420524f628bacf06\"\n    },\n    {\n      \"path\": \"test-corpus/failures/unresolved-import.ttl\",\n      \"bytes\": 136,\n      \"sha256\": \"6e14efde32e5441b3689680571465e6435027e6b638f30142f27627e6cdcbcc9\"\n    },\n    {\n      \"path\": \"test-corpus/mappings/hdfs-observations-v1.yaml\",\n      \"bytes\": 1300,\n      \"sha256\": \"e8614e4b5d22215aeed01abe09f320628813e2e0bfb89201ecdae43c8bb5520a\"\n    },\n    {\n      \"path\": \"test-corpus/ontologies/core.ttl\",\n      \"bytes\": 1166,\n      \"sha256\": \"b6bdda9a4ebe63b5eacb175fe063e6fc9415fc4ce6b4af467904773d7ff22307\"\n    },\n    {\n      \"path\": \"test-corpus/queries/hot-manifest.json\",\n      \"bytes\": 85,\n      \"sha256\": \"253cb193b5f7477592a7507adfcd79fc04fde2744551ba5f12a9825fdc1bda17\"\n    },\n    {\n      \"path\": \"test-corpus/queries/manifest.json\",\n      \"bytes\": 912,\n      \"sha256\": \"ec02c36d40a7dfecc2a25b212fc70b97c058afcdc1ac493ac3ffa9bf7c12feb2\"\n    },\n    {\n      \"path\": \"test-corpus/queries/q01-cross-domain.rq\",\n      \"bytes\": 497,\n      \"sha256\": \"0b30bba7ad52ec6c3bdeb9baf26140af2a45bfbcf2cc7d0705989375d84bcf04\"\n    },\n    {\n      \"path\": \"test-corpus/queries/q02-optional.rq\",\n      \"bytes\": 272,\n      \"sha256\": \"33b6a67f2b66683684c4768125fba92e684e84f1582fd6fa1d692ca3216b897c\"\n    },\n    {\n      \"path\": \"verification/phase-00.json\",\n      \"bytes\": 5545,\n      \"sha256\": \"66a47b8f08ad55dafdde726f28369c8672d775de5e29d91d3651a36c8a7e6a34\"\n    },\n    {\n      \"path\": \"verification/phase-01.json\",\n      \"bytes\": 6941,\n      \"sha256\": \"7b96e49a312f13c7753d8806671e17b940978ff8aae3d9c0bd9f4c637e21e5c3\"\n    },\n    {\n      \"path\": \"verification/phase-02.json\",\n      \"bytes\": 7847,\n      \"sha256\": \"c6bc1c99d31a849ce707ec7cd956f63549508b71277425154672d1d2c018ece3\"\n    },\n    {\n      \"path\": \"verification/phase-03.json\",\n      \"bytes\": 8941,\n      \"sha256\": \"4ef1cb6f2c99e0d7d72b6a807e8e8f841e56abe3d1ba51406dee89698436506c\"\n    }\n  ],\n  \"errors\": []\n}\n",
+      "stderr": ""
+    },
+    "cargoFmt": {
+      "status": "blocked",
+      "reason": "cargo is not installed",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--check"
+      ]
+    },
+    "cargoCheck": {
+      "status": "blocked",
+      "reason": "cargo is not installed",
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-targets",
+        "--all-features"
+      ]
+    },
+    "cargoTest": {
+      "status": "blocked",
+      "reason": "cargo is not installed",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--all-features"
+      ]
+    }
+  },
+  "gateStatus": "blocked"
+}

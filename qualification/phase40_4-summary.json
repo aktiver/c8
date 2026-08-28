@@ -1,0 +1,79 @@
+{
+  "formatVersion": 1,
+  "phase": "40.4",
+  "status": "phase-40.4-implementation-candidate-not-production-qualified",
+  "parentArchiveSha256": "61fb9d2c4daf2fc38dace0663c9f1161b32ef5312b5f9ffa2f3ff4bee69d84c4",
+  "parentPayloadFileCount": 467,
+  "changedParentFileCount": 9,
+  "deletedParentFiles": [],
+  "newFileCount": 27,
+  "directCertificateContract": {
+    "formatVersion": 1,
+    "schedulingIndependentResultDigest": true,
+    "crossLanguageDigestVector": true,
+    "exactCompleteOnly": true,
+    "exhaustiveCandidateEvidence": true,
+    "distributedPartitionCompletionEvidence": true,
+    "reasonerClientBindingVerification": true,
+    "proofSupportVocabulary": true,
+    "proofSupportRuntimeCoverage": false
+  },
+  "staticVerification": {
+    "gateCount": 35,
+    "allPassed": true
+  },
+  "schemaMetaValidation": {
+    "schemaCount": 30,
+    "errors": []
+  },
+  "apiOpenApiParity": {
+    "status": "pass",
+    "operationCounts": {
+      "control-plane": 12,
+      "online-data-plane": 14
+    }
+  },
+  "structuralValidation": {
+    "errorCount": 0
+  },
+  "placeholderProductionFindingCount": 0,
+  "editArtifactFindingCount": 0,
+  "nativeToolchains": {
+    "cargo": {
+      "available": false,
+      "path": null
+    },
+    "rustc": {
+      "available": false,
+      "path": null
+    },
+    "mvn": {
+      "available": false,
+      "path": null
+    },
+    "helm": {
+      "available": false,
+      "path": null
+    },
+    "kubectl": {
+      "available": false,
+      "path": null
+    },
+    "rke2": {
+      "available": false,
+      "path": null
+    },
+    "java": {
+      "available": true,
+      "path": "/usr/bin/java",
+      "versionOutput": "openjdk version \"21.0.11\" 2026-04-21 | OpenJDK Runtime Environment (build 21.0.11+10-1-deb13u2-Debian)"
+    },
+    "javac": {
+      "available": true,
+      "path": "/usr/bin/javac",
+      "versionOutput": "javac 21.0.11"
+    }
+  },
+  "nativeQualificationExecuted": false,
+  "owlDirectArbitraryBgpCompleteness": false
+}

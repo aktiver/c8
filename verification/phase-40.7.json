@@ -1,0 +1,21 @@
+{
+  "formatVersion": 1,
+  "phase": "40.7",
+  "parent": "40.6",
+  "purpose": "legal-owl-direct-bgp-classification-validation",
+  "status": "phase-40.7-implementation-candidate-not-production-qualified",
+  "staticContractGate": "scripts/verify_phase40_7_static.py",
+  "qualificationGate": "scripts/qualify_phase40_7.sh",
+  "typedAlgebraBgpTraversalImplemented": true,
+  "bgpLocalVariableTypingImplemented": true,
+  "owlSignatureEntityDisambiguationImplemented": true,
+  "failClosedStructuralClassificationImplemented": true,
+  "deterministicParallelBgpClassificationImplemented": true,
+  "directBgpValidationRestApiImplemented": true,
+  "reasonerLegalityHandoffImplemented": true,
+  "propertyPathsSeparatedFromDirectBgps": true,
+  "groundedOwl2DlCandidateCheckDeferredToPhase40_8": true,
+  "exactDirectReasonerFallbackImplemented": false,
+  "owlDirectArbitraryBgpCompleteness": false,
+  "standardsClaimsEnabled": false
+}

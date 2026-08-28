@@ -1,0 +1,95 @@
+{
+  "formatVersion": 1,
+  "records": [
+    {
+      "path": "scripts/verify_phase40_10_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.10 static verification passed; authoritative Helm ceilings are bounded, schema-valid, resource-safe, and intentionally not yet runtime-wired"
+    },
+    {
+      "path": "scripts/verify_phase40_11_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.11 static verification passed; reference-worker consumes trusted Helm ceilings, enforces HPC/resource sub-ceilings, and operator propagation remains deferred"
+    },
+    {
+      "path": "scripts/verify_phase40_12_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.12 static verification passed; online/query and distributed-fragment roles consume trusted admission ceilings with CPU-safe Direct-BGP enforcement"
+    },
+    {
+      "path": "scripts/verify_phase40_13_1_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.13.1 static verification passed: exact merge repaired, legal SPARQL parsing is policy-separated, online CPU budgets are enforced, and workload-aware HPA is production-profile gated"
+    },
+    {
+      "path": "scripts/verify_phase40_13_2_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.13.2 static verification passed: online futures are owned and Send-capable, payload loading is single-flight without cache-lock I/O, RDF union/blank-node semantics are repaired, and HPC/HPA contracts remain fail-closed"
+    },
+    {
+      "path": "scripts/verify_phase40_13_3_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.13.3 static contract verification passed"
+    },
+    {
+      "path": "scripts/verify_phase40_13_4_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.13.4 static contract verification passed"
+    },
+    {
+      "path": "scripts/verify_phase40_13_5_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.13.5 static contract verification passed"
+    },
+    {
+      "path": "scripts/verify_phase40_13_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.13 static verification passed; both operators propagate one checksum-bound exact ceiling bundle into reference/reasoner Jobs and reject policy drift"
+    },
+    {
+      "path": "scripts/verify_phase40_1_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.1 static verification passed; OWL signature runtime/schema/hash binding is coherent"
+    },
+    {
+      "path": "scripts/verify_phase40_2_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.2 static verification passed; datatype policy/schema/runtime/hash/HPC validation wiring is coherent"
+    },
+    {
+      "path": "scripts/verify_phase40_3_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.3 static verification passed; Direct-BGP result/schema/RDF-term/bag/graph/HPC contract is coherent"
+    },
+    {
+      "path": "scripts/verify_phase40_4_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.4 static verification passed; Direct certificate/result-digest/completeness/reasoner/support contract is coherent"
+    },
+    {
+      "path": "scripts/verify_phase40_5_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.5 static verification passed; checksum-bound OWLAPI import closure and merged OWL 2 DL profile evidence are coherent"
+    },
+    {
+      "path": "scripts/verify_phase40_6_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.6 static verification passed; global OWL 2 DL consistency is checksum-bound and fail-closed"
+    },
+    {
+      "path": "scripts/verify_phase40_7_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.7 static verification passed; OWL Direct BGP admission is typed, snapshot-bound, deterministic and fail-closed"
+    },
+    {
+      "path": "scripts/verify_phase40_8_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.8 static verification passed; exact HermiT fallback is bounded, graph-scoped, partition-complete and fail-closed"
+    },
+    {
+      "path": "scripts/verify_phase40_9_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.9 static verification passed; exact answers are proof-manifest bound with complete multiplicity support coverage"
+    }
+  ]
+}

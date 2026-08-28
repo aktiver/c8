@@ -1,0 +1,54 @@
+{
+  "formatVersion": 1,
+  "phase": "40.8",
+  "requirements": [
+    {
+      "id": "P40-8-001",
+      "text": "Require an identity-matching legal Phase 40.7 BGP before exact reasoning."
+    },
+    {
+      "id": "P40-8-002",
+      "text": "Revalidate the resolved authorized SPARQL dataset against the immutable graph catalog."
+    },
+    {
+      "id": "P40-8-003",
+      "text": "Materialize the exact default or named BGP scoping graph with correct union-versus-merge blank-node behavior."
+    },
+    {
+      "id": "P40-8-004",
+      "text": "Enumerate a finite typed candidate space deterministically and fail closed above configured ceilings."
+    },
+    {
+      "id": "P40-8-005",
+      "text": "Partition candidate ordinals deterministically and execute bounded HermiT lanes without CPU oversubscription."
+    },
+    {
+      "id": "P40-8-006",
+      "text": "For every candidate, require the grounded target plus active ontology to remain OWL 2 DL."
+    },
+    {
+      "id": "P40-8-007",
+      "text": "Use HermiT isEntailed over grounded logical axioms and never promote partial execution."
+    },
+    {
+      "id": "P40-8-008",
+      "text": "Require gap-free partition completion and common candidate/reasoner identities before exact-complete result construction."
+    },
+    {
+      "id": "P40-8-009",
+      "text": "Emit a DirectBgpResult and DirectCertificate bound to query, dataset, authorization and semantic qualification hashes."
+    },
+    {
+      "id": "P40-8-010",
+      "text": "Fail closed for anonymous-individual instance-map semantics until independently qualified."
+    },
+    {
+      "id": "P40-8-011",
+      "text": "Expose the exact fallback through the checksum/path-confined reference-worker direct-bgp job mode."
+    },
+    {
+      "id": "P40-8-012",
+      "text": "Keep Phase 40.8 ceilings bounded locally until Phase 40.10 makes them authoritative Helm/operator configuration."
+    }
+  ]
+}

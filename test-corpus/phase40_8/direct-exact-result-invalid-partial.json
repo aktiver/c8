@@ -1,0 +1,37 @@
+{
+  "formatVersion": 1,
+  "datasetId": "4d2e1a82-c2bc-536a-a809-fda7643ef1f7",
+  "snapshotId": "91054ecb-2f68-5a63-b31a-137333c64a7c",
+  "querySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "bgpSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "engine": "hermit-grounded-owl2dl-isentailed-v1",
+  "partition": {
+    "index": 0,
+    "count": 1
+  },
+  "candidateBindingCount": 2,
+  "partitionStartOrdinal": 0,
+  "partitionEndOrdinalExclusive": 2,
+  "checkedCandidateCount": 1,
+  "groundedOwl2dlCandidateCount": 1,
+  "entailedCandidateCount": 1,
+  "reasonerRequestCount": 1,
+  "entailed": [
+    {
+      "candidateOrdinal": 0,
+      "bindings": {
+        "x": {
+          "termType": "iri",
+          "value": "https://example.test/alice"
+        }
+      }
+    }
+  ],
+  "complete": true,
+  "reasonerName": "HermiT",
+  "reasonerVersion": "1.4.5.519",
+  "adapterVersion": "40.8",
+  "requestSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "aggregateInputSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "candidateSpaceSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+}

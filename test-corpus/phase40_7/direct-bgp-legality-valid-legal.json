@@ -1,0 +1,46 @@
+{
+  "formatVersion": 1,
+  "datasetId": "00000000-0000-0000-0000-000000000001",
+  "snapshotId": "00000000-0000-0000-0000-000000000002",
+  "querySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "sparqlAlgebraSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "activeDatasetSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "authorizedGraphSetSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "owlSignatureSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "datatypePolicySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "owlProfileQualificationSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "owlConsistencyQualificationSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "entailmentRegime": "owl2-direct",
+  "classifier": "w3c-owl2-direct-bgp-cp1-cp4-v1",
+  "bgpCount": 1,
+  "allBgpsLegal": true,
+  "propertyPathsOutsideDirectBgps": true,
+  "bgps": [
+    {
+      "ordinal": 0,
+      "bgpSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "graphScope": {
+        "scope": "default"
+      },
+      "tripleCount": 2,
+      "recognizedForms": [
+        "ClassAssertion",
+        "DeclarationClass"
+      ],
+      "variables": [
+        {
+          "variable": "c",
+          "role": "class",
+          "source": "explicit-declaration"
+        },
+        {
+          "variable": "x",
+          "role": "named-individual",
+          "source": "structural-position"
+        }
+      ],
+      "status": "legal",
+      "groundedOwl2dlCheckRequired": true
+    }
+  ]
+}

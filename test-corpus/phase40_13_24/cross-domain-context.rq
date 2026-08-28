@@ -1,0 +1,13 @@
+PREFIX ex: <https://c8-next-generation.io/ontology/release/>
+CONSTRUCT {
+  ?incident ex:detectedOn ?workload .
+  ?workload ex:hostedBy ?cluster .
+  ?cluster ex:ownedBy ?team .
+  ?incident ex:requiresResponseFrom ?team .
+}
+WHERE {
+  ?incident ex:detectedOn ?workload .
+  ?workload ex:hostedBy ?cluster .
+  ?cluster ex:ownedBy ?team .
+  ?incident ex:requiresResponseFrom ?team .
+}

@@ -1,0 +1,112 @@
+{
+  "formatVersion": 1,
+  "parentLabel": "phase-40.8",
+  "currentLabel": "phase-40.9",
+  "parentArchiveSha256": "cf2cb61732464f2cf081a4c20fe96d0da518540e0156e5a2a08720678cb655fc",
+  "embeddedParentManifest": "verification/stabilization/phase-40.8-parent-for-40.9-FILE_MANIFEST_SHA256.txt",
+  "parentFileManifestSha256": "3be69e10205c35f8d7fa6c8efeb1bf529643196aaf1c973742786cf813c82a22",
+  "parentPayloadFileCount": 613,
+  "changedParentFiles": [
+    {
+      "path": "README.md",
+      "parentSha256": "7e47fca4252c5dbac13bff799a4710d7707ba3a7f474a9ef070d2e7c2435ee25",
+      "currentSha256": "bf84d3c3a5d6e25343abd68a43bb2acb0840f969204199f61e573532dc70e52a"
+    },
+    {
+      "path": "acceptance/phase-gates.yaml",
+      "parentSha256": "1359323cc77c9b70b7eb9c0e40df41343d21b30ae34979d3cbfa87bde3f56778",
+      "currentSha256": "4c60b6ad925fd884df995d2fa23326eb7062bb79f6239e99b90126f3397d5832"
+    },
+    {
+      "path": "adapters/hermit-reasoner/README.md",
+      "parentSha256": "6b84af1463e1dfb70e0dbbaee5449411f886399d5d6c9837f311d3224c9f1d72",
+      "currentSha256": "3848bd1748b44b58c4f805ae35273f19b79aad3fbb8cbba675e604a938e377e8"
+    },
+    {
+      "path": "adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/DirectBgpExecutor.java",
+      "parentSha256": "7f8716e6e5a718db52155bb93f103987958ba1b4f46a66805cacfc2fa3d70653",
+      "currentSha256": "be2561a26f9e71a6942880883c620a1bf05c8de1481bc5d75aa8708ddbe3c91b"
+    },
+    {
+      "path": "adapters/hermit-reasoner/src/test/java/io/ngkg/reasoner/MainTest.java",
+      "parentSha256": "a08add714dc6ce66c543c14c2c95b1f52ae94e83898a92bcab4e53a4965bd9b4",
+      "currentSha256": "9b941875b27291c5fa00e518e3e2b8a01b1282378b88cc2b8cb7d4e2fce8f363"
+    },
+    {
+      "path": "contracts/direct-certificate.schema.json",
+      "parentSha256": "7ff36abb28b57c373487911883f73d8987c8e77a59688a8684bc32c3b1e67184",
+      "currentSha256": "573e5d0ce5e08bc4ffbddbc2d1e2d924febf3cbecc1fb766fbf8aeac31808c88"
+    },
+    {
+      "path": "contracts/direct-exact-job.schema.json",
+      "parentSha256": "84b38656e5fd93230db8fb9f9cc9261c05feecda4adca7320622eb442bdbaaf4",
+      "currentSha256": "4a68759dec33bb012686005afe2e7a40c951aabc5f31c3a162649390753d1dbd"
+    },
+    {
+      "path": "contracts/direct-exact-partition-result.schema.json",
+      "parentSha256": "1fedb6cc930edd837516b3d7a653fabb5e67e9c1e8dfd68ee20811b7b70fcbd5",
+      "currentSha256": "e504514db9072698fd4ad81ee069b4c014f749421e5cb728b89b67712f5f0318"
+    },
+    {
+      "path": "crates/ngkg-direct-reasoner/src/lib.rs",
+      "parentSha256": "cd7dcf2f71a0101fd4e168ea32779ba29b185d9ed9db1bd4bbbe3216fe9a4212",
+      "currentSha256": "0aef3e154ab9056dbe275708867a7fe91c2a875087c475671416237593e9b46b"
+    },
+    {
+      "path": "crates/ngkg-reasoner-client/src/lib.rs",
+      "parentSha256": "d47d6db22ab136ce54ef7be81bc5c3a8a24d570b6c63a02b77c258141c9ea104",
+      "currentSha256": "012073029aa379f309d290c0ced19f896913c4c02a9e2878a59e652fed5ae94f"
+    },
+    {
+      "path": "crates/ngkg-types/src/direct_certificate.rs",
+      "parentSha256": "e29cfb1f08323e83ede34463319e0923eb9de43b72d92cfbf25d695f6194ccbd",
+      "currentSha256": "5fd8d1d8df10eed1a7e148559cbf745a08b9dfc09fdce44c8452083aad388fdd"
+    },
+    {
+      "path": "crates/ngkg-types/src/direct_exact.rs",
+      "parentSha256": "4795ff7986916bb855edf472231c746fac4ed91385920ffc831eb0e2d5bdb8cc",
+      "currentSha256": "fab95c35aefb39115e290a07e40bd2692a4619a819c1300d074362964587411e"
+    },
+    {
+      "path": "crates/ngkg-types/src/lib.rs",
+      "parentSha256": "d6b60530b161545477789705418298280a8a478f781fd58d3fc415646b45402d",
+      "currentSha256": "33e27dc8d72e71c9d42fa31af416b173fd1dfa9490df13199b5e3cc59cdee327"
+    },
+    {
+      "path": "docs/DIRECT_BGP_RESULT_CONTRACT.md",
+      "parentSha256": "f8d6d6720c56c679ddd0581ecbab03e4680fc9fe772f754c9aa182f7f810fdf9",
+      "currentSha256": "7d3778ece20796b0fd50c224cc0c46df0b940aeaa13dd00dac1b3c8c1ed6f42c"
+    },
+    {
+      "path": "docs/DIRECT_CERTIFICATE_CONTRACT.md",
+      "parentSha256": "99cb4b943b8d4f146bce10eab7d5fae9467dcae983dd18f65ed39a82aeee81bf",
+      "currentSha256": "18a90020d04844aca6c1e10f08fd8d14cae248635e53bd3faef3ef5af85d733e"
+    },
+    {
+      "path": "scripts/validate_direct_certificate.py",
+      "parentSha256": "d739599213038b236bb01ed37b1f9717e1d1f1046f48c5cc9a87c3b52cdf5b6c",
+      "currentSha256": "f0043dc02b755e1309cb0b6a765e922885102589ff6efd860347e9e783a3cc7c"
+    },
+    {
+      "path": "scripts/validate_direct_exact.py",
+      "parentSha256": "87e00cdc322fe2d13adb29a705fa933a7e01157967066a6e28627bb4f399c125",
+      "currentSha256": "a3152667da6ea8606bcb0e5cb0889c8bdeeee5e9d61611e0feb93be87dcfb002"
+    },
+    {
+      "path": "scripts/verify_phase40_8_static.py",
+      "parentSha256": "f1f9fc0ee1ade9072e5a87dc70ba31f70370b1f662a41855b752428099159ae7",
+      "currentSha256": "647297cd578b3436f46b417762f8fe21814348e8264556c2224782e3d96b30e5"
+    },
+    {
+      "path": "services/reference-worker/src/direct_job.rs",
+      "parentSha256": "1dd76b4a71b1ed29ebdddc2fa1d671de3b12614d2e862854b941c88e5f413d82",
+      "currentSha256": "ed57f5b94254aece844125fe8d9bceaef51d0526edcd768915189190a469c712"
+    },
+    {
+      "path": "verification/phase-40-capability-status.json",
+      "parentSha256": "7322fde5fda9979ab886ec36e78db538ba2fe42dc523d8915730c3a8196e883c",
+      "currentSha256": "fafd17131509a20af98695c0796abff2d5030386724a5f34853a4db84651850f"
+    }
+  ],
+  "deletedFiles": []
+}

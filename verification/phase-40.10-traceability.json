@@ -1,0 +1,148 @@
+{
+  "formatVersion": 1,
+  "phase": "40.10",
+  "entries": [
+    {
+      "requirementId": "P40-10-001",
+      "implementation": [
+        "charts/ngkg-workloads/values.schema.json",
+        "charts/ngkg-workloads/values.yaml"
+      ],
+      "evidence": [
+        "verification/phase-40.10.json"
+      ]
+    },
+    {
+      "requirementId": "P40-10-002",
+      "implementation": [
+        "charts/ngkg-platform/values.schema.json",
+        "charts/ngkg-platform/values.yaml"
+      ],
+      "evidence": [
+        "verification/phase-40.10.json"
+      ]
+    },
+    {
+      "requirementId": "P40-10-003",
+      "implementation": [
+        "charts/ngkg-platform/values.schema.json",
+        "charts/ngkg-platform/values.yaml",
+        "charts/ngkg-workloads/values.schema.json",
+        "charts/ngkg-workloads/values.yaml",
+        "scripts/validate_phase40_helm_ceilings.py",
+        "test-corpus/phase40_10/platform-invalid-memory.yaml",
+        "test-corpus/phase40_10/platform-invalid-partition.yaml",
+        "test-corpus/phase40_10/workloads-invalid-lanes.yaml"
+      ],
+      "evidence": [
+        "verification/phase-40.10.json"
+      ]
+    },
+    {
+      "requirementId": "P40-10-004",
+      "implementation": [
+        "charts/ngkg-platform/values.schema.json",
+        "charts/ngkg-platform/values.yaml",
+        "charts/ngkg-workloads/values.schema.json",
+        "charts/ngkg-workloads/values.yaml",
+        "crates/ngkg-direct-reasoner/src/lib.rs",
+        "crates/ngkg-owl-direct/src/lib.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.10.json"
+      ]
+    },
+    {
+      "requirementId": "P40-10-005",
+      "implementation": [
+        "charts/ngkg-platform/values.schema.json",
+        "charts/ngkg-platform/values.yaml",
+        "crates/ngkg-direct-reasoner/src/lib.rs",
+        "crates/ngkg-owl-direct/src/lib.rs",
+        "scripts/validate_phase40_helm_ceilings.py",
+        "test-corpus/phase40_10/platform-invalid-memory.yaml",
+        "test-corpus/phase40_10/platform-invalid-partition.yaml",
+        "test-corpus/phase40_10/workloads-invalid-lanes.yaml"
+      ],
+      "evidence": [
+        "verification/phase-40.10.json"
+      ]
+    },
+    {
+      "requirementId": "P40-10-006",
+      "implementation": [
+        "charts/ngkg-platform/values.schema.json",
+        "charts/ngkg-platform/values.yaml",
+        "crates/ngkg-direct-reasoner/src/lib.rs",
+        "crates/ngkg-owl-direct/src/lib.rs",
+        "scripts/validate_phase40_helm_ceilings.py",
+        "test-corpus/phase40_10/platform-invalid-memory.yaml",
+        "test-corpus/phase40_10/platform-invalid-partition.yaml",
+        "test-corpus/phase40_10/workloads-invalid-lanes.yaml"
+      ],
+      "evidence": [
+        "verification/phase-40.10.json"
+      ]
+    },
+    {
+      "requirementId": "P40-10-007",
+      "implementation": [
+        "charts/ngkg-platform/values.schema.json",
+        "charts/ngkg-platform/values.yaml",
+        "scripts/validate_phase40_helm_ceilings.py",
+        "test-corpus/phase40_10/platform-invalid-memory.yaml",
+        "test-corpus/phase40_10/platform-invalid-partition.yaml",
+        "test-corpus/phase40_10/workloads-invalid-lanes.yaml"
+      ],
+      "evidence": [
+        "verification/phase-40.10.json"
+      ]
+    },
+    {
+      "requirementId": "P40-10-008",
+      "implementation": [
+        "charts/ngkg-platform/values.schema.json",
+        "charts/ngkg-platform/values.yaml",
+        "crates/ngkg-types/src/direct_certificate.rs",
+        "crates/ngkg-types/src/direct_proof.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.10.json"
+      ]
+    },
+    {
+      "requirementId": "P40-10-009",
+      "implementation": [
+        "verification/phase-40-ceilings.json"
+      ],
+      "evidence": [
+        "verification/phase-40.10.json"
+      ]
+    },
+    {
+      "requirementId": "P40-10-010",
+      "implementation": [
+        "verification/phase-40-ceilings.json"
+      ],
+      "evidence": [
+        "verification/phase-40.10.json"
+      ]
+    },
+    {
+      "requirementId": "P40-10-011",
+      "implementation": [],
+      "evidence": [
+        "verification/phase-40.10.json",
+        "verification/stabilization/phase-40.10.json"
+      ]
+    },
+    {
+      "requirementId": "P40-10-012",
+      "implementation": [],
+      "evidence": [
+        "verification/phase-40.10.json",
+        "verification/phase-40-capability-status.json"
+      ]
+    }
+  ]
+}

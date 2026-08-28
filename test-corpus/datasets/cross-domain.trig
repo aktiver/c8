@@ -1,0 +1,28 @@
+@prefix ngkg: <https://ngkg.io/ontology/> .
+@prefix id: <https://ngkg.io/id/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<urn:ngkg:graph:hdfs> {
+  id:node-1 a ngkg:NameNode ; ngkg:participatesIn id:service-1 .
+  id:observation-1 a ngkg:LatencyObservation ;
+    ngkg:observedOn id:node-1 ;
+    ngkg:latencyValue "750.0"^^xsd:decimal ;
+    ngkg:rawMessage "latency threshold exceeded" ;
+    prov:wasDerivedFrom id:source-1 .
+  id:observation-2 a ngkg:LatencyObservation ;
+    ngkg:observedOn id:node-1 ;
+    ngkg:latencyValue "120.0"^^xsd:decimal ;
+    prov:wasDerivedFrom id:source-1 .
+}
+
+<urn:ngkg:graph:operations> {
+  id:service-1 a ngkg:Service ; ngkg:affectedBy id:failure-1 .
+  id:failure-1 a ngkg:ReplicationFailure ; prov:wasDerivedFrom id:source-2 .
+}
+
+<urn:ngkg:graph:provenance> {
+  id:source-1 a prov:Entity .
+  id:source-2 a prov:Entity .
+}
+

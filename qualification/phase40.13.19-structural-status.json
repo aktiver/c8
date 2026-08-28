@@ -1,0 +1,7 @@
+{
+  "phase": "40.13.19",
+  "command": "python3 scripts/structural_validate.py --root .",
+  "status": "failed-inherited-findings",
+  "exitCode": 1,
+  "note": "The validator reports pre-existing TODO tokens in the Phase 40.13.16 report and vendored Oxigraph/spareval/sparopt sources; no Phase 40.13.19 implementation file contains an unresolved token."
+}

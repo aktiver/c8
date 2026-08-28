@@ -1,0 +1,134 @@
+{
+  "formatVersion": 1,
+  "phase": "40.8",
+  "entries": [
+    {
+      "requirementId": "P40-8-001",
+      "implementation": [
+        "crates/ngkg-direct-reasoner/src/lib.rs",
+        "services/reference-worker/src/direct_job.rs"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_8_static.py",
+        "docs/phases/PHASE_40_8.md"
+      ]
+    },
+    {
+      "requirementId": "P40-8-002",
+      "implementation": [
+        "crates/ngkg-dataset/src/lib.rs",
+        "services/reference-worker/src/direct_job.rs"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_8_static.py",
+        "docs/phases/PHASE_40_8.md"
+      ]
+    },
+    {
+      "requirementId": "P40-8-003",
+      "implementation": [
+        "crates/ngkg-reference/src/direct_exact.rs"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_8_static.py",
+        "docs/phases/PHASE_40_8.md"
+      ]
+    },
+    {
+      "requirementId": "P40-8-004",
+      "implementation": [
+        "adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/DirectBgpExecutor.java",
+        "crates/ngkg-direct-reasoner/src/lib.rs"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_8_static.py",
+        "docs/phases/PHASE_40_8.md"
+      ]
+    },
+    {
+      "requirementId": "P40-8-005",
+      "implementation": [
+        "crates/ngkg-direct-reasoner/src/lib.rs"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_8_static.py",
+        "docs/phases/PHASE_40_8.md"
+      ]
+    },
+    {
+      "requirementId": "P40-8-006",
+      "implementation": [
+        "adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/DirectBgpExecutor.java"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_8_static.py",
+        "docs/phases/PHASE_40_8.md"
+      ]
+    },
+    {
+      "requirementId": "P40-8-007",
+      "implementation": [
+        "adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/DirectBgpExecutor.java"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_8_static.py",
+        "docs/phases/PHASE_40_8.md"
+      ]
+    },
+    {
+      "requirementId": "P40-8-008",
+      "implementation": [
+        "crates/ngkg-direct-reasoner/src/lib.rs"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_8_static.py",
+        "docs/phases/PHASE_40_8.md"
+      ]
+    },
+    {
+      "requirementId": "P40-8-009",
+      "implementation": [
+        "crates/ngkg-direct-reasoner/src/lib.rs",
+        "crates/ngkg-types/src/direct_exact.rs"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_8_static.py",
+        "docs/phases/PHASE_40_8.md"
+      ]
+    },
+    {
+      "requirementId": "P40-8-010",
+      "implementation": [
+        "crates/ngkg-direct-reasoner/src/lib.rs",
+        "adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/DirectBgpExecutor.java"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_8_static.py",
+        "docs/phases/PHASE_40_8.md"
+      ]
+    },
+    {
+      "requirementId": "P40-8-011",
+      "implementation": [
+        "services/reference-worker/src/main.rs",
+        "services/reference-worker/src/direct_job.rs",
+        "contracts/direct-exact-job.schema.json"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_8_static.py",
+        "docs/phases/PHASE_40_8.md"
+      ]
+    },
+    {
+      "requirementId": "P40-8-012",
+      "implementation": [
+        "crates/ngkg-direct-reasoner/src/lib.rs",
+        "services/reference-worker/src/direct_job.rs"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_8_static.py",
+        "docs/phases/PHASE_40_8.md"
+      ]
+    }
+  ]
+}

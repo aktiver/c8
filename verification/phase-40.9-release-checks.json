@@ -1,0 +1,34 @@
+{
+  "formatVersion": 1,
+  "phase": "40.9",
+  "parentPhase": "40.8",
+  "parentStaticGateEvidence": "BUILD_STATUS_PHASE_40_8.md reports 39/39 PASS",
+  "affectedInheritedStaticGatesRerun": [
+    "36",
+    "40.2",
+    "40.4",
+    "40.5",
+    "40.6",
+    "40.7",
+    "40.8"
+  ],
+  "phaseStaticGate": "40.9 PASS",
+  "jsonSchemasMetaValid": 39,
+  "controlPlaneOpenApiOperations": 12,
+  "onlineDataPlaneOpenApiOperations": 15,
+  "openApiRouteParity": "PASS",
+  "structuralValidationErrors": 0,
+  "productionPlaceholderFindings": 0,
+  "editArtifactFindings": 0,
+  "nativeQualification": {
+    "cargo": false,
+    "rustc": false,
+    "maven": false,
+    "helm": false,
+    "kubectl": false,
+    "rke2": false,
+    "javaAvailable": true,
+    "javacAvailable": true
+  },
+  "standardsClaimsEnabled": false
+}

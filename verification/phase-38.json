@@ -1,0 +1,56 @@
+{
+  "formatVersion": 1,
+  "phase": 38,
+  "workspaceVersion": "0.6.0",
+  "status": "implementation-candidate-not-production-qualified",
+  "staticContractGate": "scripts/verify_phase38_static.py",
+  "qualificationGate": "scripts/qualify_phase38.sh",
+  "standardsClaimsEnabled": false,
+  "liveGatesExecutedInThisBuildEnvironment": false,
+  "implementedEvidence": {
+    "sharedTypedSparqlCompiler": true,
+    "lexicalSemanticScannerRemoved": true,
+    "canonicalAlgebraCertificate": true,
+    "protocolDatasetPrecedence": true,
+    "typedDistributedEligibility": "pure-constant-GRAPH-inner-join-only",
+    "selectResultFormats": [
+      "application/sparql-results+json",
+      "application/sparql-results+xml",
+      "text/tab-separated-values",
+      "text/csv"
+    ],
+    "vendoredSwaggerUi": true,
+    "upstreamTimeoutHttpStatus": 504,
+    "parserExecution": "bounded-blocking-compute-pool",
+    "databasePoolConfiguration": "NGKG_DATABASE_MAX_CONNECTIONS",
+    "autoscaling": [
+      "HPA",
+      "KEDA-compatible-metrics",
+      "Kueue",
+      "RKE2-cluster-autoscaler"
+    ]
+  },
+  "staticGatesExecuted": [
+    "phase-15-through-phase-38-static-contracts",
+    "repository-structural-validation",
+    "platform-values-validation",
+    "workload-values-validation",
+    "merged-rke2-values-validation",
+    "json-schema-meta-validation",
+    "openapi-local-reference-validation",
+    "shell-syntax-validation",
+    "python-syntax-validation",
+    "changed-source-synthetic-logic-scan",
+    "rust-delimiter-edit-artifact-scan"
+  ],
+  "blockedLiveGates": [
+    "phase-37-live-qualification",
+    "cargo-rustfmt-clippy-workspace-build-and-tests",
+    "rust-typed-sparql-compiler-tests",
+    "rust-shared-algebra-runtime-tests",
+    "maven-hermit-adapter-tests",
+    "w3c-sparql-query-protocol-and-result-format-tests",
+    "helm-render-and-kubernetes-server-dry-run",
+    "live-rke2-autoscaling-authorization-and-failure-tests"
+  ]
+}

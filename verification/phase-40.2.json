@@ -1,0 +1,33 @@
+{
+  "datatypePolicyRuntimeImplemented": true,
+  "deterministicParallelValidationImplemented": true,
+  "formatVersion": 1,
+  "mergedOntologyDatatypeCoverageCheckImplemented": true,
+  "owlDirectArbitraryBgpCompleteness": false,
+  "parent": "40.1",
+  "phase": "40.2",
+  "purpose": "datatype-policy-runtime-contract-and-json-schema",
+  "qualificationGate": "scripts/qualify_phase40_2.sh",
+  "reasoningLiteralValidationImplemented": true,
+  "standardsClaimsEnabled": false,
+  "staticContractGate": "scripts/verify_phase40_2_static.py",
+  "status": "phase-40.2-implementation-candidate-not-production-qualified",
+  "strictlySupersededAssertions": [
+    {
+      "assertion": "reasoner report formatVersion 2",
+      "phase": "36",
+      "replacement": "reasoner report formatVersion 3 with required datatypePolicySha256 binding"
+    },
+    {
+      "assertion": "reasoner report formatVersion 3",
+      "phase": "40.5",
+      "replacement": "reasoner report formatVersion 4 retains datatypePolicySha256 and adds owlProfileQualificationSha256"
+    }
+  ],
+  "supersessions": [
+    {
+      "assertion": "reasoner report formatVersion 4",
+      "replacement": "Phase 40.6 reasoner report formatVersion 5 retains prior bindings and adds owlConsistencyQualificationSha256"
+    }
+  ]
+}

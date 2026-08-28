@@ -1,0 +1,186 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13",
+  "entries": [
+    {
+      "requirementId": "P40-13-001",
+      "implementation": [
+        "crates/ngkg-operator-core/src/lib.rs",
+        "charts/ngkg-platform/templates/operator.yaml",
+        "charts/ngkg-platform/templates/distributed-operator.yaml",
+        "services/operator/src/main.rs",
+        "services/distributed-operator/src/main.rs",
+        "services/reference-worker/src/phase40_limits.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.13.json",
+        "scripts/verify_phase40_13_static.py"
+      ]
+    },
+    {
+      "requirementId": "P40-13-002",
+      "implementation": [
+        "crates/ngkg-operator-core/src/lib.rs",
+        "charts/ngkg-platform/templates/operator.yaml",
+        "charts/ngkg-platform/templates/distributed-operator.yaml",
+        "services/operator/src/main.rs",
+        "services/distributed-operator/src/main.rs",
+        "services/reference-worker/src/phase40_limits.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.13.json",
+        "scripts/verify_phase40_13_static.py"
+      ]
+    },
+    {
+      "requirementId": "P40-13-003",
+      "implementation": [
+        "crates/ngkg-operator-core/src/lib.rs",
+        "charts/ngkg-platform/templates/operator.yaml",
+        "charts/ngkg-platform/templates/distributed-operator.yaml",
+        "services/operator/src/main.rs",
+        "services/distributed-operator/src/main.rs",
+        "services/reference-worker/src/phase40_limits.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.13.json",
+        "scripts/verify_phase40_13_static.py"
+      ]
+    },
+    {
+      "requirementId": "P40-13-004",
+      "implementation": [
+        "crates/ngkg-operator-core/src/lib.rs",
+        "charts/ngkg-platform/templates/operator.yaml",
+        "charts/ngkg-platform/templates/distributed-operator.yaml",
+        "services/operator/src/main.rs",
+        "services/distributed-operator/src/main.rs",
+        "services/reference-worker/src/phase40_limits.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.13.json",
+        "scripts/verify_phase40_13_static.py"
+      ]
+    },
+    {
+      "requirementId": "P40-13-005",
+      "implementation": [
+        "crates/ngkg-operator-core/src/lib.rs",
+        "charts/ngkg-platform/templates/operator.yaml",
+        "charts/ngkg-platform/templates/distributed-operator.yaml",
+        "services/operator/src/main.rs",
+        "services/distributed-operator/src/main.rs",
+        "services/reference-worker/src/phase40_limits.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.13.json",
+        "scripts/verify_phase40_13_static.py"
+      ]
+    },
+    {
+      "requirementId": "P40-13-006",
+      "implementation": [
+        "crates/ngkg-operator-core/src/lib.rs",
+        "charts/ngkg-platform/templates/operator.yaml",
+        "charts/ngkg-platform/templates/distributed-operator.yaml",
+        "services/operator/src/main.rs",
+        "services/distributed-operator/src/main.rs",
+        "services/reference-worker/src/phase40_limits.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.13.json",
+        "scripts/verify_phase40_13_static.py"
+      ]
+    },
+    {
+      "requirementId": "P40-13-007",
+      "implementation": [
+        "crates/ngkg-operator-core/src/lib.rs",
+        "charts/ngkg-platform/templates/operator.yaml",
+        "charts/ngkg-platform/templates/distributed-operator.yaml",
+        "services/operator/src/main.rs",
+        "services/distributed-operator/src/main.rs",
+        "services/reference-worker/src/phase40_limits.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.13.json",
+        "scripts/verify_phase40_13_static.py"
+      ]
+    },
+    {
+      "requirementId": "P40-13-008",
+      "implementation": [
+        "crates/ngkg-operator-core/src/lib.rs",
+        "charts/ngkg-platform/templates/operator.yaml",
+        "charts/ngkg-platform/templates/distributed-operator.yaml",
+        "services/operator/src/main.rs",
+        "services/distributed-operator/src/main.rs",
+        "services/reference-worker/src/phase40_limits.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.13.json",
+        "scripts/verify_phase40_13_static.py"
+      ]
+    },
+    {
+      "requirementId": "P40-13-009",
+      "implementation": [
+        "crates/ngkg-operator-core/src/lib.rs",
+        "charts/ngkg-platform/templates/operator.yaml",
+        "charts/ngkg-platform/templates/distributed-operator.yaml",
+        "services/operator/src/main.rs",
+        "services/distributed-operator/src/main.rs",
+        "services/reference-worker/src/phase40_limits.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.13.json",
+        "scripts/verify_phase40_13_static.py"
+      ]
+    },
+    {
+      "requirementId": "P40-13-010",
+      "implementation": [
+        "crates/ngkg-operator-core/src/lib.rs",
+        "charts/ngkg-platform/templates/operator.yaml",
+        "charts/ngkg-platform/templates/distributed-operator.yaml",
+        "services/operator/src/main.rs",
+        "services/distributed-operator/src/main.rs",
+        "services/reference-worker/src/phase40_limits.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.13.json",
+        "scripts/verify_phase40_13_static.py"
+      ]
+    },
+    {
+      "requirementId": "P40-13-011",
+      "implementation": [
+        "crates/ngkg-operator-core/src/lib.rs",
+        "charts/ngkg-platform/templates/operator.yaml",
+        "charts/ngkg-platform/templates/distributed-operator.yaml",
+        "services/operator/src/main.rs",
+        "services/distributed-operator/src/main.rs",
+        "services/reference-worker/src/phase40_limits.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.13.json",
+        "scripts/verify_phase40_13_static.py"
+      ]
+    },
+    {
+      "requirementId": "P40-13-012",
+      "implementation": [
+        "crates/ngkg-operator-core/src/lib.rs",
+        "charts/ngkg-platform/templates/operator.yaml",
+        "charts/ngkg-platform/templates/distributed-operator.yaml",
+        "services/operator/src/main.rs",
+        "services/distributed-operator/src/main.rs",
+        "services/reference-worker/src/phase40_limits.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.13.json",
+        "scripts/verify_phase40_13_static.py"
+      ]
+    }
+  ]
+}

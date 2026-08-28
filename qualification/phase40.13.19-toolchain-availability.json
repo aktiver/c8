@@ -1,0 +1,18 @@
+{
+  "phase": "40.13.19",
+  "observedAtUtc": "2026-08-28",
+  "tools": {
+    "cargo": "unavailable",
+    "rustc": "unavailable",
+    "rustfmt": "unavailable",
+    "helm": "unavailable",
+    "kubectl": "unavailable",
+    "maven": "unavailable",
+    "java": "openjdk 17.0.20",
+    "gcc": "13.3.0",
+    "g++": "13.3.0"
+  },
+  "nativeBuildQualified": false,
+  "helmRenderQualified": false,
+  "liveClusterQualified": false
+}

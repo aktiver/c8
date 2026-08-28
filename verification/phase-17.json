@@ -1,0 +1,58 @@
+{
+  "phase": "17",
+  "generatedAt": "2026-08-18T12:00:00-05:00",
+  "checks": {
+    "structural": {
+      "status": "passed",
+      "command": ["python3", "scripts/structural_validate.py", "--root", "."],
+      "summary": "All 203 current files were inventoried; required Phase 17 artifacts were present; JSON, non-template YAML and TOML parsed; and unresolved forbidden tokens were absent."
+    },
+    "phase17StaticContracts": {
+      "status": "passed",
+      "command": ["python3", "scripts/verify_phase17_static.py"],
+      "summary": "Migration/RLS, immutable plan and root catalog methods, exact-key workers, manifest/root publication ordering, operator barriers, reference handoff, REST schemas, and Helm responsibility wiring were present."
+    },
+    "pythonShellAndWhitespace": {
+      "status": "passed",
+      "commands": [
+        "python3 -m py_compile scripts/*.py",
+        "bash -n scripts/*.sh (individually)",
+        "git diff --check"
+      ]
+    },
+    "cargoFormatClippyTest": {
+      "status": "blocked",
+      "reason": "cargo, rustc and rustfmt are unavailable and the repository lacks the dependency-resolved Cargo.lock required for a locked production build.",
+      "requiredCommands": [
+        "cargo generate-lockfile",
+        "cargo fmt --all --check",
+        "cargo clippy --locked --workspace --all-targets --all-features -- -D warnings",
+        "cargo test --locked --workspace --all-features"
+      ]
+    },
+    "postgresObjectStoreIntegration": {
+      "status": "blocked",
+      "reason": "No PostgreSQL 16 and S3-compatible immutable-object integration environment is available.",
+      "requiredEvidence": "Migration 4, forced RLS, immutable retry CAS, partial upload, checksum corruption, manifest-last, root-last, and catalog restart tests."
+    },
+    "helmRke2Autoscaling": {
+      "status": "blocked",
+      "reason": "helm, kubectl, RKE2, Kueue, Rancher Cluster Autoscaler, custom metrics, and responsibility machine pools are unavailable.",
+      "requiredCommand": "scripts/qualify_phase17.sh"
+    },
+    "referenceAndArtifactEquivalence": {
+      "status": "blocked",
+      "reason": "The pinned Rust toolchain, HermiT adapter, Java runtime, Parquet inspectors, PostgreSQL, and object storage are unavailable.",
+      "requiredEvidence": "Forward/reverse/retry artifacts plus one-node/N-node root, reference snapshot, certified-query multiset, and GUID hydration equality."
+    },
+    "faultInjection": {
+      "status": "blocked",
+      "reason": "A supported multi-node cluster is required to kill planner, artifact, finalizer, operator, catalog, object-store, and reasoner components at each publication boundary."
+    },
+    "endToEnd": {
+      "status": "blocked",
+      "reason": "Phase 17 implements the durable service path but cannot claim a working deployment until all external compile, database, object-store, reasoner, Helm, RKE2, query, and hydration gates pass."
+    }
+  },
+  "gateStatus": "blocked"
+}

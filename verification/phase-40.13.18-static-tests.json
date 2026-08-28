@@ -1,0 +1,18 @@
+{
+  "phase": "40.13.18",
+  "status": "passed",
+  "executedAtUtc": "2026-08-27",
+  "checks": {
+    "phase40_13_1Through18Static": 18,
+    "controlPlaneOpenapiOperations": 16,
+    "onlineOpenapiOperations": 18,
+    "openapiRouteParity": true,
+    "openapiYaml": true,
+    "helmValuesYaml": true,
+    "helmValuesSchemaJson": true,
+    "federationRegistryJson": true,
+    "federationCorpusJson": true
+  },
+  "nativeToolchainAvailable": false,
+  "liveKubernetesAvailable": false
+}

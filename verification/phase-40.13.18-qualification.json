@@ -1,0 +1,34 @@
+{
+  "phase": "40.13.18",
+  "status": "source-implemented-static-qualified-candidate",
+  "parentPhase": "40.13.17",
+  "parentArchiveSha256": "32bbca4258f4ee0619c2fa3e1fc9ca1442d970335f85b2e971ba5c5436cf2f52",
+  "implemented": {
+    "typedServiceExecution": true,
+    "variableEndpointRouting": true,
+    "serviceSilentDelegatedToStandardsEvaluator": true,
+    "localOwlAndRemoteServiceSeparation": true,
+    "failClosedEndpointPolicy": true,
+    "boundedHpcConcurrency": true,
+    "workloadAwareAutoscalingWired": true,
+    "ontologyAlignmentAdded": false,
+    "rawDataMappingAdded": false
+  },
+  "blocked": {
+    "cargo": "tool unavailable",
+    "rustc": "tool unavailable",
+    "rustfmt": "tool unavailable",
+    "maven": "tool unavailable",
+    "helm": "tool unavailable",
+    "kubectl": "tool unavailable",
+    "liveFederationEndpoints": "not configured",
+    "liveMultinode": "cluster unavailable"
+  },
+  "openProductionLimits": {
+    "officialFederatedQuerySuitePassed": false,
+    "dnsRedirectTimeoutFailureInjectionPassed": false,
+    "liveHpaAndNodeAutoscalingPassed": false,
+    "serviceDescriptionReleaseClaimEnabled": false,
+    "productionClaimEnabled": false
+  }
+}

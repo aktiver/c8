@@ -1,0 +1,54 @@
+{
+  "formatVersion": 1,
+  "phase": "40.12",
+  "requirements": [
+    {
+      "id": "P40-12-001",
+      "text": "Render the authoritative workload Direct-BGP admission ceilings into one immutable online-serving ConfigMap."
+    },
+    {
+      "id": "P40-12-002",
+      "text": "Require every online-serving role to validate the same trusted Phase 40 admission environment bundle at startup."
+    },
+    {
+      "id": "P40-12-003",
+      "text": "Use the trusted maxBgps ceiling instead of the Phase 40.7 classifier default for query Direct-BGP validation."
+    },
+    {
+      "id": "P40-12-004",
+      "text": "Use the trusted maxTriplesPerBgp ceiling instead of the Phase 40.7 classifier default for query Direct-BGP validation."
+    },
+    {
+      "id": "P40-12-005",
+      "text": "Use the trusted classification CPU ceiling while additionally capping effective lanes by visible CPU and the Rust compute-thread budget."
+    },
+    {
+      "id": "P40-12-006",
+      "text": "Emit a deterministic SHA-256 identity for the trusted online admission ceiling bundle."
+    },
+    {
+      "id": "P40-12-007",
+      "text": "Make query and distributed fragment-worker pods consume the same immutable admission ConfigMap without changing fragment semantic execution."
+    },
+    {
+      "id": "P40-12-008",
+      "text": "Leave the offline distributed ingestion/build worker outside Direct-BGP admission because that workload does not execute SPARQL Direct BGPs."
+    },
+    {
+      "id": "P40-12-009",
+      "text": "Preserve Phase 40.11 reference-worker exact ceiling enforcement unchanged."
+    },
+    {
+      "id": "P40-12-010",
+      "text": "Keep operator and distributed-operator generated-job propagation deferred to Phase 40.13."
+    },
+    {
+      "id": "P40-12-011",
+      "text": "Preserve every Phase 40.11 parent payload unless checksum-accounted in the Phase 40.11 to 40.12 inheritance record."
+    },
+    {
+      "id": "P40-12-012",
+      "text": "Keep full OWL Direct standards claims disabled until cumulative/native/W3C qualification is complete."
+    }
+  ]
+}

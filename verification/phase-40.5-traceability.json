@@ -1,0 +1,80 @@
+{
+  "formatVersion": 1,
+  "phase": "40.5",
+  "entries": [
+    {
+      "requirementId": "P40-5-001",
+      "implementation": [
+        "crates/ngkg-reference/src/compiler.rs"
+      ],
+      "evidence": [
+        "docs/OWL_PROFILE_IMPORT_QUALIFICATION.md"
+      ]
+    },
+    {
+      "requirementId": "P40-5-002",
+      "implementation": [
+        "crates/ngkg-reference/src/compiler.rs",
+        "adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/Main.java"
+      ],
+      "evidence": [
+        "adapters/hermit-reasoner/src/test/java/io/ngkg/reasoner/MainTest.java"
+      ]
+    },
+    {
+      "requirementId": "P40-5-003",
+      "implementation": [
+        "adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/Main.java",
+        "crates/ngkg-reference/src/model.rs"
+      ],
+      "evidence": [
+        "contracts/owl-profile-qualification.schema.json",
+        "test-corpus/phase40_5/owl-profile-qualification-valid.json"
+      ]
+    },
+    {
+      "requirementId": "P40-5-004",
+      "implementation": [
+        "adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/Main.java",
+        "contracts/owl-profile-qualification.schema.json"
+      ],
+      "evidence": [
+        "docs/phases/PHASE_40_5.md"
+      ]
+    },
+    {
+      "requirementId": "P40-5-005",
+      "implementation": [
+        "crates/ngkg-reference/src/reasoner.rs",
+        "crates/ngkg-reference/src/compiler.rs",
+        "contracts/reasoner-report.schema.json"
+      ],
+      "evidence": [
+        "test-corpus/phase40_5/owl-profile-qualification-valid.json"
+      ]
+    },
+    {
+      "requirementId": "P40-5-006",
+      "implementation": [
+        "crates/ngkg-reference/src/reasoner.rs",
+        "scripts/validate_owl_profile_qualification.py"
+      ],
+      "evidence": [
+        "test-corpus/phase40_5/owl-profile-qualification-invalid-unresolved-count.json",
+        "test-corpus/phase40_5/owl-profile-qualification-invalid-import-target.json",
+        "test-corpus/phase40_5/owl-profile-qualification-invalid-document-order.json"
+      ]
+    },
+    {
+      "requirementId": "P40-5-007",
+      "implementation": [
+        "scripts/verify_phase40_5_static.py",
+        "scripts/qualify_phase40_5.sh"
+      ],
+      "evidence": [
+        "BUILD_STATUS_PHASE_40_5.md",
+        "verification/stabilization/phase-40.5.json"
+      ]
+    }
+  ]
+}

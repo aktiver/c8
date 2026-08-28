@@ -1,0 +1,13 @@
+{
+  "head": {"vars": ["observation", "message"]},
+  "results": {"bindings": [
+    {
+      "observation": {"type": "uri", "value": "https://ngkg.io/id/observation-1"},
+      "message": {"type": "literal", "value": "latency threshold exceeded"}
+    },
+    {
+      "observation": {"type": "uri", "value": "https://ngkg.io/id/observation-2"}
+    }
+  ]}
+}
+

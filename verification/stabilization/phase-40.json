@@ -1,0 +1,52 @@
+{
+  "changedParentFiles": [
+    {
+      "currentSha256": "5cad5a56ee6b94391f7e7d568aa7095a1a7f10f9fde6591a6f4e1521c4b52557",
+      "parentSha256": "6f48a37792993abe5366c8cf62840874ce1f5a55534240f5051c6e20b0183aa4",
+      "path": "README.md"
+    },
+    {
+      "currentSha256": "6f093dc5f5a199f42dcdcbd7bad53b8fbbe04b5883c7c1da832e96b9d341b37c",
+      "parentSha256": "4e81a8bf771f606f333dce59467b4cada5ef25c47730c2b70f0d34045c0c3b00",
+      "path": "acceptance/phase-gates.yaml"
+    },
+    {
+      "currentSha256": "d6e1cfb7d2162cc404db1ed8a46b9f0cb892d44347ed62351a41235b78d68e7b",
+      "parentSha256": "97439dbe2d5b9d7cb89bdff6ed41bb4931f2e11268d94452e8f1a5fe896b7a92",
+      "path": "api/online-openapi.yaml"
+    },
+    {
+      "currentSha256": "9ae8244c3f4ce8670a856649878a93632b8e1a21ba3a731f71bd83bdeb302127",
+      "parentSha256": "1b5d52dbcd8f8e7e76126c11d35c2513dcff42359b624d4674e24136826707d5",
+      "path": "api/openapi.yaml"
+    },
+    {
+      "currentSha256": "8fde211f76b72166111eb153c94c4c397db702020a79c15f3398d60e42b901bb",
+      "parentSha256": "d52521142d8dfa727780802916ee8ea8deea4453e20a11720e1f18d73e2aff2c",
+      "path": "scripts/ci_release.sh"
+    },
+    {
+      "currentSha256": "7a5019741babf6e98f31f9c437ea05146cf294e0181faeca7e8fb1462d3d02b1",
+      "parentSha256": "db95e79b68f1d062b013ba930b820f7e54fa7aa6038f50fa73b38703b4f836ae",
+      "path": "scripts/run_cumulative_static_gates.py"
+    },
+    {
+      "currentSha256": "0b2928ff414b6cfaa0f8e0646fdecc052f272b8c5e993365dfcc15fd57efeebd",
+      "parentSha256": "9d8a4d605365cee79eb4d8fef990876fef248bc1785c7f45e800aab11acdbd2d",
+      "path": "services/api/Cargo.toml"
+    },
+    {
+      "currentSha256": "276673b457d35c91d4b2e4d5b4a93d20225240a7eace030d42590f8bf6281eea",
+      "parentSha256": "3227367d18a7c853d71187bee637b56b16ff660fb1a66ec16704651ff4ee6cc0",
+      "path": "services/api/src/main.rs"
+    }
+  ],
+  "currentLabel": "phase-40",
+  "deletedFiles": [],
+  "embeddedParentManifest": "verification/stabilization/phase-39.5-files.sha256",
+  "formatVersion": 1,
+  "parentArchiveSha256": "b1d9cdd5302fee7cbb24c656f3a31314555592ae140e4d0971679d1621821181",
+  "parentFileManifestSha256": "571aa6ce8093adb2330c48a0f9813522170da8ba2bd8429e16d505f70b5199e2",
+  "parentLabel": "phase-39.5",
+  "parentPayloadFileCount": 372
+}

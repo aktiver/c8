@@ -1,0 +1,14 @@
+{
+  "phase": "40.11",
+  "tools": {
+    "cargo": null,
+    "rustc": null,
+    "mvn": null,
+    "helm": null,
+    "kubectl": null,
+    "rke2": null,
+    "java": "/usr/bin/java",
+    "javac": "/usr/bin/javac"
+  },
+  "nativeQualificationExecuted": false
+}

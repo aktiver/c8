@@ -1,0 +1,137 @@
+{
+  "formatVersion": 1,
+  "phase": "40.9",
+  "entries": [
+    {
+      "requirementId": "P40-9-001",
+      "implementation": [
+        "adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/DirectBgpExecutor.java",
+        "crates/ngkg-types/src/direct_exact.rs"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_9_static.py",
+        "docs/phases/PHASE_40_9.md"
+      ]
+    },
+    {
+      "requirementId": "P40-9-002",
+      "implementation": [
+        "crates/ngkg-types/src/direct_proof.rs"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_9_static.py",
+        "docs/phases/PHASE_40_9.md"
+      ]
+    },
+    {
+      "requirementId": "P40-9-003",
+      "implementation": [
+        "crates/ngkg-types/src/direct_proof.rs",
+        "contracts/direct-proof-manifest.schema.json"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_9_static.py",
+        "docs/phases/PHASE_40_9.md"
+      ]
+    },
+    {
+      "requirementId": "P40-9-004",
+      "implementation": [
+        "crates/ngkg-types/src/direct_proof.rs",
+        "crates/ngkg-direct-reasoner/src/lib.rs"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_9_static.py",
+        "docs/phases/PHASE_40_9.md"
+      ]
+    },
+    {
+      "requirementId": "P40-9-005",
+      "implementation": [
+        "crates/ngkg-types/src/direct_proof.rs",
+        "crates/ngkg-direct-reasoner/src/lib.rs"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_9_static.py",
+        "docs/phases/PHASE_40_9.md"
+      ]
+    },
+    {
+      "requirementId": "P40-9-006",
+      "implementation": [
+        "crates/ngkg-types/src/direct_certificate.rs",
+        "contracts/direct-certificate.schema.json"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_9_static.py",
+        "docs/phases/PHASE_40_9.md"
+      ]
+    },
+    {
+      "requirementId": "P40-9-007",
+      "implementation": [
+        "crates/ngkg-types/src/direct_certificate.rs",
+        "crates/ngkg-direct-reasoner/src/lib.rs"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_9_static.py",
+        "docs/phases/PHASE_40_9.md"
+      ]
+    },
+    {
+      "requirementId": "P40-9-008",
+      "implementation": [
+        "crates/ngkg-reasoner-client/src/lib.rs",
+        "crates/ngkg-types/src/direct_proof.rs"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_9_static.py",
+        "docs/phases/PHASE_40_9.md"
+      ]
+    },
+    {
+      "requirementId": "P40-9-009",
+      "implementation": [
+        "services/reference-worker/src/direct_job.rs",
+        "contracts/direct-exact-job.schema.json"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_9_static.py",
+        "docs/phases/PHASE_40_9.md"
+      ]
+    },
+    {
+      "requirementId": "P40-9-010",
+      "implementation": [
+        "crates/ngkg-direct-reasoner/src/lib.rs",
+        "crates/ngkg-types/src/direct_proof.rs"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_9_static.py",
+        "docs/phases/PHASE_40_9.md"
+      ]
+    },
+    {
+      "requirementId": "P40-9-011",
+      "implementation": [
+        "docs/phases/PHASE_40_9.md",
+        "adapters/hermit-reasoner/README.md"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_9_static.py",
+        "docs/phases/PHASE_40_9.md"
+      ]
+    },
+    {
+      "requirementId": "P40-9-012",
+      "implementation": [
+        "crates/ngkg-direct-reasoner/src/lib.rs",
+        "verification/phase-40-capability-status.json"
+      ],
+      "evidence": [
+        "scripts/verify_phase40_9_static.py",
+        "docs/phases/PHASE_40_9.md"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+phase40:
+  direct:
+    maxPartitionCandidates: 1
+    maxExactPartitions: 4096

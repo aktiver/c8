@@ -1,0 +1,23 @@
+{
+  "phase": "40.13.20",
+  "status": "candidate",
+  "implemented": [
+    "deterministic 80-percent CPU-or-memory scaling policy",
+    "scale-from-zero and checkpoint-safe drain decisions",
+    "cgroup-v2 finite memory and bounded-buffer admission",
+    "generic, RKE, RKE2, EKS, AKS, and GKE node autoscaling overlays",
+    "read-only Amazon S3, Azure Blob, and GCS CSI TriG ingestion contracts",
+    "cross-scale node-loss retry result and artifact identity contract",
+    "read-only live qualification collector"
+  ],
+  "observed": {
+    "staticQualification": true,
+    "nativeBuild": false,
+    "helmRender": false,
+    "liveCluster": false,
+    "scaleFromZero": false,
+    "nodeLoss": false,
+    "deterministicScaledResults": false
+  },
+  "complete": false
+}

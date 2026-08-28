@@ -1,0 +1,65 @@
+{
+  "formatVersion": 1,
+  "records": [
+    {
+      "phase": "26",
+      "path": "scripts/verify_phase26_static.py",
+      "exitCode": 0,
+      "output": "Phase 26 static contract verification passed"
+    },
+    {
+      "phase": "27",
+      "path": "scripts/verify_phase27_static.py",
+      "exitCode": 0,
+      "output": "Phase 27 static contract verification passed"
+    },
+    {
+      "phase": "28",
+      "path": "scripts/verify_phase28_static.py",
+      "exitCode": 0,
+      "output": "Phase 28 static contract verification passed"
+    },
+    {
+      "phase": "29",
+      "path": "scripts/verify_phase29_static.py",
+      "exitCode": 0,
+      "output": "Phase 29 static contract verification passed"
+    },
+    {
+      "phase": "30",
+      "path": "scripts/verify_phase30_static.py",
+      "exitCode": 0,
+      "output": "Phase 30 static contract verification passed"
+    },
+    {
+      "phase": "31",
+      "path": "scripts/verify_phase31_static.py",
+      "exitCode": 0,
+      "output": "Phase 31 static contract verification passed"
+    },
+    {
+      "phase": "32",
+      "path": "scripts/verify_phase32_static.py",
+      "exitCode": 0,
+      "output": "Phase 32 static contract verification passed"
+    },
+    {
+      "phase": "33",
+      "path": "scripts/verify_phase33_static.py",
+      "exitCode": 0,
+      "output": "Phase 33 static contract verification passed"
+    },
+    {
+      "phase": "34",
+      "path": "scripts/verify_phase34_static.py",
+      "exitCode": 0,
+      "output": "Phase 34 static contract verification passed"
+    },
+    {
+      "phase": "35",
+      "path": "scripts/verify_phase35_static.py",
+      "exitCode": 0,
+      "output": "Phase 35 static contract verification passed"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "formatVersion": 1,
+  "purpose": "Live scalar-oracle equivalence corpus for the complete distributed algebra lane",
+  "cases": [
+    {"id": "optional", "form": "SELECT", "query": "SELECT * WHERE { ?s ?p ?o OPTIONAL { ?s ?p2 ?o2 FILTER(?o2 != ?o) } } LIMIT 100"},
+    {"id": "union-minus", "form": "SELECT", "query": "SELECT * WHERE { { ?s ?p ?o } UNION { ?s a ?t } MINUS { ?s a <urn:never> } } LIMIT 100"},
+    {"id": "aggregate", "form": "SELECT", "query": "SELECT ?p (COUNT(*) AS ?count) WHERE { ?s ?p ?o } GROUP BY ?p ORDER BY DESC(?count) LIMIT 100"},
+    {"id": "distinct-subquery", "form": "SELECT", "query": "SELECT DISTINCT ?s WHERE { { SELECT ?s WHERE { ?s ?p ?o } LIMIT 1000 } } ORDER BY ?s LIMIT 100"},
+    {"id": "ask", "form": "ASK", "query": "ASK { ?s ?p ?o }"},
+    {"id": "construct", "form": "CONSTRUCT", "query": "CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100"},
+    {"id": "describe", "form": "DESCRIBE", "query": "DESCRIBE ?s WHERE { ?s ?p ?o } LIMIT 10"}
+  ],
+  "requiredFailureCases": [
+    "missing-replica",
+    "duplicate-worker-id",
+    "result-checksum-mismatch",
+    "stale-snapshot",
+    "unauthorized-graph-set",
+    "worker-timeout",
+    "pod-loss-during-query"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "formatVersion": 1,
+  "datasetId": "00000000-0000-0000-0000-000000000001",
+  "snapshotId": "00000000-0000-0000-0000-000000000002",
+  "querySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "bgpSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "activeDatasetSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "authorizedGraphSetSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "owlSignatureSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "datatypePolicySha256": "6666666666666666666666666666666666666666666666666666666666666666",
+  "entailmentRegime": "owl2-direct",
+  "graphContext": {
+    "scope": "default",
+    "activeDefaultGraphSha256": "7777777777777777777777777777777777777777777777777777777777777777"
+  },
+  "variables": [
+    "x"
+  ],
+  "candidateBindingCount": 1000,
+  "solutionMultiplicityTotal": 2,
+  "solutions": [
+    {
+      "bindings": {
+        "patient": {
+          "termType": "iri",
+          "value": "https://example.test/patient/1"
+        },
+        "status": {
+          "termType": "literal",
+          "lexicalForm": "active",
+          "datatypeIri": "http://www.w3.org/2001/XMLSchema#string"
+        }
+      },
+      "multiplicity": 2
+    }
+  ],
+  "outcome": {
+    "status": "failed",
+    "exactness": "not-established",
+    "completeness": "incomplete"
+  },
+  "error": {
+    "code": "resource-exhausted",
+    "retryable": true,
+    "detail": "candidate ceiling reached before completeness could be established"
+  }
+}

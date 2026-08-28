@@ -1,0 +1,60 @@
+{
+  "formatVersion": 1,
+  "phase": 39,
+  "workspaceVersion": "0.7.0",
+  "status": "implementation-candidate-not-production-qualified",
+  "staticContractGate": "scripts/verify_phase39_static.py",
+  "qualificationGate": "scripts/qualify_phase39.sh",
+  "standardsClaimsEnabled": false,
+  "liveGatesExecutedInThisBuildEnvironment": false,
+  "implementedEvidence": {
+    "queryForms": [
+      "SELECT",
+      "ASK",
+      "CONSTRUCT",
+      "DESCRIBE"
+    ],
+    "resultHashVersion": 2,
+    "graphEquality": "RDFC-1.0-SHA256",
+    "scalarExecution": "bounded-cancellable-exact-path",
+    "distributedEligibility": "typed-certified-SELECT-only",
+    "solutionFormats": [
+      "application/sparql-results+json",
+      "application/sparql-results+xml",
+      "text/tab-separated-values",
+      "text/csv"
+    ],
+    "graphFormats": [
+      "text/turtle",
+      "application/n-triples",
+      "application/rdf+xml"
+    ],
+    "autoscaling": [
+      "HPA",
+      "Kueue",
+      "RKE2-cluster-autoscaler"
+    ]
+  },
+  "blockedLiveGates": [
+    "cargo-rustfmt-clippy-workspace-build-and-tests",
+    "maven-hermit-adapter-tests",
+    "applicable-w3c-sparql-query-and-result-format-tests",
+    "helm-render-and-kubernetes-server-dry-run",
+    "live-rke2-autoscaling-authorization-timeout-and-failure-tests"
+  ],
+  "cumulativeStaticGatesExecutedInThisBuildEnvironment": true,
+  "cumulativeStaticGateRange": "phase-15-through-phase-39",
+  "archiveInheritance": {
+    "verified": true,
+    "parentPhase": 38,
+    "parentArchiveSha256": "fce0b6eb31229ca019917aaf9726d6f1f7912fc766686c8878fc4d9ee936c08a",
+    "parentPayloadFileCount": 321,
+    "deletedParentFiles": 0,
+    "modifiedParentFiles": 24
+  },
+  "qualificationAttempt": {
+    "executed": true,
+    "status": "blocked-before-build",
+    "reason": "required external Rust/Cargo, Maven, Helm, and Kubernetes toolchains are unavailable in this build environment; Cargo.lock is intentionally not fabricated"
+  }
+}

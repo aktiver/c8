@@ -1,0 +1,24 @@
+{
+  "phase": "40.13.17",
+  "executedAtUtc": "2026-08-27T23:07:23Z",
+  "status": "passed-with-native-and-live-gates-blocked",
+  "passed": {
+    "phase40_13_1Through17StaticContracts": 17,
+    "controlPlaneOpenapiOperations": 16,
+    "onlineDataPlaneOpenapiOperations": 18,
+    "openapiParity": true,
+    "baseHelmValuesCrossValidation": true,
+    "productionOverlayCrossValidation": true,
+    "jsonAndYamlParsing": true,
+    "qualificationShellSyntax": true
+  },
+  "blocked": {
+    "cargo": "not installed",
+    "rustc": "not installed",
+    "rustfmt": "not installed",
+    "maven": "not installed",
+    "helm": "not installed",
+    "kubectl": "not installed",
+    "liveKubernetesCluster": "not available"
+  }
+}

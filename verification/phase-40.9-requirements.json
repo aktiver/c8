@@ -1,0 +1,54 @@
+{
+  "formatVersion": 1,
+  "phase": "40.9",
+  "requirements": [
+    {
+      "id": "P40-9-001",
+      "text": "Emit immutable grounded-RDF and logical-axiom hashes for every entailed candidate returned by HermiT."
+    },
+    {
+      "id": "P40-9-002",
+      "text": "Generate deterministic reasoner-check support IDs bound to snapshot, query, BGP, authorization, graph scope and exact request identity."
+    },
+    {
+      "id": "P40-9-003",
+      "text": "Emit a closed Direct proof manifest that includes exact ontology input hashes and every answer reasoner-check record."
+    },
+    {
+      "id": "P40-9-004",
+      "text": "Prove SPARQL bag multiplicity coverage by matching one proof record to every entailed candidate contributing to each compressed solution mapping."
+    },
+    {
+      "id": "P40-9-005",
+      "text": "Emit a global completion-barrier support ID so exact empty answers remain proof-covered."
+    },
+    {
+      "id": "P40-9-006",
+      "text": "Advance Direct certificates to proof-bound format v2 while retaining format v1 validation compatibility."
+    },
+    {
+      "id": "P40-9-007",
+      "text": "Require format-v2 certificates to bind the exact proof-manifest SHA and expose only reasoner-check support references from that artifact."
+    },
+    {
+      "id": "P40-9-008",
+      "text": "Verify proof manifest, exact result and Direct certificate together at the reasoner-client trust boundary."
+    },
+    {
+      "id": "P40-9-009",
+      "text": "Emit result, proof manifest and certificate atomically under the confined reference-worker work root and verify the emitted proof artifact hash."
+    },
+    {
+      "id": "P40-9-010",
+      "text": "Keep proof construction deterministic across candidate partitions and worker completion order without expanding SPARQL duplicate rows."
+    },
+    {
+      "id": "P40-9-011",
+      "text": "Do not claim a HermiT derivation DAG; distinguish complete answer-support coverage from logical derivation provenance."
+    },
+    {
+      "id": "P40-9-012",
+      "text": "Preserve all Phase 40.8 fail-closed exactness/completeness and anonymous-individual qualification boundaries."
+    }
+  ]
+}

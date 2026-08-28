@@ -1,0 +1,10 @@
+{
+  "querySha256": "0b30bba7ad52ec6c3bdeb9baf26140af2a45bfbcf2cc7d0705989375d84bcf04",
+  "selectionMode": "declared_dataset",
+  "selectedGraphIris": [
+    "urn:ngkg:graph:hdfs",
+    "urn:ngkg:graph:operations"
+  ],
+  "selectedGraphCount": 2,
+  "totalGraphCount": 3
+}

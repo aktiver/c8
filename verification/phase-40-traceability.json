@@ -1,0 +1,94 @@
+{
+  "entries": [
+    {
+      "evidence": [
+        "verification/stabilization/phase-40.json"
+      ],
+      "gate": "scripts/verify_phase40_static.py",
+      "implementation": [
+        "scripts/generate_stabilization_parent_evidence.py"
+      ],
+      "requirementId": "P40-BASE-001"
+    },
+    {
+      "evidence": [
+        "BUILD_STATUS_PHASE_40.md"
+      ],
+      "gate": "scripts/verify_phase40_static.py",
+      "implementation": [
+        "docs/PHASE_40_ENGINEERING_CONTRACT.md",
+        "verification/phase-40-requirements.json"
+      ],
+      "requirementId": "P40-BASE-002"
+    },
+    {
+      "evidence": [
+        "verification/phase-40-traceability.json"
+      ],
+      "gate": "scripts/verify_phase40_static.py",
+      "implementation": [
+        "verification/phase-40-traceability.json"
+      ],
+      "requirementId": "P40-BASE-003"
+    },
+    {
+      "evidence": [
+        "verification/phase-40-inherited-gates.json"
+      ],
+      "gate": "scripts/verify_phase40_static.py",
+      "implementation": [
+        "verification/phase-40-inherited-gates.json",
+        "acceptance/phase-gates.yaml"
+      ],
+      "requirementId": "P40-BASE-004"
+    },
+    {
+      "evidence": [
+        "verification/phase-40-capability-status.json"
+      ],
+      "gate": "scripts/verify_phase40_static.py",
+      "implementation": [
+        "verification/phase-40-capability-status.json"
+      ],
+      "requirementId": "P40-BASE-005"
+    },
+    {
+      "evidence": [
+        "charts/ngkg-workloads/values.yaml"
+      ],
+      "gate": "scripts/verify_phase40_static.py",
+      "implementation": [
+        "verification/phase-40-ceilings.json"
+      ],
+      "requirementId": "P40-BASE-006"
+    },
+    {
+      "evidence": [
+        "verification/phase-40.json"
+      ],
+      "gate": "scripts/verify_phase40_static.py",
+      "implementation": [
+        "scripts/run_cumulative_static_gates.py",
+        "scripts/qualify_phase40.sh"
+      ],
+      "requirementId": "P40-BASE-007"
+    },
+    {
+      "evidence": [
+        "verification/phase-40-api-openapi-parity.json",
+        "docs/API_ROUTE_CATALOG.md"
+      ],
+      "gate": "scripts/verify_api_openapi_parity.py",
+      "implementation": [
+        "services/api/src/main.rs",
+        "services/online-serving/src/main.rs",
+        "api/openapi.yaml",
+        "api/online-openapi.yaml",
+        "scripts/verify_api_openapi_parity.py"
+      ],
+      "requirementId": "P40-BASE-008"
+    }
+  ],
+  "formatVersion": 1,
+  "phase": "40"
+}

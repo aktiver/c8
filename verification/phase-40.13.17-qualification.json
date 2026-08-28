@@ -1,0 +1,45 @@
+{
+  "phase": "40.13.17",
+  "status": "source-implemented-static-qualified-candidate",
+  "parentPhase": "40.13.16",
+  "parentArchiveSha256": "b0e9e4de885c32230c73ff24cd5369d040093410808d8504c0ed3be04753991a",
+  "implemented": {
+    "partitionNativeAdjacencyScans": true,
+    "literalCompleteAdjacencyForRecompiledSnapshots": true,
+    "distributedFrontierWaves": true,
+    "boundedCoreHotVertexSplits": true,
+    "densePartitionAndWorkBarriers": true,
+    "globalTerminationDetection": true,
+    "boundedAtomicCheckpoints": true,
+    "immutableRemoteCheckpointPublication": true,
+    "authorizationBeforeMaterialization": true,
+    "hpcResourceBudgetPreserved": true,
+    "workloadAwareAutoscalingWired": true,
+    "ontologyAlignmentAdded": false,
+    "rawDataMappingAdded": false
+  },
+  "passed": {
+    "phase40_13_17Static": true,
+    "phase40_13_16Static": true,
+    "controlPlaneOpenapiOperations": 16,
+    "onlineOpenapiOperations": 18,
+    "helmValuesAndProductionOverlay": true,
+    "contractSyntax": true
+  },
+  "blocked": {
+    "cargo": "tool unavailable",
+    "rustc": "tool unavailable",
+    "rustfmt": "tool unavailable",
+    "maven": "tool unavailable",
+    "helm": "tool unavailable",
+    "kubectl": "tool unavailable",
+    "liveMultinode": "cluster unavailable"
+  },
+  "openProductionLimits": {
+    "distributedEndpointsSubstitutedIntoAllOuterAlgebra": false,
+    "restartFromCheckpointQualified": false,
+    "scalarCompatibilityImageMaximumBytes": 68719476736,
+    "fiveHundredGigabyteEndToEndQueryQualified": false,
+    "productionClaimEnabled": false
+  }
+}

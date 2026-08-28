@@ -1,0 +1,25 @@
+@prefix ex: <https://c8-next-generation.io/ontology/release/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+<https://c8-next-generation.io/acme/security/semkg> {
+  ex:incident-7 a ex:SecurityIncident ; ex:detectedOn ex:workload-2 .
+}
+
+<https://c8-next-generation.io/acme/infrastructure/semkg> {
+  ex:workload-2 a ex:Workload ; ex:hostedBy ex:cluster-1 .
+}
+
+<https://c8-next-generation.io/acme/organization/semkg> {
+  ex:cluster-1 a ex:Cluster ; ex:ownedBy ex:team-blue .
+  ex:team-blue a ex:ResponseTeam .
+}
+
+<https://c8-next-generation.io/acme/enterprise/semkg> {
+  ex:requiresResponseFrom a owl:ObjectProperty ;
+    owl:propertyChainAxiom ( ex:detectedOn ex:hostedBy ex:ownedBy ) .
+  ex:SecurityIncident a owl:Class .
+  ex:Workload a owl:Class .
+  ex:Cluster a owl:Class .
+  ex:ResponseTeam a owl:Class .
+}

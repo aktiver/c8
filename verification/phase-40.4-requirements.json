@@ -1,0 +1,13 @@
+{
+  "formatVersion": 1,
+  "phase": "40.4",
+  "requirements": [
+    {"id":"P40-4-001","text":"Define one strict shared runtime contract for successful exact Direct certificates."},
+    {"id":"P40-4-002","text":"Bind every certificate to dataset, snapshot, query, BGP, active dataset, authorization, OWL signature, datatype policy and active graph context."},
+    {"id":"P40-4-003","text":"Bind the certificate to a scheduling-independent digest of the exact Phase 40.3 Direct-BGP result."},
+    {"id":"P40-4-004","text":"Represent exhaustive finite-candidate completeness with exact reasoner and distributed-partition completion evidence."},
+    {"id":"P40-4-005","text":"Define reasoner identity and closed proof/support reference vocabulary without falsely claiming proof-DAG completeness."},
+    {"id":"P40-4-006","text":"Verify the certificate/result/expected immutable identities at the reasoner client boundary and fail closed on mismatch."},
+    {"id":"P40-4-007","text":"Provide Draft 2020-12 schema, valid/invalid fixtures, independent validation, documentation, inheritance evidence and cumulative gates."}
+  ]
+}

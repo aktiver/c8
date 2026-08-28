@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "phase": "40.10",
+  "status": "implementation-candidate-not-production-qualified",
+  "authoritativeHelmCeilingsDeclared": true,
+  "platformDirectExactCeilingsDeclared": true,
+  "workloadDirectAdmissionCeilingsDeclared": true,
+  "helmValuesSchemasSynchronized": true,
+  "runtimeDefaultsMatchedAtDeclaration": true,
+  "crossFieldSafetyChecksImplemented": true,
+  "reasonerMemoryBudgetSafetyChecked": true,
+  "certificateProofBoundsRegistered": true,
+  "runtimeCeilingWiringImplemented": false,
+  "referenceWorkerCeilingWiringImplemented": false,
+  "distributedWorkerCeilingWiringImplemented": false,
+  "operatorCeilingWiringImplemented": false,
+  "nativeHelmQualificationExecuted": false,
+  "standardsClaimsEnabled": false
+}

@@ -1,0 +1,59 @@
+{
+  "formatVersion": 1,
+  "datasetId": "00000000-0000-0000-0000-000000000091",
+  "snapshotId": "00000000-0000-0000-0000-000000000092",
+  "querySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "bgpSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "activeDatasetSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "authorizedGraphSetSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "owlSignatureSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "datatypePolicySha256": "6666666666666666666666666666666666666666666666666666666666666666",
+  "entailmentRegime": "owl2-direct",
+  "graphContext": {
+    "scope": "named",
+    "graphIri": "https://example.test/graph/clinical"
+  },
+  "directBgpResultSha256": "78edc0dff47829c26ff5c40e864c9305e9d6f954f2320edb6f4c3a16aad3f75f",
+  "candidateSpaceSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+  "executionRootSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+  "reasonerEngine": "HermiT",
+  "reasonerVersion": "1.4.5.519",
+  "adapterVersion": "40.9",
+  "completionSupportId": "5a88190a11147a22496c113978af780ab8a600e1a3656054863de2f7db601471",
+  "ontologyInputs": [
+    {
+      "sha256": "9090909090909090909090909090909090909090909090909090909090909090",
+      "ontologyIris": [
+        "https://example.test/ontology/core"
+      ]
+    },
+    {
+      "sha256": "9191919191919191919191919191919191919191919191919191919191919191",
+      "ontologyIris": [
+        "https://example.test/ontology/domain"
+      ]
+    }
+  ],
+  "answerProofs": [
+    {
+      "supportId": "17851afe006f5a9d9bec2172b2772dd6db39d1bed7206b151ea59ca183f521e7",
+      "candidateOrdinal": 0,
+      "partitionIndex": 0,
+      "requestSha256": "a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0",
+      "bindingSha256": "2c1c539f0226fc30714110de3e0ee48d551963883812ccb5bf4ec07ab65d9c2f",
+      "groundedRdfSha256": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0",
+      "logicalAxiomsSha256": "c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0",
+      "logicalAxiomCount": 1
+    },
+    {
+      "supportId": "284619b080d7738795815910664026315ac1f2c058b683a8ad0758447ab917ca",
+      "candidateOrdinal": 2,
+      "partitionIndex": 1,
+      "requestSha256": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+      "bindingSha256": "2c1c539f0226fc30714110de3e0ee48d551963883812ccb5bf4ec07ab65d9c2f",
+      "groundedRdfSha256": "b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1",
+      "logicalAxiomsSha256": "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+      "logicalAxiomCount": 1
+    }
+  ]
+}

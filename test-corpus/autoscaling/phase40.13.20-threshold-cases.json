@@ -1,0 +1,16 @@
+{
+  "formatVersion": 1,
+  "targetPercent": 80,
+  "cases": [
+    {"id": "cpu-below-target", "cpuPercent": 79, "memoryPercent": 79, "pendingPods": 0, "expected": "hold"},
+    {"id": "cpu-at-target", "cpuPercent": 80, "memoryPercent": 40, "pendingPods": 0, "expected": "scale-out"},
+    {"id": "memory-at-target", "cpuPercent": 40, "memoryPercent": 80, "pendingPods": 0, "expected": "scale-out"},
+    {"id": "both-above-target", "cpuPercent": 91, "memoryPercent": 88, "pendingPods": 0, "expected": "scale-out"},
+    {"id": "one-node-at-target-other-node-idle", "nodeCpuPercents": [80, 0], "nodeMemoryPercents": [40, 0], "pendingPods": 0, "expected": "scale-out"},
+    {"id": "pending-pod-demand", "cpuPercent": 30, "memoryPercent": 30, "pendingPods": 1, "expected": "scale-out"},
+    {"id": "scale-from-zero", "cpuPercent": 0, "memoryPercent": 0, "pendingPods": 1, "expected": "scale-from-zero"},
+    {"id": "checkpoint-blocks-scale-in", "cpuPercent": 10, "memoryPercent": 10, "pendingPods": 0, "checkpointBytes": 1, "expected": "scale-in-blocked"},
+    {"id": "spill-blocks-scale-in", "cpuPercent": 10, "memoryPercent": 10, "pendingPods": 0, "spillBytes": 1, "expected": "scale-in-blocked"},
+    {"id": "node-loss-retry", "cpuPercent": 40, "memoryPercent": 40, "pendingPods": 1, "nodeLoss": true, "expected": "scale-out-and-identical-result"}
+  ]
+}

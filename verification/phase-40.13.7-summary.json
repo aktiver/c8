@@ -1,0 +1,40 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.7",
+  "status": "exact-online-entailment-source-candidate",
+  "parent": "40.13.6",
+  "implemented": {
+    "normalQueryEndpointExactRouting": true,
+    "authorizedSemkgOnlyAssembly": true,
+    "pinnedImportMaterialization": true,
+    "distributedPartitionDispatch": true,
+    "completePartitionBarrier": true,
+    "exactBgpScalarAlgebraSubstitution": true,
+    "allQueryForms": true,
+    "graphVariableScoping": true,
+    "boundedRetryAndDuplicateIdentity": true,
+    "proofManifestsAndCertificates": true,
+    "workloadAwareReasonerHpaSource": true,
+    "ontologyAlignment": false,
+    "rawDataMapping": false
+  },
+  "passed": {
+    "phase40137Static": true,
+    "cumulativeStaticThrough40136": true,
+    "openapiParity": true,
+    "pythonSyntax": true,
+    "jsonAndValuesYamlParse": true
+  },
+  "unqualified": {
+    "rustNativeBuildAndTests": "cargo and rustc absent",
+    "mavenBuildAndTests": "maven absent",
+    "helmLintAndRender": "helm absent",
+    "w3cEntailment": "pinned suite and rdflib absent",
+    "liveMultinodeAutoscaling": "kubectl and cluster absent"
+  },
+  "claimsEnabled": {
+    "owlDirectComplete": false,
+    "fullEntailment": false,
+    "production": false
+  }
+}

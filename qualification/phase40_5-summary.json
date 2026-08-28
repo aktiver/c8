@@ -1,0 +1,83 @@
+{
+  "formatVersion": 1,
+  "phase": "40.5",
+  "status": "phase-40.5-implementation-candidate-not-production-qualified",
+  "parentArchiveSha256": "be8b696221086c81790f518809fd38808dca00c349140adf8dc51b787b042fd7",
+  "parentPayloadFileCount": 496,
+  "changedParentFileCount": 16,
+  "deletedParentFiles": [],
+  "combinedOwl2DlProfileImportQualification": {
+    "ontologyHeaderPreflightHardened": true,
+    "versionIriImportAliasResolution": true,
+    "actualOwlApiLoadedClosureEvidence": true,
+    "checksumBoundLocalImportResolution": true,
+    "mergedProfileEvidence": true,
+    "qualificationShaBoundIntoReasonerReport": true,
+    "independentRustQualificationVerification": true,
+    "directBgpLegality": false,
+    "exactDirectReasonerFallback": false
+  },
+  "staticVerification": {
+    "gateCount": 36,
+    "allPassed": true,
+    "executionModel": "bounded ranges plus individual 40.x gates"
+  },
+  "schemaMetaValidation": {
+    "contractSchemaCount": 31,
+    "helmValuesSchemaCount": 2,
+    "totalSchemaCount": 33,
+    "errors": []
+  },
+  "apiOpenApiParity": {
+    "status": "pass",
+    "controlPlaneOperations": 12,
+    "onlineDataPlaneOperations": 14
+  },
+  "structuralValidation": {
+    "errorCount": 0
+  },
+  "placeholderProductionFindingCount": 0,
+  "editArtifactFindingCount": 0,
+  "nativeToolchains": {
+    "cargo": {
+      "available": false,
+      "path": null
+    },
+    "rustc": {
+      "available": false,
+      "path": null
+    },
+    "mvn": {
+      "available": false,
+      "path": null
+    },
+    "helm": {
+      "available": false,
+      "path": null
+    },
+    "kubectl": {
+      "available": false,
+      "path": null
+    },
+    "rke2": {
+      "available": false,
+      "path": null
+    },
+    "java": {
+      "available": true,
+      "path": "/usr/bin/java",
+      "versionOutput": "openjdk version \"21.0.11\" 2026-04-21 | OpenJDK Runtime Environment (build 21.0.11+10-1-deb13u2-Debian)"
+    },
+    "javac": {
+      "available": true,
+      "path": "/usr/bin/javac",
+      "versionOutput": "javac 21.0.11"
+    },
+    "python3": {
+      "available": true,
+      "path": "/opt/pyvenv/bin/python3"
+    }
+  },
+  "nativeQualificationExecuted": false,
+  "owlDirectArbitraryBgpCompleteness": false
+}

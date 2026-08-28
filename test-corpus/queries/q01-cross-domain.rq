@@ -1,0 +1,18 @@
+PREFIX ngkg: <https://ngkg.io/ontology/>
+SELECT ?observation ?node ?failure
+FROM NAMED <urn:ngkg:graph:hdfs>
+FROM NAMED <urn:ngkg:graph:operations>
+WHERE {
+  GRAPH <urn:ngkg:graph:hdfs> {
+    ?observation a ngkg:LatencyObservation ;
+      ngkg:observedOn ?node ;
+      ngkg:latencyValue ?latency .
+    ?node ngkg:participatesIn ?service .
+    FILTER (?latency > 500)
+  }
+  GRAPH <urn:ngkg:graph:operations> {
+    ?service ngkg:affectedBy ?failure .
+    ?failure a ngkg:ReplicationFailure .
+  }
+}
+

@@ -1,0 +1,14 @@
+{
+  "phase": "1.0.0-GA",
+  "version": "1.0.0",
+  "sourceImplementationComplete": true,
+  "staticQualificationComplete": true,
+  "inheritedPhase15Through40StaticGatesPassed": 31,
+  "phase40_13StaticGatesPassed": 24,
+  "openApiOperationsValidated": 39,
+  "structuralErrors": 0,
+  "liveQualificationComplete": false,
+  "publishable": false,
+  "complete": false,
+  "reason": "GA publication requires native builds, live same-release five-provider evidence, signatures, security reports, reproducibility evidence, and a final go certificate"
+}

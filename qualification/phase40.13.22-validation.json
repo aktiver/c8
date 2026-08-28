@@ -1,0 +1,32 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.22",
+  "checks": {
+    "phase40_13StaticScripts": {
+      "total": 23,
+      "passed": 22,
+      "failed": 0,
+      "blocked": 1,
+      "blocker": "scripts/verify_phase40_13_static.py requires the unavailable Python jsonschema package"
+    },
+    "phase40_13_22ExecutableBarrier": "passed",
+    "phase40_13_21Static": "passed",
+    "openapiParity": "passed",
+    "jsonParse": "passed",
+    "tomlParse": "passed",
+    "nonTemplateYamlParse": "passed",
+    "mavenXmlParse": "passed",
+    "shellSyntax": "passed"
+  },
+  "toolchains": {
+    "cargo": false,
+    "rustc": false,
+    "rustfmt": false,
+    "maven": false,
+    "javaRuntime": true,
+    "javac": false,
+    "helm": false,
+    "kubectl": false
+  },
+  "liveQualificationPerformed": false
+}

@@ -1,0 +1,14 @@
+{
+  "nativeQualification": {
+    "cargo": "not-run-toolchain-unavailable",
+    "helm": "not-run-toolchain-unavailable",
+    "kubectlRke2": "not-run-toolchain-unavailable",
+    "maven": "not-run-toolchain-unavailable"
+  },
+  "phase": "39.3",
+  "pythonToolSyntax": "pass",
+  "qualificationPolicy": "No native/live PASS is claimed without executing the required toolchain.",
+  "scope": "Expanded GRAPH ?g semantic regression matrix",
+  "staticContract": "pass",
+  "structuralValidation": "pass"
+}

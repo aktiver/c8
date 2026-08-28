@@ -1,0 +1,10 @@
+{
+  "productionFindings": [],
+  "count": 0,
+  "scannerLiteralReferences": [
+    {
+      "path": "scripts/verify_phase39_static.py",
+      "line": 76
+    }
+  ]
+}

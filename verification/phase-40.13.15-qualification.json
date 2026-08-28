@@ -1,0 +1,37 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.15",
+  "status": "source-implemented-static-qualified-native-and-cluster-blocked",
+  "parentArchiveSha256": "27093d66effa7ac7f40e337a638015a8518fe2e705713608563707cd652a20f5",
+  "parentManifestPayloadsVerified": 940,
+  "implemented": {
+    "durableCloudOperationRegistration": true,
+    "allRootsPartitionBarrier": true,
+    "transactionalCertification": true,
+    "activeParentCompareAndSwap": true,
+    "ordinarySemanticQueryActivation": true,
+    "hydrationWithoutLocatorFailsClosed": true,
+    "boundedVerificationConcurrency": true,
+    "kueueAndClusterAutoscalerDemand": true,
+    "ontologyAlignment": false,
+    "rawDataMapping": false
+  },
+  "executed": {
+    "phase40_13_10Through15Static": "passed",
+    "controlPlaneOpenapiOperations": 16,
+    "onlineOpenapiOperations": 16,
+    "jsonSyntax": "passed",
+    "nonTemplateYamlFiles": 26,
+    "nonTemplateYamlDuplicateKeys": "passed",
+    "workloadAutoscalingValues": "passed"
+  },
+  "blocked": {
+    "cargoFmtCheckWorkspaceClippyTests": "Cargo/rustc/rustfmt unavailable",
+    "postgresMigrationAndFaultTests": "PostgreSQL unavailable",
+    "mavenHermitAdapter": "Maven unavailable",
+    "helmLintRender": "Helm unavailable",
+    "liveMultinodeKubernetes": "kubectl/designated cluster unavailable"
+  },
+  "scalarCompatibilityMaxBytes": 68719476736,
+  "nextPhase": "40.13.16 complete partition-native distributed SPARQL runtime"
+}

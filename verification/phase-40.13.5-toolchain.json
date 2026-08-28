@@ -1,0 +1,20 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.5",
+  "available": {
+    "rustc": "1.97.1",
+    "cargo": "1.97.1",
+    "java": true,
+    "gcc": true
+  },
+  "unavailable": {
+    "maven": true,
+    "helm": true,
+    "kubectl": true
+  },
+  "qualificationImpact": [
+    "Rust locked/offline native qualification executed",
+    "HPC and Kubernetes manifests validated statically",
+    "HermiT Maven packaging, Helm lint/render, and live cluster gates not executed"
+  ]
+}

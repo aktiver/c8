@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "entailmentRegime": "owl2-direct",
+  "datasetPolicy": "explicit-named-graphs",
+  "queries": [
+    {
+      "id": "q01-cross-domain",
+      "query": "test-corpus/queries/q01-cross-domain.rq",
+      "expected": "test-corpus/expected/q01-cross-domain.srj",
+      "features": ["named-graphs", "multi-hop", "cross-domain", "virtual-literal-filter"],
+      "ordered": false,
+      "proofRequired": true
+    },
+    {
+      "id": "q02-optional",
+      "query": "test-corpus/queries/q02-optional.rq",
+      "expected": "test-corpus/expected/q02-optional.srj",
+      "features": ["named-graphs", "optional", "unbound", "ordering"],
+      "ordered": true,
+      "proofRequired": false
+    }
+  ],
+  "requiredFeatureFamilies": ["duplicates", "union", "minus", "not-exists", "aggregates", "property-paths", "authorization", "provenance"],
+  "extendedCorpusGate": "required-before-phase-12-release"
+}
+

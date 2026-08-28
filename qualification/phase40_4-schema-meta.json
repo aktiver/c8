@@ -1,0 +1,127 @@
+{
+  "formatVersion": 1,
+  "schemaCount": 30,
+  "errors": [],
+  "records": [
+    {
+      "path": "contracts/api-auth-tokens.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/artifact-partition-manifest.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/build-equivalence-matrix.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/certified-query-record.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/compilation-bundle.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/context-policy.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/coverage-certificate.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/datatype-policy.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/direct-bgp-result.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/direct-certificate.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/distributed-artifact-plan.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/distributed-artifact-root.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/distributed-query-plan.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/distributed-run-manifest.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/distributed-source-plan.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/graph-capability-index.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/index-header.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/owl-signature.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/query-routing-certificate.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/query-workload.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/rdf-dataset-catalog.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/reasoner-report.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/reference-compile.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/semantic-projection.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/serving-equivalence-report.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/serving-root.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/snapshot-manifest.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/tenant-admission-policy.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/trig-source-metadata.schema.json",
+      "status": "pass"
+    },
+    {
+      "path": "contracts/work-envelope.schema.json",
+      "status": "pass"
+    }
+  ]
+}

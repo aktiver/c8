@@ -1,0 +1,20 @@
+{
+  "formatVersion": 1,
+  "phase": "40.3",
+  "releaseStatus": "implementation-candidate-not-production-qualified",
+  "parent": "NGKG_PHASE_40_2_CANDIDATE.zip",
+  "parentArchiveSha256": "3487e77282dc2dc36e64d53d0fb4bd8d3e5db3a88af5a7dbe3f250f2ebb0b904",
+  "parentPayloadFileCount": 436,
+  "changedInheritedFileCount": 6,
+  "deletedInheritedFileCount": 0,
+  "newFunctionalCapability": "strict Direct-BGP result runtime contract with graph/snapshot/policy binding, lossless RDF terms, compressed bag multiplicity, reasoner-boundary identity validation and deterministic bounded CPU validation",
+  "maxValidationWorkers": 32,
+  "jsonSchemaCount": 29,
+  "openApiOperations": {
+    "control-plane": 12,
+    "online-data-plane": 14
+  },
+  "nativeQualificationExecuted": false,
+  "nativeQualificationReason": "cargo/rustc/mvn/helm/kubectl/rke2 are unavailable in this environment",
+  "nextPhase": "40.4 \u2014 Direct certificate runtime contract + JSON Schema"
+}

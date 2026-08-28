@@ -1,0 +1,38 @@
+{
+  "phase": "40.13.11",
+  "candidateStatus": "source-implemented-static-qualified",
+  "parentArchiveSha256": "27e6bb9ae804ca6f4ddbbceee1d4192ba44333a0a4125eda44ded0d8f970d9d9",
+  "graphNamespace": "https://c8-next-generation.io/<scope>/<subdomain>/{semkg|closure|provenance}",
+  "implemented": [
+    "deterministic whole-TriG largest-first decode planning",
+    "Kubernetes Indexed Job decode barrier",
+    "bounded concurrent per-pod TriG parse and immutable N-Quads upload",
+    "object-scoped blank-node handoff metadata",
+    "remote fragment checksum verification and exact completion barrier",
+    "checksum-bound Phase 40.13.12 compiler handoff",
+    "Kueue source-ingestion placement and node-autoscaler demand"
+  ],
+  "localChecks": {
+    "archiveIntegrity": "passed",
+    "parentManifest": "passed",
+    "phase40_13_10Static": "passed",
+    "phase40_13_11Static": "passed",
+    "openapiParity": "passed: 16 control-plane and 16 data-plane operations",
+    "jsonYamlParsing": "passed",
+    "liveJobVerifierFixture": "passed"
+  },
+  "blockedChecks": {
+    "cargoFmtCheck": "blocked: rustfmt absent",
+    "cargoCheckClippyTest": "blocked: Cargo/Rust toolchain absent",
+    "mavenHermit": "blocked: Maven absent",
+    "helmLintRender": "blocked: Helm absent",
+    "liveKubernetesKueueAutoscaling": "blocked: kubectl and cluster absent"
+  },
+  "claims": {
+    "ontologyAlignment": false,
+    "rawDataMapping": false,
+    "owlSnapshotQualification": false,
+    "queryActivation": false,
+    "productionQualified": false
+  }
+}

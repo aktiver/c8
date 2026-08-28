@@ -1,0 +1,49 @@
+{
+  "formatVersion": 1,
+  "services": [
+    {
+      "label": "control-plane",
+      "openapi": "api/openapi.yaml",
+      "operationCount": 12,
+      "operations": [
+        "GET /docs",
+        "GET /health/live",
+        "GET /health/ready",
+        "GET /openapi.json",
+        "GET /openapi.yaml",
+        "GET /v1/datasets/{datasetId}/snapshots/{snapshotId}",
+        "GET /v1/jobs/{operationId}",
+        "POST /v1/datasets/{datasetId}/ingestions",
+        "POST /v1/datasets/{datasetId}/snapshots/{snapshotId}/publish",
+        "POST /v1/jobs/{operationId}/cancel",
+        "PUT /v1/datasets/{datasetId}",
+        "PUT /v1/datasets/{datasetId}/sources/{sourceId}"
+      ],
+      "source": "services/api/src/main.rs"
+    },
+    {
+      "label": "online-data-plane",
+      "openapi": "api/online-openapi.yaml",
+      "operationCount": 15,
+      "operations": [
+        "GET /docs",
+        "GET /health/live",
+        "GET /health/ready",
+        "GET /metrics",
+        "GET /openapi.json",
+        "GET /openapi.yaml",
+        "GET /v1/datasets/{datasetId}/sparql",
+        "GET /v1/datasets/{datasetId}/sparql/service-description",
+        "POST /v1/datasets/{datasetId}/fragments/{querySha256}/{fragmentId}/execute",
+        "POST /v1/datasets/{datasetId}/hydrate",
+        "POST /v1/datasets/{datasetId}/locate",
+        "POST /v1/datasets/{datasetId}/query",
+        "POST /v1/datasets/{datasetId}/shuffles/{querySha256}/{stage}/{partition}/join",
+        "POST /v1/datasets/{datasetId}/sparql",
+        "POST /v1/datasets/{datasetId}/sparql/direct/validate"
+      ],
+      "source": "services/online-serving/src/main.rs"
+    }
+  ],
+  "status": "pass"
+}

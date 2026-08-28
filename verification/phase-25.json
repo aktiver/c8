@@ -1,0 +1,48 @@
+{
+  "phase": 25,
+  "status": "implemented-not-production-qualified",
+  "implemented": [
+    "bounded coordinator-side local spill for both relations of every certified shuffle stage",
+    "stable hash routing directly into per-side and per-partition files without retaining cloned partition bags",
+    "dataset, snapshot, query, stage, side, partition and partition-count binary spill headers",
+    "length-prefixed SPARQL rows with exact row, byte, EOF, ownership and SHA-256 replay validation",
+    "create-new, flush, fsync, marked-root, symlink rejection, restart reaping and fail-closed explicit cleanup behavior",
+    "bounded concurrent spill replay into the existing exact Arrow IPC worker exchange",
+    "public spill-mode and spill-byte evidence followed by original offline final-multiset admission",
+    "query-pod ephemeral-storage reservation and bounded emptyDir intended for reviewed RKE2 local NVMe",
+    "multi-core Rust partition concurrency across pods while native OpenMP and BLAS pools remain non-nested",
+    "mmap GUID locator and direct Parquet hydration retained from cumulative serving phases"
+  ],
+  "localValidation": {
+    "phase15Through25Static": "passed",
+    "structural": "passed-246-files-zero-errors",
+    "pythonAndShellSyntax": "passed",
+    "helmValuesCrossFieldValidation": "passed",
+    "gitDiffCheck": "passed",
+    "rust": "blocked-cargo-unavailable-in-artifact-environment",
+    "helm": "blocked-helm-unavailable-in-artifact-environment"
+  },
+  "externalGates": [
+    "pinned Rust 1.97.1 format, compile, Clippy and full workspace tests with committed Cargo.lock",
+    "spill header, length, JSON, ownership, checksum, truncation, extension, symlink and unmanaged-root corruption matrix",
+    "success, failure, timeout, cancellation and process-restart spill cleanup plateau",
+    "real HermiT compilation plus deployed exact binding, GUID and Parquet hydration equivalence",
+    "Phase 24 in-memory partition versus Phase 25 spill replay equality across enterprise cardinality, width and skew",
+    "coordinator CPU/RSS, NVMe throughput/latency, Arrow bytes, worker CPU/RSS and p50/p95 benchmark",
+    "Helm schema, lint, render, server-side dry-run and NetworkPolicy/mTLS connectivity",
+    "RKE2 local-NVMe placement, ephemeral-storage eviction and sustained 79/80 percent pool-growth qualification"
+  ],
+  "claims": {
+    "boundedLocalNvmeShuffleSpillImplemented": true,
+    "parallelSparseJoinAcrossRustCoresAndNodes": true,
+    "fileMmapSpillImplemented": false,
+    "directPeerShuffleImplemented": false,
+    "spillableWorkerHashTablesImplemented": false,
+    "persistentPartitionCacheImplemented": false,
+    "arrowFlightImplemented": false,
+    "distributedPropertyPathsImplemented": false,
+    "arbitraryOwl2DlSparqlComplete": false,
+    "productionQualified": false,
+    "universal20To50xSpeedup": false
+  }
+}

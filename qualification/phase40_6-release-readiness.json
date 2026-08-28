@@ -1,0 +1,11 @@
+{
+  "phase": "40.6",
+  "staticCandidateReady": true,
+  "nativeProductionQualified": false,
+  "blockingNativeQualification": [
+    "cargo/rustc unavailable",
+    "maven unavailable",
+    "helm/kubectl/rke2 unavailable"
+  ],
+  "nextPhase": "40.7-direct-bgp-legality-classification"
+}

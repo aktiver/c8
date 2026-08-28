@@ -1,0 +1,29 @@
+{
+  "formatVersion": 1,
+  "records": [
+    {
+      "phase": "40.1",
+      "path": "scripts/verify_phase40_1_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.1 static verification passed; OWL signature runtime/schema/hash binding is coherent"
+    },
+    {
+      "phase": "40.2",
+      "path": "scripts/verify_phase40_2_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.2 static verification passed; datatype policy/schema/runtime/hash/HPC validation wiring is coherent"
+    },
+    {
+      "phase": "40.3",
+      "path": "scripts/verify_phase40_3_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.3 static verification passed; Direct-BGP result/schema/RDF-term/bag/graph/HPC contract is coherent"
+    },
+    {
+      "phase": "40.4",
+      "path": "scripts/verify_phase40_4_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.4 static verification passed; Direct certificate/result-digest/completeness/reasoner/support contract is coherent"
+    }
+  ]
+}

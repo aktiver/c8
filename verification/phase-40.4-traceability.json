@@ -1,0 +1,13 @@
+{
+  "formatVersion": 1,
+  "phase": "40.4",
+  "entries": [
+    {"requirementId":"P40-4-001","implementation":["crates/ngkg-types/src/direct_certificate.rs","crates/ngkg-types/src/lib.rs"],"evidence":["docs/DIRECT_CERTIFICATE_CONTRACT.md"]},
+    {"requirementId":"P40-4-002","implementation":["crates/ngkg-types/src/direct_certificate.rs","contracts/direct-certificate.schema.json"],"evidence":["test-corpus/phase40_4/direct-certificate-valid.json"]},
+    {"requirementId":"P40-4-003","implementation":["crates/ngkg-types/src/direct_certificate.rs","scripts/validate_direct_certificate.py"],"evidence":["test-corpus/phase40_4/direct-certificate-invalid-result-digest.json"]},
+    {"requirementId":"P40-4-004","implementation":["crates/ngkg-types/src/direct_certificate.rs","contracts/direct-certificate.schema.json"],"evidence":["test-corpus/phase40_4/direct-certificate-invalid-incomplete-partitions.json"]},
+    {"requirementId":"P40-4-005","implementation":["crates/ngkg-types/src/direct_certificate.rs","contracts/direct-certificate.schema.json"],"evidence":["test-corpus/phase40_4/direct-certificate-invalid-proof-coverage.json"]},
+    {"requirementId":"P40-4-006","implementation":["crates/ngkg-reasoner-client/src/lib.rs"],"evidence":["docs/DIRECT_CERTIFICATE_CONTRACT.md"]},
+    {"requirementId":"P40-4-007","implementation":["contracts/direct-certificate.schema.json","scripts/validate_direct_certificate.py","scripts/verify_phase40_4_static.py","scripts/qualify_phase40_4.sh"],"evidence":["test-corpus/phase40_4/direct-certificate-valid.json","test-corpus/phase40_4/direct-certificate-invalid-support-order.json","test-corpus/phase40_4/direct-certificate-invalid-extra-field.json"]}
+  ]
+}

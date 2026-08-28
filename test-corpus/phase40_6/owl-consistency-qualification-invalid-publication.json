@@ -1,0 +1,21 @@
+{
+  "formatVersion": 1,
+  "datasetId": "4d2e1a82-c2bc-536a-a809-fda7643ef1f7",
+  "snapshotId": "91054ecb-2f68-5a63-b31a-137333c64a7c",
+  "aggregateInputSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "owlSignatureSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "datatypePolicySha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "owlProfileQualificationSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "owlProfile": "OWL 2 DL",
+  "directSemantics": true,
+  "reasonerName": "HermiT",
+  "reasonerVersion": "1.4.5.519",
+  "consistencyMethod": "OWLReasoner.isConsistent",
+  "inputDocumentCount": 3,
+  "loadedOntologyCount": 3,
+  "mergedAxiomCount": 41,
+  "consistencyChecked": true,
+  "consistent": true,
+  "publicationPermitted": false,
+  "inconsistentOntologyHandling": "reject_snapshot"
+}

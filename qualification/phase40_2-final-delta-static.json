@@ -1,0 +1,34 @@
+{
+  "formatVersion": 1,
+  "status": "pass",
+  "records": [
+    {
+      "gate": "verify_phase36_static.py",
+      "exitCode": 0,
+      "status": "pass",
+      "durationSeconds": 0.779,
+      "output": "Phase 36 static contract verification passed; live build/deploy gates remain mandatory"
+    },
+    {
+      "gate": "verify_phase40_static.py",
+      "exitCode": 0,
+      "status": "pass",
+      "durationSeconds": 1.522,
+      "output": "Phase 40 static contract verification passed; baseline, API/OpenAPI parity, inheritance and HPC ceiling governance are coherent"
+    },
+    {
+      "gate": "verify_phase40_1_static.py",
+      "exitCode": 0,
+      "status": "pass",
+      "durationSeconds": 6.667,
+      "output": "Phase 40.1 static verification passed; OWL signature runtime/schema/hash binding is coherent"
+    },
+    {
+      "gate": "verify_phase40_2_static.py",
+      "exitCode": 0,
+      "status": "pass",
+      "durationSeconds": 6.399,
+      "output": "Phase 40.2 static verification passed; datatype policy/schema/runtime/hash/HPC validation wiring is coherent"
+    }
+  ]
+}

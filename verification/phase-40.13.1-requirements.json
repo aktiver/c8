@@ -1,0 +1,17 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.1",
+  "requirements": [
+    {"id": "P40-13-1-001", "text": "Pass trusted exact-reasoner proof and certificate ceilings into partition-result merge."},
+    {"id": "P40-13-1-002", "text": "Fail closed at exact merge when proof-support or certificate-byte ceilings are exceeded."},
+    {"id": "P40-13-1-003", "text": "Parse legal SPARQL SERVICE and standard volatile functions before execution-policy classification."},
+    {"id": "P40-13-1-004", "text": "Keep remote and volatile queries ineligible for immutable snapshot certification and caching."},
+    {"id": "P40-13-1-005", "text": "Allow bounded online scalar execution of volatile queries while SERVICE remains an explicit unavailable capability."},
+    {"id": "P40-13-1-006", "text": "Consume the shared cpuset-aware Rust, blocking, OpenMP, BLAS and control-thread budget in online serving."},
+    {"id": "P40-13-1-007", "text": "Keep every online role thread budget within its guaranteed Kubernetes CPU allocation."},
+    {"id": "P40-13-1-008", "text": "Add workload-aware HPA scaling from bounded admission backlog without removing CPU and memory scaling signals."},
+    {"id": "P40-13-1-009", "text": "Require the Kubernetes custom-metrics API in the production workload-aware autoscaling profile."},
+    {"id": "P40-13-1-010", "text": "Retain implementation-candidate status and make no ontology-alignment functionality or production claim."},
+    {"id": "P40-13-1-011", "text": "Run the pinned Rust 1.97.1 native gate, repair workspace blockers, and fail the release gate while online-serving remains unqualified."}
+  ]
+}

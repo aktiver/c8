@@ -1,0 +1,18 @@
+{
+  "phase": "40.12",
+  "configured": {
+    "maxBgps": 4096,
+    "maxTriplesPerBgp": 65536,
+    "maxClassificationCpuLanes": 32
+  },
+  "hardCaps": {
+    "maxBgps": 4096,
+    "maxTriplesPerBgp": 65536,
+    "maxClassificationCpuLanes": 32
+  },
+  "queryCpuLimit": 16.0,
+  "rustComputeThreads": 12,
+  "effectiveClassificationCpuLanes": 12,
+  "onlineServingRoleConsumers": 4,
+  "status": "PASS"
+}

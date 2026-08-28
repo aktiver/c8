@@ -1,0 +1,35 @@
+[package]
+name = "ngkg-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+axum.workspace = true
+futures.workspace = true
+blake3.workspace = true
+hex.workspace = true
+kube.workspace = true
+ngkg-artifact-store = { path = "../../crates/ngkg-artifact-store" }
+ngkg-catalog = { path = "../../crates/ngkg-catalog" }
+ngkg-dataset = { path = "../../crates/ngkg-dataset" }
+ngkg-kube = { path = "../../crates/ngkg-kube" }
+ngkg-storage-recovery = { path = "../../crates/ngkg-storage-recovery" }
+ngkg-types = { path = "../../crates/ngkg-types" }
+oxigraph.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+sha2.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+tower-http.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+utoipa-swagger-ui.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

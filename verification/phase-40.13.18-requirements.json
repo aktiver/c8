@@ -1,0 +1,24 @@
+{
+  "phase": "40.13.18",
+  "status": "source-implemented-static-qualified-candidate",
+  "requirements": {
+    "fixedServiceEndpoints": true,
+    "variableServiceEndpoints": true,
+    "serviceSilentEvaluatorSemantics": true,
+    "checksumBoundEndpointRegistry": true,
+    "tenantScopedEndpointAuthorization": true,
+    "credentialsBySecretReference": true,
+    "httpsOnly": true,
+    "dnsRebindingAndPrivateAddressDefense": true,
+    "redirectsDisabled": true,
+    "boundedTimeoutConcurrencyQueueAndResponse": true,
+    "sparqlProtocolDatasetParameters": true,
+    "resultContentNegotiation": true,
+    "conditionalServiceDescription": true,
+    "hpcBlockingLaneBudget": true,
+    "queryShardAutoscalingMetric": true,
+    "kubernetesEgressPolicy": true,
+    "ontologyAlignment": false,
+    "rawDataMapping": false
+  }
+}

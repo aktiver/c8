@@ -1,0 +1,1126 @@
+{
+  "durationMs": 41.758,
+  "executor": {
+    "availableCpus": 8,
+    "caseTimeoutSeconds": 120.0,
+    "jobs": 7,
+    "maxDriverOutputBytes": 1048576,
+    "nestedNativeThreadsPerCase": 1
+  },
+  "formatVersion": 2,
+  "inventory": {
+    "byKind": {},
+    "byType": {
+      "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest": 70
+    },
+    "total": 70
+  },
+  "inventoryOnly": true,
+  "lockSha256": "9256861622757542ab7af741cd2bb421ba37776cbc509589d26c13d2cbdff508",
+  "manifests": [
+    "sparql/sparql11/entailment/manifest.ttl"
+  ],
+  "qualification": "w3c-rdf-tests-execution",
+  "suiteCommit": "8af71fed933539d09d5f4658fb1ea7ba4c8e30b9",
+  "suiteRoot": "/tmp/ngkg-w3c-cache/rdf-tests-8af71fed933539d09d5f4658fb1ea7ba4c8e30b9",
+  "summary": {
+    "unsupported": 70
+  },
+  "tests": [
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind01",
+      "index": 0,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "bind01 - BIND fixed data for OWL DL",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind02",
+      "index": 1,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "bind02 - BIND fixed data for OWL DL",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind03",
+      "index": 2,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "bind03 - BIND fixed data for OWL DL",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind04",
+      "index": 3,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "bind04 - BIND fixed data for OWL DL",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind05",
+      "index": 4,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "bind05 - BIND fixed data for OWL DL",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind06",
+      "index": 5,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "bind06 - BIND fixed data for OWL DL",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind07",
+      "index": 6,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "bind07 - BIND fixed data for OWL DL",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#bind08",
+      "index": 7,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "bind08 - BIND fixed data for OWL DL",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#d-ent-01",
+      "index": 8,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "D-Entailment test to show that  neither literals in subject position nor newly introduced surrogate blank nodes are to be returned in query answers",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#lang",
+      "index": 9,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "Literal with language tag test",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#owlds01",
+      "index": 10,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "bnodes are not existentials",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#owlds02",
+      "index": 11,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "bnodes are not existentials with answer",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q1",
+      "index": 12,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "paper-sparqldl-Q1",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q1-rdfs",
+      "index": 13,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "paper-sparqldl-Q1-rdfs",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q2",
+      "index": 14,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "paper-sparqldl-Q2",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q3",
+      "index": 15,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "paper-sparqldl-Q3",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q4",
+      "index": 16,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "paper-sparqldl-Q4",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#paper-sparqldl-Q5",
+      "index": 17,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "paper-sparqldl-Q5",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent10",
+      "index": 18,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "filtered subclass query with (hasChild some Thing) restriction",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent2",
+      "index": 19,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "parent query with distinguished variable",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent3",
+      "index": 20,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "parent query with (hasChild some Thing) restriction",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent4",
+      "index": 21,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "parent query with (hasChild min 1) restriction",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent5",
+      "index": 22,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "parent query with (hasChild some Female) restriction",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent6",
+      "index": 23,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "parent query with (hasChild min 1 Female) restriction",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent7",
+      "index": 24,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "parent query with (hasChild max 1 Female) restriction",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent8",
+      "index": 25,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "parent query with (hasChild exactly 1 Female) restriction",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#parent9",
+      "index": 26,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "subclass query with (hasChild some Thing) restriction",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#plainLit",
+      "index": 27,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "Plain literals with language tag are not the same as the same literal without",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDF"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf01",
+      "index": 28,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RDF inference test",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDF"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf02",
+      "index": 29,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RDF inference test",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDF"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf03",
+      "index": 30,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RDF test for blank node cardinalities",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdf04",
+      "index": 31,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "simple triple pattern match",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs01",
+      "index": 32,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RDFS inference test rdfs:subPropertyOf",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs02",
+      "index": 33,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RDFS inference test rdfs:subPropertyOf",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs03",
+      "index": 34,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RDFS inference test combining subPropertyOf and domain",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs04",
+      "index": 35,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RDFS inference test subClassOf",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs05",
+      "index": 36,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RDFS inference test subClassOf",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs06",
+      "index": 37,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RDFS inference test domain",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs07",
+      "index": 38,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RDFS inference test range",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs08",
+      "index": 39,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RDFS inference test rdf:XMLLiteral subclass of rdfs:Literal",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs09",
+      "index": 40,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RDFS inference test transitivity of subClassOf",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs10",
+      "index": 41,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RDFS inference test transitivity of subPropertyOf",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs11",
+      "index": 42,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RDFS inference test subProperty and instances",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs12",
+      "index": 43,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RDFS inference test containers",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rdfs13",
+      "index": 44,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RDFS inference test to show that neither literals in subject position nor newly introduced surrogate blank nodes are to be returned in query answers",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RIF"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif01",
+      "index": 45,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RIF Logical Entailment (referencing RIF XML)",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RIF"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif03",
+      "index": 46,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RIF Core WG tests: Frames",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RIF"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif04",
+      "index": 47,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RIF Core WG tests: Modeling Brain Anatomy",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/RIF"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#rif06",
+      "index": 48,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "RIF Core WG tests: RDF Combination Blank Node",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple1",
+      "index": 49,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "simple 1",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple2",
+      "index": 50,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "simple 2",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple3",
+      "index": 51,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "simple 3",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple4",
+      "index": 52,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "simple 4",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple5",
+      "index": 53,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "simple 5",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple6",
+      "index": 54,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "simple 6",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple7",
+      "index": 55,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "simple 7",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#simple8",
+      "index": 56,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "simple 8",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-01",
+      "index": 57,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "sparqldl-01.rq: triple pattern",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-02",
+      "index": 58,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "sparqldl-02.rq: simple combined query",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-03",
+      "index": 59,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "sparqldl-03.rq: combined query with complex class description",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-04",
+      "index": 60,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "sparqldl-04.rq: bug fixing test",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-05",
+      "index": 61,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "sparqldl-05.rq: simple undistinguished variable test.",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-06",
+      "index": 62,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "sparqldl-06.rq: cycle of undistinguished variables",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-07",
+      "index": 63,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "sparqldl-07.rq: two distinguished variables + undist.",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-08",
+      "index": 64,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "sparqldl-08.rq: two distinguished variables + undist.",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based",
+        "http://www.w3.org/ns/entailment/RDFS",
+        "http://www.w3.org/ns/entailment/RDF",
+        "http://www.w3.org/ns/entailment/D"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-09",
+      "index": 65,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "sparqldl-09.rq: undist vars test",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-10",
+      "index": 66,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "sparqldl-10.rq: undist vars test",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-11",
+      "index": 67,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "sparqldl-11.rq: domain test",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-12",
+      "index": 68,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "sparqldl-12.rq: range test",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    },
+    {
+      "entailmentRegimes": [
+        "http://www.w3.org/ns/entailment/OWL-Direct",
+        "http://www.w3.org/ns/entailment/OWL-RDF-Based"
+      ],
+      "id": "http://www.w3.org/2009/sparql/docs/tests/data-sparql11/entailment/manifest#sparqldl-13",
+      "index": 69,
+      "manifest": "sparql/sparql11/entailment/manifest.ttl",
+      "name": "sparqldl-13.rq: sameAs",
+      "status": "unsupported",
+      "types": [
+        "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#QueryEvaluationTest"
+      ],
+      "unsupportedReason": "entailment regime is not wired into this case driver"
+    }
+  ]
+}

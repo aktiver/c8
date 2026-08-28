@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "phase": "40.4",
+  "releaseStatus": "implementation-candidate-not-production-qualified",
+  "parent": "NGKG_PHASE_40_3_CANDIDATE.zip",
+  "parentArchiveSha256": "61fb9d2c4daf2fc38dace0663c9f1161b32ef5312b5f9ffa2f3ff4bee69d84c4",
+  "parentPayloadFileCount": 467,
+  "changedInheritedFileCount": 9,
+  "deletedInheritedFileCount": 0,
+  "newFunctionalCapability": "strict Direct certificate runtime contract with scheduling-independent result digest, exhaustive candidate/partition/reasoner completion evidence, reasoner identity, proof/support vocabulary and reasoner-boundary binding verification",
+  "jsonSchemaCount": 30,
+  "openApiOperations": {
+    "control-plane": 12,
+    "online-data-plane": 14
+  },
+  "nativeQualificationExecuted": false,
+  "nativeQualificationReason": "cargo/rustc/mvn/helm/kubectl/rke2 are unavailable in this environment",
+  "nextPhase": "40.5 \u2014 harden combined OWL 2 DL profile/import qualification"
+}

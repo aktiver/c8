@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.23",
+  "status": "source-implemented",
+  "ngkgRuntime": "rust-only",
+  "apacheJenaRole": "external-competitor-only",
+  "syntheticBarrier": "passed",
+  "corruptedEvidence": "rejected",
+  "liveQualification": {
+    "enterpriseDatasets": "not-run",
+    "releaseImages": "not-built",
+    "sameHardwareJena": "not-run",
+    "multinodeAutoscaling": "not-run",
+    "costEvidence": "not-collected",
+    "certificate": null
+  },
+  "productionClaim": false
+}

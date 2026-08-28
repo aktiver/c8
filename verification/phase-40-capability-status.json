@@ -1,0 +1,114 @@
+{
+  "capabilities": {
+    "adHocExactRdfFallback": {
+      "semanticScope": "exact RDF plus qualified finite closure",
+      "sourcePhase": "39.4",
+      "status": "implemented-static-qualified"
+    },
+    "authorizedUnionDefault": {
+      "sourcePhase": "37",
+      "status": "implemented-static-qualified"
+    },
+    "combinedOwl2DlProfileValidation": {
+      "semanticScope": "combined checksum-bound ontology with OWLAPI-loaded local import closure and profile evidence",
+      "sourcePhase": "38-40.5",
+      "status": "implemented-not-native-qualified"
+    },
+    "cppKernels": {
+      "plannedBeyondBaseline": true,
+      "status": "not-active"
+    },
+    "directBgpLegalityClassification": {
+      "semanticScope": "W3C-derived typed-BGP admission/preflight bound to the qualified snapshot; grounded candidate OWL2DL C3 and entailment remain Phase 40.8",
+      "sourcePhase": "40.7",
+      "status": "implemented-static-qualified"
+    },
+    "directBgpResultContract": {
+      "semanticScope": "contract-and-validation-only; no arbitrary Direct-BGP execution claim",
+      "sourcePhase": "40.3",
+      "status": "implemented-static-qualified"
+    },
+    "directCertificateContract": {
+      "semanticScope": "format-v1 legacy validation plus format-v2 proof-manifest SHA binding and complete answer-support coverage",
+      "sourcePhase": "40.4-40.9",
+      "status": "implemented-static-qualified"
+    },
+    "directProofDag": {
+      "semanticScope": "Every exact returned solution multiplicity is backed by deterministic HermiT reasoner-check support evidence plus a completion-barrier support; HermiT derivation DAG remains unavailable.",
+      "sourcePhase": "40.9",
+      "status": "answer-support-coverage-implemented-derivation-dag-not-available"
+    },
+    "distributedSelectFastPath": {
+      "sourcePhase": "35-39",
+      "status": "implemented-static-qualified"
+    },
+    "exactDirectReasonerFallback": {
+      "semanticScope": "Phase 40.7-admitted BGPs with finite typed candidate domains; complete ordinal partition barrier, grounded OWL2DL check, HermiT logical-axiom entailment; anonymous-individual sigma mappings remain explicit not-covered; Phase 40.9 binds every returned multiplicity to grounded exact-reasoner support IDs and a proof manifest",
+      "sourcePhase": "40.8",
+      "status": "implemented-static-qualified-fail-closed"
+    },
+    "exactScalarSparqlAlgebra": {
+      "sourcePhase": "39",
+      "status": "implemented-static-qualified"
+    },
+    "losslessRdfDataset": {
+      "sourcePhase": "37",
+      "status": "implemented-static-qualified"
+    },
+    "openmpBlasExactJoinPath": {
+      "reason": "Exact sparse RDF joins remain Rust/Arrow/Grace-join based.",
+      "status": "not-active"
+    },
+    "owlConsistencyCheck": {
+      "semanticScope": "HermiT global consistency decision over the complete checksum-bound merged OWL 2 DL ontology",
+      "sourcePhase": "38-40.6",
+      "status": "implemented-not-native-qualified"
+    },
+    "owlConsistencyQualificationEvidence": {
+      "semanticScope": "checksum-bound HermiT OWLReasoner.isConsistent evidence; inconsistent snapshots are not publishable",
+      "sourcePhase": "40.6",
+      "status": "implemented-static-qualified"
+    },
+    "owlDirectArbitraryBgpCompleteness": {
+      "plannedMilestones": [
+        "40.8",
+        "40.24",
+        "40.25"
+      ],
+      "reason": "Anonymous-individual instance-map multiplicity and native/W3C qualification remain outstanding; uncovered cases fail closed.",
+      "status": "not-implemented"
+    },
+    "owlProfileImportQualificationEvidence": {
+      "semanticScope": "checksum-bound ontology/version/import closure plus merged OWL2DLProfile evidence",
+      "sourcePhase": "40.5",
+      "status": "implemented-static-qualified"
+    },
+    "typedSparqlCompilerAndProtocol": {
+      "sourcePhase": "38",
+      "status": "implemented-static-qualified"
+    },
+    "phase40HelmCeilings": {
+      "phase": "40.13",
+      "status": "authoritative-helm-values-worker-enforced-operator-propagated-static-qualified",
+      "semanticScope": "Phase 40 exact-reasoner ceilings are authoritative in Helm, consumed by reference-worker, imported by both operators from the immutable ConfigMap, included in Job work-spec identity, and injected into generated reference/reasoner Jobs; online Direct-BGP admission remains enforced by Phase 40.12."
+    },
+    "phase40ReferenceWorkerCeilings": {
+      "sourcePhase": "40.11",
+      "status": "implemented-static-qualified",
+      "semanticScope": "direct-bgp requires a complete trusted environment ceiling bundle, enforces per-job sub-ceilings, CPU/cgroup memory safety, exact partition count, certificate bytes, and proof-support count before successful exact certification."
+    },
+    "phase40OnlineAdmissionCeilings": {
+      "sourcePhase": "40.12",
+      "status": "implemented-static-qualified",
+      "semanticScope": "query coordinators use Helm-controlled BGP count/triple/CPU ceilings; all online-serving roles validate the immutable ceiling bundle, and effective classifier lanes are bounded by visible CPU and the Rust compute-thread budget."
+    },
+    "phase40OperatorCeilingPropagation": {
+      "sourcePhase": "40.13",
+      "status": "implemented-static-qualified",
+      "semanticScope": "Both Kubernetes operators validate one shared Phase 40 exact ceiling bundle and propagate it only to reference/reasoner workloads with a deterministic SHA-256 annotation and environment binding; existing Jobs with divergent policy hashes fail reconciliation."
+    }
+  },
+  "formatVersion": 1,
+  "phase": "40",
+  "standardsClaimsEnabled": false
+}

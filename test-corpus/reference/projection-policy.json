@@ -1,0 +1,48 @@
+{
+  "policyId": "urn:ngkg:projection-policy:reference-v1",
+  "rejectDefaultGraph": true,
+  "rules": [
+    {
+      "predicateIri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+      "treatment": "core",
+      "participatesInReasoning": true,
+      "queryableAsRdf": true
+    },
+    {
+      "predicateIri": "https://ngkg.io/ontology/participatesIn",
+      "treatment": "core",
+      "participatesInReasoning": true,
+      "queryableAsRdf": true
+    },
+    {
+      "predicateIri": "https://ngkg.io/ontology/observedOn",
+      "treatment": "core",
+      "participatesInReasoning": true,
+      "queryableAsRdf": true
+    },
+    {
+      "predicateIri": "https://ngkg.io/ontology/affectedBy",
+      "treatment": "core",
+      "participatesInReasoning": true,
+      "queryableAsRdf": true
+    },
+    {
+      "predicateIri": "http://www.w3.org/ns/prov#wasDerivedFrom",
+      "treatment": "core",
+      "participatesInReasoning": true,
+      "queryableAsRdf": true
+    },
+    {
+      "predicateIri": "https://ngkg.io/ontology/latencyValue",
+      "treatment": "virtual",
+      "participatesInReasoning": false,
+      "queryableAsRdf": true
+    },
+    {
+      "predicateIri": "https://ngkg.io/ontology/rawMessage",
+      "treatment": "payload",
+      "participatesInReasoning": false,
+      "queryableAsRdf": false
+    }
+  ]
+}

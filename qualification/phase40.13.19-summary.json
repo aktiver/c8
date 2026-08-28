@@ -1,0 +1,23 @@
+{
+  "phase": "40.13.19",
+  "status": "implemented-static-qualified-candidate",
+  "parentArchiveSha256": "2a3969b86f17c20b6ce608b9e7c278837d49f83fcf1b3df491b79cce53a40e51",
+  "checks": {
+    "parentArchiveIntegrity": "passed",
+    "parentManifestVerification": "passed",
+    "phaseStaticContract": "passed",
+    "cumulativePhase40_13StaticContracts": "passed",
+    "controlOpenApiParity": {"status": "passed", "operations": 19},
+    "onlineOpenApiParity": {"status": "passed", "operations": 18},
+    "platformValuesValidation": "passed",
+    "workloadValuesValidation": "passed",
+    "pythonJsonYamlTomlParsing": "passed",
+    "structuralValidator": "failed-inherited-findings",
+    "rustWorkspaceBuildAndTests": "blocked-toolchain-unavailable",
+    "helmLintAndRender": "blocked-toolchain-unavailable",
+    "postgresObjectStoreIntegration": "not-run-environment-unavailable",
+    "liveMultinodeFailureAndAutoscaling": "not-run-cluster-unavailable"
+  },
+  "semanticBoundary": "Copies immutable certified snapshot artifacts only; no RDF/OWL transformation, ontology alignment, or raw-data mapping.",
+  "releaseQualified": false
+}

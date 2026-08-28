@@ -1,0 +1,42 @@
+{
+  "phase": "40.13.16",
+  "status": "source-implemented-static-qualified-candidate",
+  "parentPhase": "40.13.15",
+  "parentArchiveSha256": "fcd47dedb5e40b22297f57bc3287895b2162f0f51fca4512039d0f2781d7b197",
+  "implemented": {
+    "normalQueryRoute": true,
+    "queryForms": ["SELECT", "ASK", "CONSTRUCT", "DESCRIBE"],
+    "distinctWorkerReplicaBarrier": true,
+    "canonicalScalarEquivalence": true,
+    "authorizationBeforeSemanticMaterialization": true,
+    "failClosedPartialResult": true,
+    "hpcResourceBudgetPreserved": true,
+    "workloadAwareAutoscalingWired": true,
+    "ontologyAlignment": false,
+    "rawDataMapping": false
+  },
+  "passed": {
+    "phase40_13_16Static": true,
+    "phase40_13_8Through15Static": true,
+    "controlPlaneOpenapiOperations": 16,
+    "onlineOpenapiOperations": 17,
+    "helmValuesAndProductionOverlay": true,
+    "contractSyntax": true
+  },
+  "blocked": {
+    "cargo": "tool unavailable",
+    "rustc": "tool unavailable",
+    "rustfmt": "tool unavailable",
+    "maven": "tool unavailable",
+    "helm": "tool unavailable",
+    "kubectl": "tool unavailable",
+    "liveMultinode": "cluster unavailable"
+  },
+  "openProductionLimits": {
+    "partitionNativeSemanticScans": false,
+    "scalarCompatibilityImageMaximumBytes": 68719476736,
+    "fiveHundredGigabyteActivationQualified": false,
+    "securedServiceExecution": false,
+    "productionClaimEnabled": false
+  }
+}

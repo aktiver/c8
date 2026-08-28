@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "phase": "40.11",
+  "status": "implementation-candidate-not-production-qualified",
+  "authoritativeHelmCeilingsPreserved": true,
+  "immutableReferenceWorkerConfigMapImplemented": true,
+  "referenceWorkerTrustedEnvironmentRequired": true,
+  "perJobSubCeilingEnforcementImplemented": true,
+  "candidatePartitionCrossFieldValidationImplemented": true,
+  "cpuVisibilityEnforcementImplemented": true,
+  "cgroupMemoryHeadroomEnforcementImplemented": true,
+  "maxExactPartitionsRuntimeEnforced": true,
+  "maxCertificateBytesRuntimeEnforced": true,
+  "maxProofSupportIdsRuntimeEnforced": true,
+  "operatorConfigMapPropagationImplemented": false,
+  "distributedOperatorConfigMapPropagationImplemented": false,
+  "nativeHelmQualificationExecuted": false,
+  "standardsClaimsEnabled": false
+}

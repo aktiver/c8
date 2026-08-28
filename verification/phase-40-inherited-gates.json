@@ -1,0 +1,158 @@
+{
+  "formatVersion": 1,
+  "gates": [
+    {
+      "command": "scripts/qualify_phase15.sh",
+      "gate": "deterministic-distributed-build-equivalence",
+      "phase": "15"
+    },
+    {
+      "command": "scripts/run_distributed_artifact_slice.sh",
+      "gate": "distributed-columnar-artifact-equivalence",
+      "phase": "16"
+    },
+    {
+      "command": "scripts/qualify_phase17.sh",
+      "gate": "cumulative-phase-17-qualification",
+      "phase": "17"
+    },
+    {
+      "command": "scripts/qualify_phase18.sh",
+      "gate": "cumulative-phase-18-qualification",
+      "phase": "18"
+    },
+    {
+      "command": "scripts/qualify_phase19.sh",
+      "gate": "cumulative-phase-19-qualification",
+      "phase": "19"
+    },
+    {
+      "command": "scripts/qualify_phase20.sh",
+      "gate": "cumulative-phase-20-qualification",
+      "phase": "20"
+    },
+    {
+      "command": "scripts/qualify_phase21.sh",
+      "gate": "cumulative-phase-21-qualification",
+      "phase": "21"
+    },
+    {
+      "command": "scripts/qualify_phase22.sh",
+      "gate": "cumulative-phase-22-qualification",
+      "phase": "22"
+    },
+    {
+      "command": "scripts/qualify_phase23.sh",
+      "gate": "cumulative-phase-23-qualification",
+      "phase": "23"
+    },
+    {
+      "command": "scripts/qualify_phase24.sh",
+      "gate": "cumulative-phase-24-qualification",
+      "phase": "24"
+    },
+    {
+      "command": "scripts/qualify_phase25.sh",
+      "gate": "cumulative-phase-25-qualification",
+      "phase": "25"
+    },
+    {
+      "command": "scripts/qualify_phase26.sh",
+      "gate": "cumulative-phase-26-qualification",
+      "phase": "26"
+    },
+    {
+      "command": "scripts/qualify_phase27.sh",
+      "gate": "cumulative-phase-27-qualification",
+      "phase": "27"
+    },
+    {
+      "command": "scripts/qualify_phase28.sh",
+      "gate": "cumulative-phase-28-qualification",
+      "phase": "28"
+    },
+    {
+      "command": "scripts/qualify_phase29.sh",
+      "gate": "cumulative-phase-29-qualification",
+      "phase": "29"
+    },
+    {
+      "command": "scripts/qualify_phase30.sh",
+      "gate": "cumulative-phase-30-qualification",
+      "phase": "30"
+    },
+    {
+      "command": "scripts/qualify_phase31.sh",
+      "gate": "cumulative-phase-31-qualification",
+      "phase": "31"
+    },
+    {
+      "command": "scripts/qualify_phase32.sh",
+      "gate": "cumulative-phase-32-qualification",
+      "phase": "32"
+    },
+    {
+      "command": "scripts/qualify_phase33.sh",
+      "gate": "cumulative-phase-33-qualification",
+      "phase": "33"
+    },
+    {
+      "command": "scripts/qualify_phase34.sh",
+      "gate": "direct-fragment-spool-primary-partition-equivalence",
+      "phase": "34"
+    },
+    {
+      "command": "scripts/qualify_phase35.sh",
+      "gate": "out-of-core-multi-stage-shuffle-result-equivalence",
+      "phase": "35"
+    },
+    {
+      "command": "scripts/qualify_phase36.sh",
+      "gate": "executable-standards-compliance-baseline",
+      "phase": "36"
+    },
+    {
+      "command": "scripts/qualify_phase37.sh",
+      "gate": "lossless-rdf-dataset-and-authorized-union-default",
+      "phase": "37"
+    },
+    {
+      "command": "scripts/qualify_phase38.sh",
+      "gate": "typed-sparql-compiler-and-protocol",
+      "phase": "38"
+    },
+    {
+      "command": "scripts/qualify_phase39.sh",
+      "gate": "exact-scalar-sparql11-algebra-and-query-forms",
+      "phase": "39"
+    },
+    {
+      "command": "scripts/qualify_phase39_1.sh",
+      "gate": "reproducible-rust-lock-resolution",
+      "phase": "39.1"
+    },
+    {
+      "command": "scripts/qualify_phase39_2.sh",
+      "gate": "executable-w3c-manifest-conformance",
+      "phase": "39.2"
+    },
+    {
+      "command": "scripts/qualify_phase39_3.sh",
+      "gate": "graph-variable-dataset-authorization-regressions",
+      "phase": "39.3"
+    },
+    {
+      "command": "scripts/qualify_phase39_4.sh",
+      "gate": "ad-hoc-bounded-exact-rdf-query-admission",
+      "phase": "39.4"
+    },
+    {
+      "command": "scripts/qualify_phase39_5.sh",
+      "gate": "cumulative-stabilization-governance",
+      "phase": "39.5"
+    }
+  ],
+  "liveGatesRemainExplicit": true,
+  "phase": "40",
+  "range": "15-39.5"
+}

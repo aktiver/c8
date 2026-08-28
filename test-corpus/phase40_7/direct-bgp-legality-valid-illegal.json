@@ -1,0 +1,38 @@
+{
+  "formatVersion": 1,
+  "datasetId": "00000000-0000-0000-0000-000000000001",
+  "snapshotId": "00000000-0000-0000-0000-000000000002",
+  "querySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "sparqlAlgebraSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "activeDatasetSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "authorizedGraphSetSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "owlSignatureSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "datatypePolicySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "owlProfileQualificationSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "owlConsistencyQualificationSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "entailmentRegime": "owl2-direct",
+  "classifier": "w3c-owl2-direct-bgp-cp1-cp4-v1",
+  "bgpCount": 1,
+  "allBgpsLegal": false,
+  "propertyPathsOutsideDirectBgps": true,
+  "bgps": [
+    {
+      "ordinal": 0,
+      "bgpSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "graphScope": {
+        "scope": "default"
+      },
+      "tripleCount": 2,
+      "recognizedForms": [],
+      "variables": [],
+      "status": "illegal",
+      "groundedOwl2dlCheckRequired": true,
+      "failure": {
+        "code": "undeclared-entity-variable",
+        "detail": "predicate variable ?p requires a BGP-local property declaration",
+        "tripleOrdinal": 0,
+        "variable": "p"
+      }
+    }
+  ]
+}

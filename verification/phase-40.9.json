@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "phase": "40.9",
+  "status": "implementation-candidate-not-production-qualified",
+  "perEntailedCandidateReasonerCheckEvidenceImplemented": true,
+  "groundedRdfAndLogicalAxiomHashesImplemented": true,
+  "proofManifestRuntimeContractImplemented": true,
+  "answerMultiplicityProofCoverageImplemented": true,
+  "zeroAnswerCompletionSupportImplemented": true,
+  "directCertificateV2ProofBindingImplemented": true,
+  "reasonerClientProofVerificationImplemented": true,
+  "referenceWorkerProofManifestEmissionImplemented": true,
+  "deterministicProofSupportIdsImplemented": true,
+  "hpcProofAggregationDeterministic": true,
+  "hermitDerivationDagImplemented": false,
+  "standardsClaimsEnabled": false,
+  "nativeCargoMavenQualificationExecuted": false,
+  "nextMilestone": "40.10-authoritative-phase-40-helm-ceilings"
+}

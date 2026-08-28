@@ -1,0 +1,61 @@
+{
+  "formatVersion": 1,
+  "parentLabel": "phase-40.9",
+  "currentLabel": "phase-40.10",
+  "parentFileManifestSha256": "9a96d39c88fcac1a522e8bbeaa04d5404b4bb0ce866b10a9d6e776e1192e10f3",
+  "embeddedParentManifest": "verification/stabilization/phase-40.9-parent-for-40.10-FILE_MANIFEST_SHA256.txt",
+  "changedParentFiles": [
+    {
+      "path": "README.md",
+      "parentSha256": "bf84d3c3a5d6e25343abd68a43bb2acb0840f969204199f61e573532dc70e52a",
+      "currentSha256": "cc1985a0721c9d2a2d12fc5dbe2e63dba81263e9d6173698e1225b86fd9b7e73"
+    },
+    {
+      "path": "acceptance/phase-gates.yaml",
+      "parentSha256": "4c60b6ad925fd884df995d2fa23326eb7062bb79f6239e99b90126f3397d5832",
+      "currentSha256": "aec9e52b57b4b5277afc6ac81614ec966107ec1143146a6b1ac2a5036b2b654f"
+    },
+    {
+      "path": "charts/ngkg-platform/values.schema.json",
+      "parentSha256": "569a97792770b7a0e63f7646e183070caa0471f35bb65f5eb67dbaabfe0b6b18",
+      "currentSha256": "9e6e9d5650a19f9f1077dab50e5e2f2a34dcee55d14c661f6f3e7eb7563a4e2e"
+    },
+    {
+      "path": "charts/ngkg-platform/values.yaml",
+      "parentSha256": "c681dfca196f0e173c94afaeca9b2909988e6e72ce4af83bc9abe40a88cd8d39",
+      "currentSha256": "ac0e3793dffd8dfcdab88c6c45b1df64161b145d3c83e1b3311b97a1963e66bb"
+    },
+    {
+      "path": "charts/ngkg-workloads/values.schema.json",
+      "parentSha256": "e138159097d3d3cc4d3d9fa045090b710ba607ada3f0ebb84f4e29030f54e8fc",
+      "currentSha256": "c6fb445585226948ec9ede2a3908fc04ab1b57537acee4f57453b5306119d64b"
+    },
+    {
+      "path": "charts/ngkg-workloads/values.yaml",
+      "parentSha256": "9621f1fdbabe908c5218bc44a00a43d3f1f2d616c76910f70afd7007e910de20",
+      "currentSha256": "5e0f8324a40567adc0a43e75e5235937c50ab15e3c4b9e92df25ec516e12b98b"
+    },
+    {
+      "path": "scripts/verify_phase40_9_static.py",
+      "parentSha256": "09417ff9acf0b08bf49bda82c7f53309cb135a5ea7e2304ce27aa967c7504ae1",
+      "currentSha256": "be418419812dd1d562f5ac8506d4cebecea5e4e27ebf42a7a369a21266a6aa29"
+    },
+    {
+      "path": "scripts/verify_phase40_static.py",
+      "parentSha256": "dc5768ee1771d7778e8bdf27d28dbb62caa8c1b99e6cad029cf7142a7d79778b",
+      "currentSha256": "b85755a435b23235e5ec9bf259ec91fecc860ffcb0d22d5136658792a2f813e4"
+    },
+    {
+      "path": "verification/phase-40-capability-status.json",
+      "parentSha256": "fafd17131509a20af98695c0796abff2d5030386724a5f34853a4db84651850f",
+      "currentSha256": "10dc99fb7e4adf2e2cc7755938173de43360e100404a8282e10b6ef14bc16aa4"
+    },
+    {
+      "path": "verification/phase-40-ceilings.json",
+      "parentSha256": "df50f5ef6bae0a57c7b5ba1085ad848bf0a5dc6931efd091a69cea2ee9dfa3bb",
+      "currentSha256": "a8294d85784f6cfcccfc87605f699a7f4565afcf90c13fb66760e44e3a824a32"
+    }
+  ],
+  "deletedFiles": [],
+  "inheritedPayloadFileCount": 637
+}

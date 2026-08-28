@@ -1,0 +1,23 @@
+{
+  "formatVersion": 1,
+  "phase": "40.8",
+  "status": "implementation-candidate-not-production-qualified",
+  "exactHermitFallbackImplemented": true,
+  "phase40_7LegalityRequired": true,
+  "activeDatasetRevalidationImplemented": true,
+  "graphScopedOntologyMaterializationImplemented": true,
+  "deterministicCandidateOrdinalPartitioningImplemented": true,
+  "boundedLocalReasonerConcurrencyImplemented": true,
+  "perCandidateGroundedOwl2DlValidationImplemented": true,
+  "logicalAxiomEntailmentImplemented": true,
+  "completePartitionBarrierImplemented": true,
+  "directResultAndCertificateEmissionImplemented": true,
+  "referenceWorkerDirectJobModeImplemented": true,
+  "streamingIntegrityVerificationImplemented": true,
+  "anonymousIndividualSigmaMultiplicityImplemented": false,
+  "owlDirectArbitraryBgpCompleteness": false,
+  "standardsClaimsEnabled": false,
+  "nativeCargoMavenQualificationExecuted": false,
+  "multiNodeExactReasoningImplemented": false,
+  "nextMilestone": "40.9-proof-support-ids-and-certificate-verification"
+}

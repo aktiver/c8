@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "phase": "40.3",
+  "requirements": [
+    {"id":"P40-3-001","text":"Define one strict shared runtime contract for exact Direct-BGP results."},
+    {"id":"P40-3-002","text":"Bind every result to dataset, snapshot, query, BGP, active dataset, graph authorization, OWL signature and datatype policy identities."},
+    {"id":"P40-3-003","text":"Represent RDF terms and SPARQL bag multiplicity losslessly without expanding duplicate solution rows."},
+    {"id":"P40-3-004","text":"Carry explicit default/named graph context and fail-closed exactness/completeness/error outcomes."},
+    {"id":"P40-3-005","text":"Validate large result vectors with bounded deterministic CPU parallelism whose failure identity is scheduling-independent."},
+    {"id":"P40-3-006","text":"Provide Draft 2020-12 schema, fixtures, independent validation, documentation and cumulative gates without enabling OWL Direct completeness claims."}
+  ]
+}

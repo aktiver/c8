@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "queryForm": "CONSTRUCT",
+  "authorizedGraphs": [
+    "https://c8-next-generation.io/acme/enterprise/semkg",
+    "https://c8-next-generation.io/acme/infrastructure/semkg",
+    "https://c8-next-generation.io/acme/organization/semkg",
+    "https://c8-next-generation.io/acme/security/semkg"
+  ],
+  "hopCount": 3,
+  "reasonedPredicate": "https://c8-next-generation.io/ontology/release/requiresResponseFrom",
+  "reasoningRule": "owl:propertyChainAxiom",
+  "requiresOwl2DlProfile": true,
+  "requiresConsistency": true,
+  "minimumNodes": 2,
+  "minimumCpuMillis": 2000,
+  "proofCoverage": "complete",
+  "resultType": "unified-reasoned-context-graph"
+}

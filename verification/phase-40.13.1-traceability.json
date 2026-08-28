@@ -1,0 +1,71 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.1",
+  "entries": [
+    {
+      "requirementIds": ["P40-13-1-001", "P40-13-1-002"],
+      "implementation": ["crates/ngkg-direct-reasoner/src/lib.rs"],
+      "evidence": ["scripts/verify_phase40_13_1_static.py", "verification/phase-40.13.1.json"]
+    },
+    {
+      "requirementIds": ["P40-13-1-003", "P40-13-1-004", "P40-13-1-005"],
+      "implementation": [
+        "crates/ngkg-sparql-compiler/src/lib.rs",
+        "crates/ngkg-reference/src/compiler.rs",
+        "crates/ngkg-reference/src/query.rs",
+        "services/online-serving/src/main.rs"
+      ],
+      "evidence": ["scripts/verify_phase40_13_1_static.py", "verification/phase-40.13.1.json"]
+    },
+    {
+      "requirementIds": ["P40-13-1-006", "P40-13-1-007"],
+      "implementation": [
+        "crates/ngkg-hpc-runtime/src/lib.rs",
+        "services/online-serving/Cargo.toml",
+        "services/online-serving/src/main.rs",
+        "charts/ngkg-workloads/templates/online-data-plane.yaml"
+      ],
+      "evidence": ["scripts/verify_phase40_13_1_static.py", "verification/phase-40.13.1.json"]
+    },
+    {
+      "requirementIds": ["P40-13-1-008", "P40-13-1-009"],
+      "implementation": [
+        "charts/ngkg-workloads/values.yaml",
+        "charts/ngkg-workloads/values.schema.json",
+        "charts/ngkg-workloads/templates/autoscaling.yaml",
+        "charts/ngkg-workloads/profiles/production-workload-autoscaling.yaml"
+      ],
+      "evidence": ["scripts/verify_phase40_13_1_static.py", "verification/phase-40.13.1.json"]
+    },
+    {
+      "requirementIds": ["P40-13-1-010"],
+      "implementation": ["BUILD_STATUS_PHASE_40_13_1.md"],
+      "evidence": ["verification/phase-40.13.1.json"]
+    },
+    {
+      "requirementIds": ["P40-13-1-011"],
+      "implementation": [
+        "Cargo.lock",
+        "crates/ngkg-owl-direct/src/lib.rs",
+        "crates/ngkg-reference/src/lib.rs",
+        "crates/ngkg-reference/src/query.rs",
+        "crates/ngkg-reference/src/rdf.rs",
+        "crates/ngkg-hydration/Cargo.toml",
+        "crates/ngkg-hydration/src/lib.rs",
+        "crates/ngkg-kube/Cargo.toml",
+        "crates/ngkg-distributed-artifacts/src/lib.rs",
+        "crates/ngkg-distributed-build/src/lib.rs",
+        "crates/ngkg-reasoner-client/src/lib.rs",
+        "crates/ngkg-query-planner/src/lib.rs",
+        "services/operator/src/main.rs",
+        "services/distributed-operator/src/main.rs",
+        "services/distributed-worker/src/object_stage.rs",
+        "services/online-serving/src/main.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.13.1-toolchain.json",
+        "verification/phase-40.13.1-native-tests.json"
+      ]
+    }
+  ]
+}

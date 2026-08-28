@@ -1,0 +1,25 @@
+{
+  "formatVersion": 1,
+  "sourcePlanProfile": "fact-hash-mod-8-v1",
+  "logicalPartitionCount": 8,
+  "rowGroupRows": 65536,
+  "executions": [
+    {
+      "name": "forward-completion-order",
+      "partitionOrder": [0, 1, 2, 3, 4, 5, 6, 7]
+    },
+    {
+      "name": "reverse-completion-order",
+      "partitionOrder": [7, 6, 5, 4, 3, 2, 1, 0]
+    }
+  ],
+  "mustMatch": [
+    "partitionManifestSha256ByIndex",
+    "locatorSha256",
+    "factCount",
+    "semanticRowCount",
+    "payloadRowCount",
+    "locatorRecordCount",
+    "semanticContentSha256"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "formatVersion": 1,
+  "tools": {
+    "python3": "/opt/pyvenv/bin/python3",
+    "java": "/usr/bin/java",
+    "javac": "/usr/bin/javac",
+    "cargo": null,
+    "rustc": null,
+    "mvn": null,
+    "helm": null,
+    "kubectl": null,
+    "rke2": null
+  }
+}

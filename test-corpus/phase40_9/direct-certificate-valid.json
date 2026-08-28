@@ -1,0 +1,58 @@
+{
+  "formatVersion": 2,
+  "datasetId": "00000000-0000-0000-0000-000000000091",
+  "snapshotId": "00000000-0000-0000-0000-000000000092",
+  "querySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "bgpSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "activeDatasetSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "authorizedGraphSetSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "owlSignatureSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "datatypePolicySha256": "6666666666666666666666666666666666666666666666666666666666666666",
+  "entailmentRegime": "owl2-direct",
+  "graphContext": {
+    "scope": "named",
+    "graphIri": "https://example.test/graph/clinical"
+  },
+  "certifiedOutcome": "exact-complete",
+  "directBgpResultSha256": "78edc0dff47829c26ff5c40e864c9305e9d6f954f2320edb6f4c3a16aad3f75f",
+  "proofManifestSha256": "b99c2d9819927280d5f2513ea704f04056971c5bee57b280d33e0101c85ee3b8",
+  "reasoner": {
+    "engine": "HermiT",
+    "engineVersion": "1.4.5.519",
+    "adapterName": "ngkg-hermit-adapter",
+    "adapterVersion": "40.9",
+    "requestSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "completeness": {
+    "method": "exhaustive-candidate-entailment",
+    "candidateSpaceSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+    "candidateBindingCount": 3,
+    "checkedCandidateBindingCount": 3,
+    "partitionCount": 2,
+    "completedPartitionCount": 2,
+    "reasonerRequestCount": 3,
+    "successfulReasonerRequestCount": 3,
+    "executionRootSha256": "8888888888888888888888888888888888888888888888888888888888888888"
+  },
+  "proofCoverage": "complete",
+  "supportReferences": [
+    {
+      "supportId": "17851afe006f5a9d9bec2172b2772dd6db39d1bed7206b151ea59ca183f521e7",
+      "kind": "reasoner-check",
+      "artifactSha256": "b99c2d9819927280d5f2513ea704f04056971c5bee57b280d33e0101c85ee3b8",
+      "sourceGraphIri": "https://example.test/graph/clinical"
+    },
+    {
+      "supportId": "284619b080d7738795815910664026315ac1f2c058b683a8ad0758447ab917ca",
+      "kind": "reasoner-check",
+      "artifactSha256": "b99c2d9819927280d5f2513ea704f04056971c5bee57b280d33e0101c85ee3b8",
+      "sourceGraphIri": "https://example.test/graph/clinical"
+    },
+    {
+      "supportId": "5a88190a11147a22496c113978af780ab8a600e1a3656054863de2f7db601471",
+      "kind": "reasoner-check",
+      "artifactSha256": "b99c2d9819927280d5f2513ea704f04056971c5bee57b280d33e0101c85ee3b8",
+      "sourceGraphIri": "https://example.test/graph/clinical"
+    }
+  ]
+}

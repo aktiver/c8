@@ -1,0 +1,35 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.2",
+  "rustToolchain": "1.97.1",
+  "workspaceCheck": {
+    "command": "CARGO_BUILD_JOBS=2 cargo check --workspace --all-targets --all-features",
+    "status": "passed"
+  },
+  "workspaceTests": {
+    "command": "CARGO_BUILD_JOBS=2 cargo test --workspace --all-features",
+    "status": "passed",
+    "passed": 195,
+    "failed": 0
+  },
+  "clippy": {
+    "command": "CARGO_BUILD_JOBS=2 cargo clippy --workspace --all-targets --all-features",
+    "status": "passed-with-warnings",
+    "deniedRules": ["clippy::unwrap_used", "clippy::expect_used", "clippy::panic"]
+  },
+  "formatCheck": {
+    "command": "cargo fmt --all --check",
+    "status": "failed",
+    "reason": "inherited workspace formatting backlog outside the repaired files"
+  },
+  "warningsAsErrors": {
+    "status": "failed",
+    "reason": "1114 inherited compiler documentation warnings plus a small non-documentation warning backlog"
+  },
+  "releaseBuild": {
+    "command": "CARGO_BUILD_JOBS=1 cargo build --workspace --all-features --release",
+    "status": "environment-blocked",
+    "reason": "container produced zero-length third-party object files and an incomplete-link undefined-symbol failure; the online-serving release binary itself linked before the later ngkg-api failure"
+  },
+  "releaseGate": "open"
+}

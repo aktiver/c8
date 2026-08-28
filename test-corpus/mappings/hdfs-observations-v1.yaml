@@ -1,0 +1,43 @@
+mappingId: urn:ngkg:mapping:hdfs-observations:v1
+datasetNamespace: 7b8e1c18-9c22-5b58-a2b4-7cbf21cc9b2b
+sourceTable: observations
+sourceSchemaHash: 985547614084ae83b6328ec193c727a4e4a3a9a930d42a3c09cafc1244129aa5
+subjectIriColumn: observation_iri
+namedGraphIriColumn: graph_iri
+sourceGuidColumn: source_guid
+recordGuidColumn: record_guid
+predicates:
+  - iri: https://ngkg.io/ontology/observedOn
+    object:
+      kind: entity_guid_column
+      column: entity_guid
+    treatment: core
+    participatesInReasoning: true
+    queryableAsRdf: true
+  - iri: https://ngkg.io/ontology/latencyValue
+    object:
+      kind: typed_value_column
+      column: metric_value
+      datatype_iri: http://www.w3.org/2001/XMLSchema#decimal
+    treatment: virtual
+    participatesInReasoning: false
+    queryableAsRdf: true
+  - iri: https://ngkg.io/ontology/rawMessage
+    object:
+      kind: typed_value_column
+      column: raw_message
+      datatype_iri: http://www.w3.org/2001/XMLSchema#string
+    treatment: payload
+    participatesInReasoning: false
+    queryableAsRdf: false
+fieldCoverage:
+  observation_iri: mapped
+  graph_iri: mapped
+  source_guid: mapped
+  record_guid: mapped
+  entity_guid: mapped
+  metric_value: mapped
+  raw_message: mapped
+  policy_label: mapped
+authorizationLabelColumns: [policy_label]
+

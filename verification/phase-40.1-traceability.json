@@ -1,0 +1,78 @@
+{
+  "formatVersion": 1,
+  "phase": "40.1",
+  "entries": [
+    {
+      "requirementId": "P40-1-001",
+      "implementation": [
+        "adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/Main.java"
+      ],
+      "evidence": [
+        "adapters/hermit-reasoner/src/test/java/io/ngkg/reasoner/MainTest.java"
+      ]
+    },
+    {
+      "requirementId": "P40-1-002",
+      "implementation": [
+        "crates/ngkg-reference/src/model.rs",
+        "crates/ngkg-reference/src/reasoner.rs"
+      ],
+      "evidence": [
+        "crates/ngkg-reference/src/reasoner.rs"
+      ]
+    },
+    {
+      "requirementId": "P40-1-003",
+      "implementation": [
+        "crates/ngkg-reference/src/model.rs",
+        "adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/Main.java"
+      ],
+      "evidence": [
+        "contracts/owl-signature.schema.json"
+      ]
+    },
+    {
+      "requirementId": "P40-1-004",
+      "implementation": [
+        "crates/ngkg-reference/src/reasoner.rs",
+        "contracts/reasoner-report.schema.json"
+      ],
+      "evidence": [
+        "adapters/hermit-reasoner/src/test/java/io/ngkg/reasoner/MainTest.java"
+      ]
+    },
+    {
+      "requirementId": "P40-1-005",
+      "implementation": [
+        "contracts/owl-signature.schema.json",
+        "scripts/validate_owl_signature.py"
+      ],
+      "evidence": [
+        "test-corpus/phase40_1/owl-signature-valid.json",
+        "test-corpus/phase40_1/owl-signature-invalid-duplicate.json",
+        "test-corpus/phase40_1/owl-signature-invalid-extra-field.json",
+        "test-corpus/phase40_1/owl-signature-invalid-unsorted.json"
+      ]
+    },
+    {
+      "requirementId": "P40-1-006",
+      "implementation": [
+        "crates/ngkg-reference/src/compiler.rs",
+        "crates/ngkg-reference/src/model.rs"
+      ],
+      "evidence": [
+        "docs/OWL_SIGNATURE_CONTRACT.md"
+      ]
+    },
+    {
+      "requirementId": "P40-1-007",
+      "implementation": [
+        "adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/Main.java"
+      ],
+      "evidence": [
+        "docs/OWL_SIGNATURE_CONTRACT.md",
+        "verification/phase-40-ceilings.json"
+      ]
+    }
+  ]
+}

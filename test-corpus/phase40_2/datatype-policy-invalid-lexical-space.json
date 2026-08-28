@@ -1,0 +1,139 @@
+{
+  "formatVersion": 1,
+  "policyId": "ngkg-owl2-direct-datatype-policy-v1",
+  "unsupportedDatatypeBehavior": "reject_snapshot",
+  "illTypedLiteralBehavior": "reject_snapshot",
+  "canonicalization": "preserve_source_lexical_form",
+  "maxLexicalBytes": 1048576,
+  "lexicalLimits": {
+    "integerDigitsMax": 4096,
+    "dateTimeYearDigitsMax": 18,
+    "xmlNameValidation": "ascii_subset"
+  },
+  "supportedDatatypes": [
+    {
+      "iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+      "lexicalSpace": "not_real"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#NCName",
+      "lexicalSpace": "ncname"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#NMTOKEN",
+      "lexicalSpace": "nmtoken"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#Name",
+      "lexicalSpace": "name"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#anyURI",
+      "lexicalSpace": "any_uri"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#boolean",
+      "lexicalSpace": "boolean"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#byte",
+      "lexicalSpace": "byte"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#date",
+      "lexicalSpace": "date"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#dateTime",
+      "lexicalSpace": "date_time"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#dateTimeStamp",
+      "lexicalSpace": "date_time_stamp"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#decimal",
+      "lexicalSpace": "decimal"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#double",
+      "lexicalSpace": "double"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#float",
+      "lexicalSpace": "float"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#hexBinary",
+      "lexicalSpace": "hex_binary"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#int",
+      "lexicalSpace": "int"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#integer",
+      "lexicalSpace": "integer"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#language",
+      "lexicalSpace": "language"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#long",
+      "lexicalSpace": "long"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#negativeInteger",
+      "lexicalSpace": "negative_integer"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#nonNegativeInteger",
+      "lexicalSpace": "non_negative_integer"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#nonPositiveInteger",
+      "lexicalSpace": "non_positive_integer"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#normalizedString",
+      "lexicalSpace": "normalized_string"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#positiveInteger",
+      "lexicalSpace": "positive_integer"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#short",
+      "lexicalSpace": "short"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#string",
+      "lexicalSpace": "string"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#time",
+      "lexicalSpace": "time"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#token",
+      "lexicalSpace": "token"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#unsignedByte",
+      "lexicalSpace": "unsigned_byte"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#unsignedInt",
+      "lexicalSpace": "unsigned_int"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#unsignedLong",
+      "lexicalSpace": "unsigned_long"
+    },
+    {
+      "iri": "http://www.w3.org/2001/XMLSchema#unsignedShort",
+      "lexicalSpace": "unsigned_short"
+    }
+  ]
+}

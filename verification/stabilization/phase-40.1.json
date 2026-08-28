@@ -1,0 +1,57 @@
+{
+  "changedParentFiles": [
+    {
+      "currentSha256": "e5d7eaa577c3b23d800fb58695363ff18103ea437298a6028d8be455067f047d",
+      "parentSha256": "6f093dc5f5a199f42dcdcbd7bad53b8fbbe04b5883c7c1da832e96b9d341b37c",
+      "path": "acceptance/phase-gates.yaml"
+    },
+    {
+      "currentSha256": "4a0e83a806360af0ea1635df17d3fca4cd878080eb724ed080ed4e8b66a2e78a",
+      "parentSha256": "0d6a0529057d38c47b227c8b9f35acd5409aa58d30d6b3263ef8af0f6538a6a8",
+      "path": "adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/Main.java"
+    },
+    {
+      "currentSha256": "5b10cfc9355775e454cf31fc6afd67f8354b0b6a7e6af4366ea0c4aeee54ed22",
+      "parentSha256": "34c92b09af5a163385f9e8dadb4b1687ce57cdf9d14a9f103a4f2b9b826ed3fc",
+      "path": "adapters/hermit-reasoner/src/test/java/io/ngkg/reasoner/MainTest.java"
+    },
+    {
+      "currentSha256": "91ee4df54ec6ee2b79e59d30e7df3421ff27752b45f6c36d2581bfd627acca3b",
+      "parentSha256": "9187b3021b350264823f2cc9e027c0c134b8e978a7a59f9ab4d78ca49f98190e",
+      "path": "contracts/reasoner-report.schema.json"
+    },
+    {
+      "currentSha256": "a3417454cd2977feab92da378e0690fd2dafe1ad86820bfe53f26b2b3ab69dd3",
+      "parentSha256": "db54700a676d23471073a0e1db8e5d0e70e62c4b6c63a512ddb0b973a8e3d852",
+      "path": "crates/ngkg-reference/src/compiler.rs"
+    },
+    {
+      "currentSha256": "4d407b107cd11ab4f7f6f25e7d34adc46bc789bc43cada690d99fc8499ca0ac1",
+      "parentSha256": "070394cc700cd672378904a962fb4fe8b7b09eddbca9c1c68febbfbd883ff66a",
+      "path": "crates/ngkg-reference/src/model.rs"
+    },
+    {
+      "currentSha256": "a3dc2c35afc97c889974aff28b5e55fd124043f73e8a1854b77cd05f763bf32e",
+      "parentSha256": "3cd68a8e98259fe7780ac808f181bee1f9f1de7dfe69c6f0d8f664778275d3f0",
+      "path": "crates/ngkg-reference/src/reasoner.rs"
+    },
+    {
+      "currentSha256": "50880d0a70d3ab30bf43d02901a516ca501b0e42262af3ebec3332efd6fbeeeb",
+      "parentSha256": "10db8b6684b359dce4ea6ea85861a577f87bf8da2f023323473e34632cb7c1f5",
+      "path": "scripts/structural_validate.py"
+    },
+    {
+      "currentSha256": "dc5768ee1771d7778e8bdf27d28dbb62caa8c1b99e6cad029cf7142a7d79778b",
+      "parentSha256": "c3c2930fb065edfb57167a1be63ff1f35aab4aafb0e431514a9fbc5e23e24726",
+      "path": "scripts/verify_phase40_static.py"
+    }
+  ],
+  "currentLabel": "phase-40.1",
+  "deletedFiles": [],
+  "embeddedParentManifest": "verification/stabilization/phase-40-files.sha256",
+  "formatVersion": 1,
+  "parentArchiveSha256": "f4177288f7f1a00ba7e6bb8136730e86c4327fd3bfbf609a4e2823b01c8f0d32",
+  "parentFileManifestSha256": "4e30ef6a132da0eed96255b8408e45e920fe09e571d01f9ad8635c08dafa9b36",
+  "parentLabel": "phase-40",
+  "parentPayloadFileCount": 389
+}

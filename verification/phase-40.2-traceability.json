@@ -1,0 +1,13 @@
+{
+  "formatVersion": 1,
+  "phase": "40.2",
+  "entries": [
+    {"requirementId":"P40-2-001","implementation":["policies/owl-direct-datatype-policy.json","contracts/datatype-policy.schema.json","crates/ngkg-reference/src/datatype_policy.rs"],"evidence":["docs/DATATYPE_POLICY_CONTRACT.md"]},
+    {"requirementId":"P40-2-002","implementation":["crates/ngkg-reference/src/datatype_policy.rs","crates/ngkg-reference/src/compiler.rs"],"evidence":["crates/ngkg-reference/src/datatype_policy.rs"]},
+    {"requirementId":"P40-2-003","implementation":["crates/ngkg-reference/src/datatype_policy.rs"],"evidence":["docs/DATATYPE_POLICY_CONTRACT.md"]},
+    {"requirementId":"P40-2-004","implementation":["crates/ngkg-reference/src/model.rs","crates/ngkg-reference/src/reasoner.rs","adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/Main.java","contracts/reasoner-report.schema.json"],"evidence":["adapters/hermit-reasoner/src/test/java/io/ngkg/reasoner/MainTest.java"]},
+    {"requirementId":"P40-2-005","implementation":["adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/Main.java"],"evidence":["adapters/hermit-reasoner/src/test/java/io/ngkg/reasoner/MainTest.java"]},
+    {"requirementId":"P40-2-006","implementation":["crates/ngkg-reference/src/compiler.rs","crates/ngkg-reference/src/model.rs"],"evidence":["docs/phases/PHASE_40_2.md"]},
+    {"requirementId":"P40-2-007","implementation":["contracts/datatype-policy.schema.json","scripts/validate_datatype_policy.py","scripts/verify_phase40_2_static.py","scripts/qualify_phase40_2.sh"],"evidence":["test-corpus/phase40_2/datatype-policy-valid.json","test-corpus/phase40_2/datatype-policy-invalid-duplicate.json","test-corpus/phase40_2/datatype-policy-invalid-lexical-space.json","test-corpus/phase40_2/datatype-policy-invalid-extra-field.json"]}
+  ]
+}

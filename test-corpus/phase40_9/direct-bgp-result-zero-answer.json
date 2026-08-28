@@ -1,0 +1,27 @@
+{
+  "formatVersion": 1,
+  "datasetId": "00000000-0000-0000-0000-000000000091",
+  "snapshotId": "00000000-0000-0000-0000-000000000092",
+  "querySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "bgpSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "activeDatasetSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "authorizedGraphSetSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "owlSignatureSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "datatypePolicySha256": "6666666666666666666666666666666666666666666666666666666666666666",
+  "entailmentRegime": "owl2-direct",
+  "graphContext": {
+    "scope": "named",
+    "graphIri": "https://example.test/graph/clinical"
+  },
+  "variables": [
+    "x"
+  ],
+  "candidateBindingCount": 4,
+  "solutionMultiplicityTotal": 0,
+  "solutions": [],
+  "outcome": {
+    "status": "complete",
+    "exactness": "exact",
+    "completeness": "complete"
+  }
+}

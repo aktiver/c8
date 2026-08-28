@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "phase": "39.4",
+  "status": "implementation-candidate-not-production-qualified",
+  "purpose": "general-bounded-exact-rdf-query-admission",
+  "staticContractGate": "scripts/verify_phase39_4_static.py",
+  "qualificationGate": "scripts/qualify_phase39_4.sh",
+  "precertifiedFastPathPreserved": true,
+  "unknownQueryHashRejected": false,
+  "owlDirectCompletenessClaimed": false,
+  "liveGatesExecutedInThisBuildEnvironment": false
+}

@@ -1,0 +1,13 @@
+{
+  "formatVersion": 1,
+  "phase": "40.1",
+  "parent": "40",
+  "purpose": "owl-signature-runtime-contract-and-json-schema",
+  "status": "phase-40.1-implementation-candidate-not-production-qualified",
+  "staticContractGate": "scripts/verify_phase40_1_static.py",
+  "qualificationGate": "scripts/qualify_phase40_1.sh",
+  "owlSignatureRuntimeImplemented": true,
+  "owlDirectArbitraryBgpCompleteness": false,
+  "standardsClaimsEnabled": false,
+  "hpcExecutionSemanticsChanged": false
+}

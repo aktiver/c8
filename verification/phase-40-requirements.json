@@ -1,0 +1,76 @@
+{
+  "baseline": "NGKG Phase 39.5 stabilization candidate",
+  "formatVersion": 1,
+  "futureMilestones": [
+    "40.1",
+    "40.2",
+    "40.3",
+    "40.4",
+    "40.5",
+    "40.6",
+    "40.7",
+    "40.8",
+    "40.9",
+    "40.10",
+    "40.11",
+    "40.12",
+    "40.13",
+    "40.14",
+    "40.15",
+    "40.16",
+    "40.17",
+    "40.18",
+    "40.19",
+    "40.20",
+    "40.21",
+    "40.22",
+    "40.23",
+    "40.24",
+    "40.25",
+    "40.26",
+    "40.27"
+  ],
+  "phase": "40",
+  "requirements": [
+    {
+      "id": "P40-BASE-001",
+      "milestone": "40",
+      "text": "Freeze the Phase 39.5 parent archive and checksum inheritance evidence."
+    },
+    {
+      "id": "P40-BASE-002",
+      "milestone": "40",
+      "text": "Publish the authoritative Phase 40 requirements and incremental milestone sequence."
+    },
+    {
+      "id": "P40-BASE-003",
+      "milestone": "40",
+      "text": "Map Phase 40 requirements to implementation, schemas, tests, deployment and gates."
+    },
+    {
+      "id": "P40-BASE-004",
+      "milestone": "40",
+      "text": "Declare all inherited Phase 15-39.5 gates without converting live gates into static passes."
+    },
+    {
+      "id": "P40-BASE-005",
+      "milestone": "40",
+      "text": "Declare current OWL Direct capability status and keep unqualified standards claims disabled."
+    },
+    {
+      "id": "P40-BASE-006",
+      "milestone": "40",
+      "text": "Register inherited HPC ceilings separately from planned Phase 40 Direct-reasoner ceilings."
+    },
+    {
+      "id": "P40-BASE-007",
+      "milestone": "40",
+      "text": "Provide a cumulative Phase 15-40 static qualification entry point."
+    },
+    {
+      "id": "P40-BASE-008",
+      "milestone": "40",
+      "text": "Require every runtime REST operation to appear in OpenAPI and vendored Swagger UI."
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "changedParentFiles": [
+    {
+      "currentSha256": "b13e911d4b3b8bb103ddb6200a218d0c802174446e67334bf1c38e9be69b90ca",
+      "parentSha256": "a71a07d3658e261b625444ff1fb7c2a6db584553e99d8403f473c4412aaf2ca5",
+      "path": "acceptance/phase-gates.yaml"
+    },
+    {
+      "currentSha256": "e6a6692bc1605e30d9feffe3cc49a7d1a0b8fa141c74a9282898c9301be4497d",
+      "parentSha256": "aeb70e202929529625d59c92b7dad76413d5561ffec0d9702f5b863b47dd6e4f",
+      "path": "crates/ngkg-reference/src/lib.rs"
+    },
+    {
+      "currentSha256": "f7c3d9dcc9eeaba9a651155ffe9c389b56026e3aed7dc90ad1f5be1c7b5a0d40",
+      "parentSha256": "7d8aa7df05ec16087110f63df777e592079d4095cc3cc9074a40dbc82d8eaccd",
+      "path": "scripts/verify_phase21_static.py"
+    },
+    {
+      "currentSha256": "7314c9b69f02efc97694cc1fb31f644f1b71b400ccd16b8ef1d31733fa47b20f",
+      "parentSha256": "62308843de6a0b71fcb105e369947aba47a96bc0e4bece16f6955a3e164dfa1c",
+      "path": "services/online-serving/src/main.rs"
+    }
+  ],
+  "currentLabel": "39.4",
+  "deletedFiles": [],
+  "embeddedParentManifest": "verification/stabilization/39.3-files.sha256",
+  "formatVersion": 1,
+  "parentArchiveSha256": "418fe562219b0b81d350692b4769aa92e9cab554883a473321cad46277fd9261",
+  "parentFileManifestSha256": "96567912ce30a85f380014f4b68d4de20dffa0b6ae7c7a4461bfe23c73533cb9",
+  "parentLabel": "39.3",
+  "parentPayloadFileCount": 354
+}

@@ -1,0 +1,46 @@
+{
+  "phase": "40.13.12",
+  "parentArchive": {
+    "name": "NGKG_PHASE_40_13_11_CANDIDATE(1).zip",
+    "sha256": "4700c8e89d39ab1a93405bd433e5c9f872d113b4bcae2419e6e9219f4cb1df08",
+    "internalManifestEntriesVerified": 904,
+    "integrity": "passed"
+  },
+  "implemented": {
+    "boundedMulticoreFragmentMap": true,
+    "objectScopedBlankNodes": true,
+    "hierarchicalExternalSortMerge": true,
+    "denseTermDictionary": true,
+    "deterministicGuidDictionary": true,
+    "logicalGraphPartitions": true,
+    "parquetFacts": true,
+    "forwardReverseAdjacency": true,
+    "predicateAndClassExtents": true,
+    "inactiveGraphInventory": true,
+    "indexedKubernetesJobs": true,
+    "kueueSemanticProjectionClass": true,
+    "remoteChecksumBarrier": true,
+    "snapshotActivation": false,
+    "ontologyAlignment": false,
+    "rawDataMapping": false
+  },
+  "executedGates": [
+    {"name": "phase40_13_12_static", "status": "passed", "checks": 8},
+    {"name": "phase40_13_11_static", "status": "passed", "checks": 5},
+    {"name": "phase40_13_10_static", "status": "passed"},
+    {"name": "repository_json_syntax", "status": "passed"},
+    {"name": "platform_yaml_syntax", "status": "passed"},
+    {"name": "source_import_crd_yaml_syntax", "status": "passed"}
+  ],
+  "blockedGates": [
+    {"name": "cargo_fmt", "reason": "Rust toolchain unavailable"},
+    {"name": "cargo_check_workspace", "reason": "Rust toolchain unavailable"},
+    {"name": "cargo_test_workspace", "reason": "Rust toolchain unavailable"},
+    {"name": "cargo_clippy", "reason": "Rust toolchain unavailable"},
+    {"name": "helm_lint_render", "reason": "Helm unavailable"},
+    {"name": "kubectl_crd_dry_run", "reason": "kubectl and cluster unavailable"},
+    {"name": "multinode_autoscaling", "reason": "Kueue and multinode cluster unavailable"},
+    {"name": "cloud_object_store", "reason": "designated workload identity and buckets unavailable"}
+  ],
+  "claim": "source-implemented-static-qualified-inactive-candidate"
+}

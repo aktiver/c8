@@ -1,0 +1,13 @@
+{
+  "formatVersion": 1,
+  "phase": "40.1",
+  "requirements": [
+    {"id":"P40-1-001","text":"Generate the OWL signature from the exact merged ontology loaded by the trusted OWLAPI/HermiT adapter."},
+    {"id":"P40-1-002","text":"Bind signature identity to dataset, snapshot, aggregate reasoner input SHA-256 and checksum-bound ontology documents."},
+    {"id":"P40-1-003","text":"Represent classes, object properties, data properties, annotation properties, named individuals, datatypes and imports as deterministic unique IRI arrays."},
+    {"id":"P40-1-004","text":"Bind the reasoner report to the exact OWL-signature bytes by SHA-256 and reject mismatches fail-closed."},
+    {"id":"P40-1-005","text":"Publish a strict Draft 2020-12 JSON Schema plus positive and negative executable fixtures."},
+    {"id":"P40-1-006","text":"Inventory the OWL signature in each new immutable snapshot without breaking deserialization of older snapshots."},
+    {"id":"P40-1-007","text":"Preserve existing HPC execution paths and avoid nondeterministic parallel signature serialization."}
+  ]
+}

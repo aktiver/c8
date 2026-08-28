@@ -1,0 +1,13 @@
+{
+  "formatVersion": 1,
+  "phase": "40.2",
+  "requirements": [
+    {"id":"P40-2-001","text":"Publish a strict operator-shipped datatype policy with explicit supported datatype and lexical-space mappings."},
+    {"id":"P40-2-002","text":"Validate every reasoning-visible normalized RDF literal against the policy before OWL reasoning."},
+    {"id":"P40-2-003","text":"Use deterministic bounded multi-core validation whose failure result is independent of worker scheduling."},
+    {"id":"P40-2-004","text":"Bind the HermiT request and report to the exact datatype-policy bytes by SHA-256."},
+    {"id":"P40-2-005","text":"Reject merged OWL ontologies that use datatypes outside the supported operator policy."},
+    {"id":"P40-2-006","text":"Inventory datatype policy and validation evidence in each newly compiled immutable snapshot."},
+    {"id":"P40-2-007","text":"Provide Draft 2020-12 schema, fixtures, independent validation, documentation and cumulative gates without enabling OWL Direct completeness claims."}
+  ]
+}

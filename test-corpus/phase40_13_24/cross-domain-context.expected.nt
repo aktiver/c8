@@ -1,0 +1,4 @@
+<https://c8-next-generation.io/ontology/release/cluster-1> <https://c8-next-generation.io/ontology/release/ownedBy> <https://c8-next-generation.io/ontology/release/team-blue> .
+<https://c8-next-generation.io/ontology/release/incident-7> <https://c8-next-generation.io/ontology/release/detectedOn> <https://c8-next-generation.io/ontology/release/workload-2> .
+<https://c8-next-generation.io/ontology/release/incident-7> <https://c8-next-generation.io/ontology/release/requiresResponseFrom> <https://c8-next-generation.io/ontology/release/team-blue> .
+<https://c8-next-generation.io/ontology/release/workload-2> <https://c8-next-generation.io/ontology/release/hostedBy> <https://c8-next-generation.io/ontology/release/cluster-1> .

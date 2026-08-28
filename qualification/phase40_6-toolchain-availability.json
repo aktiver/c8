@@ -1,0 +1,42 @@
+{
+  "toolchains": {
+    "cargo": {
+      "available": false,
+      "path": null
+    },
+    "rustc": {
+      "available": false,
+      "path": null
+    },
+    "mvn": {
+      "available": false,
+      "path": null
+    },
+    "helm": {
+      "available": false,
+      "path": null
+    },
+    "kubectl": {
+      "available": false,
+      "path": null
+    },
+    "rke2": {
+      "available": false,
+      "path": null
+    },
+    "java": {
+      "available": true,
+      "path": "/usr/bin/java",
+      "versionOutput": "openjdk version \"21.0.11\" 2026-04-21 | OpenJDK Runtime Environment (build 21.0.11+10-1-deb13u2-Debian)"
+    },
+    "javac": {
+      "available": true,
+      "path": "/usr/bin/javac",
+      "versionOutput": "javac 21.0.11"
+    },
+    "python3": {
+      "available": true,
+      "path": "/opt/pyvenv/bin/python3"
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "formatVersion": 1,
+  "cases": [
+    {"id": "replica-placement-three-zones", "expected": "complete", "failure": null},
+    {"id": "duplicate-indexed-delivery", "expected": "same-stable-work-id", "failure": null},
+    {"id": "compute-node-loss-retry", "expected": "retry-same-completion-index", "failure": "pod-evicted"},
+    {"id": "storage-failure-domain-loss", "expected": "new-domain-before-retire", "failure": "target-unavailable"},
+    {"id": "source-checksum-mismatch", "expected": "fail-closed", "failure": "checksum-mismatch"},
+    {"id": "destination-checksum-mismatch", "expected": "quarantined", "failure": "checksum-mismatch"},
+    {"id": "missing-partition-result", "expected": "no-certificate", "failure": "partial-worker-failure"},
+    {"id": "duplicate-partition-result", "expected": "no-certificate", "failure": "duplicate-delivery"},
+    {"id": "backup-all-artifacts", "expected": "complete-backup-manifest", "failure": null},
+    {"id": "restore-partial-copy", "expected": "not-queryable", "failure": "partial-worker-failure"},
+    {"id": "restore-full-copy", "expected": "storage-verified", "failure": null},
+    {"id": "catalog-idempotency-conflict", "expected": "http-409", "failure": "request-hash-mismatch"}
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "phase": "40.11",
+  "requirements": [
+    {"id":"P40-11-001","text":"Render the authoritative platform Phase 40 Direct ceilings into an immutable reference-worker environment ConfigMap."},
+    {"id":"P40-11-002","text":"Require a complete trusted Phase 40 ceiling environment before direct-bgp execution begins."},
+    {"id":"P40-11-003","text":"Permit per-job Direct limits only as sub-ceilings and reject any requested escalation."},
+    {"id":"P40-11-004","text":"Enforce candidate-space and exact-partition cross-field safety at the worker runtime boundary."},
+    {"id":"P40-11-005","text":"Bound HermiT concurrency by CPU parallelism visible to the worker."},
+    {"id":"P40-11-006","text":"When a finite cgroup memory limit is visible, reserve at least 20 percent non-JVM-heap headroom."},
+    {"id":"P40-11-007","text":"Enforce maxExactPartitions inside the exact coordinator rather than relying on the previous compile-time constant alone."},
+    {"id":"P40-11-008","text":"Enforce the authoritative certificate byte ceiling before an exact certificate is returned."},
+    {"id":"P40-11-009","text":"Enforce the authoritative proof-support-ID ceiling before proof/certificate construction."},
+    {"id":"P40-11-010","text":"Keep operator and distributed-operator ConfigMap propagation explicitly deferred to Phase 40.13."},
+    {"id":"P40-11-011","text":"Preserve every Phase 40.10 parent payload file unless checksum-accounted in the Phase 40.10 to 40.11 inheritance record."},
+    {"id":"P40-11-012","text":"Keep full OWL Direct standards claims disabled until cumulative/native/W3C qualification is complete."}
+  ]
+}

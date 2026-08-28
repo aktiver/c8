@@ -1,0 +1,124 @@
+{
+  "formatVersion": 1,
+  "phase": "40.11",
+  "entries": [
+    {
+      "requirementId": "P40-11-001",
+      "implementation": [
+        "charts/ngkg-platform/templates/phase40-reference-ceilings.yaml",
+        "charts/ngkg-platform/values.yaml"
+      ],
+      "evidence": [
+        "verification/phase-40.11.json"
+      ]
+    },
+    {
+      "requirementId": "P40-11-002",
+      "implementation": [
+        "services/reference-worker/src/phase40_limits.rs",
+        "services/reference-worker/src/direct_job.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.11.json"
+      ]
+    },
+    {
+      "requirementId": "P40-11-003",
+      "implementation": [
+        "services/reference-worker/src/phase40_limits.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.11.json"
+      ]
+    },
+    {
+      "requirementId": "P40-11-004",
+      "implementation": [
+        "services/reference-worker/src/phase40_limits.rs",
+        "crates/ngkg-direct-reasoner/src/lib.rs",
+        "charts/ngkg-platform/values.schema.json",
+        "scripts/validate_phase40_helm_ceilings.py",
+        "test-corpus/phase40_11/platform-invalid-exact-partitions.yaml"
+      ],
+      "evidence": [
+        "verification/phase-40.11.json"
+      ]
+    },
+    {
+      "requirementId": "P40-11-005",
+      "implementation": [
+        "services/reference-worker/src/phase40_limits.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.11.json"
+      ]
+    },
+    {
+      "requirementId": "P40-11-006",
+      "implementation": [
+        "services/reference-worker/src/phase40_limits.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.11.json"
+      ]
+    },
+    {
+      "requirementId": "P40-11-007",
+      "implementation": [
+        "crates/ngkg-direct-reasoner/src/lib.rs",
+        "services/reference-worker/src/direct_job.rs",
+        "charts/ngkg-platform/values.schema.json",
+        "scripts/validate_phase40_helm_ceilings.py",
+        "test-corpus/phase40_11/platform-invalid-exact-partitions.yaml"
+      ],
+      "evidence": [
+        "verification/phase-40.11.json"
+      ]
+    },
+    {
+      "requirementId": "P40-11-008",
+      "implementation": [
+        "crates/ngkg-direct-reasoner/src/lib.rs",
+        "services/reference-worker/src/direct_job.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.11.json"
+      ]
+    },
+    {
+      "requirementId": "P40-11-009",
+      "implementation": [
+        "crates/ngkg-direct-reasoner/src/lib.rs",
+        "services/reference-worker/src/direct_job.rs"
+      ],
+      "evidence": [
+        "verification/phase-40.11.json"
+      ]
+    },
+    {
+      "requirementId": "P40-11-010",
+      "implementation": [
+        "charts/ngkg-platform/templates/phase40-reference-ceilings.yaml"
+      ],
+      "evidence": [
+        "verification/phase-40.11.json",
+        "verification/phase-40-ceilings.json"
+      ]
+    },
+    {
+      "requirementId": "P40-11-011",
+      "implementation": [],
+      "evidence": [
+        "verification/stabilization/phase-40.11.json"
+      ]
+    },
+    {
+      "requirementId": "P40-11-012",
+      "implementation": [],
+      "evidence": [
+        "verification/phase-40.11.json",
+        "verification/phase-40-capability-status.json"
+      ]
+    }
+  ]
+}

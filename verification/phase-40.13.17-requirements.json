@@ -1,0 +1,23 @@
+{
+  "phase": "40.13.17",
+  "status": "source-implemented-static-qualified-candidate",
+  "requirements": {
+    "partitionNativeLeafScans": true,
+    "distributedPropertyPathFrontiers": true,
+    "hotVertexSplittingAcrossCores": true,
+    "semanticPartitionsAcrossNodes": true,
+    "boundedCheckpointSpill": true,
+    "atomicLocalAndImmutableRemoteCheckpoints": true,
+    "denseDistributedTerminationBarrier": true,
+    "workloadAwareKubernetesMetrics": true,
+    "scalarOracleOwnsPublishedAnswers": true,
+    "ontologyAlignment": false,
+    "rawDataMapping": false
+  },
+  "qualification": {
+    "nativeRust": "blocked-toolchain-unavailable",
+    "helmRenderLint": "blocked-toolchain-unavailable",
+    "liveMultinodeKubernetes": "not-run",
+    "staticContracts": "passed"
+  }
+}

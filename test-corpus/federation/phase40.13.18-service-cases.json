@@ -1,0 +1,21 @@
+{
+  "formatVersion": 1,
+  "cases": [
+    {
+      "id": "fixed-endpoint",
+      "query": "SELECT ?s WHERE { SERVICE <https://federation.example.org/sparql> { ?s <https://c8-next-generation.io/vocabulary/memberOf> <https://c8-next-generation.io/id/group> } }"
+    },
+    {
+      "id": "variable-endpoint",
+      "query": "SELECT ?service ?s WHERE { VALUES ?service { <https://federation.example.org/sparql> } SERVICE ?service { ?s ?p ?o } }"
+    },
+    {
+      "id": "silent-denied-endpoint",
+      "query": "SELECT ?local WHERE { VALUES ?local { <https://c8-next-generation.io/id/local> } SERVICE SILENT <https://denied.example.org/sparql> { ?s ?p ?o } }"
+    },
+    {
+      "id": "surrounding-algebra",
+      "query": "SELECT DISTINCT ?s (COUNT(?remote) AS ?matches) WHERE { ?s <https://c8-next-generation.io/vocabulary/externalId> ?id OPTIONAL { SERVICE <https://federation.example.org/sparql> { ?remote <https://c8-next-generation.io/vocabulary/externalId> ?id } } } GROUP BY ?s ORDER BY ?s"
+    }
+  ]
+}

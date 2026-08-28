@@ -1,0 +1,24 @@
+{
+  "apiOpenApiParity": "PASS",
+  "formatVersion": 1,
+  "jsonSchemaMetaValidation": {
+    "schemaCount": 29,
+    "status": "PASS"
+  },
+  "nativeQualificationExecuted": false,
+  "nativeQualificationReason": "Cargo/Rust, Maven, Helm, kubectl and RKE2 are unavailable in this build environment; Java runtime alone is insufficient for the native Phase 40.1 gate.",
+  "nativeToolchains": {
+    "cargo": null,
+    "helm": null,
+    "java": "/usr/bin/java",
+    "kubectl": null,
+    "mvn": null,
+    "rke2": null,
+    "rustc": null
+  },
+  "phase": "40.1",
+  "placeholderAndEditArtifactScan": "PASS",
+  "staticGates": "PASS",
+  "status": "implementation-candidate-not-production-qualified",
+  "structuralValidation": "PASS"
+}

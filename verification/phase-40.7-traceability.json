@@ -1,0 +1,88 @@
+{
+  "formatVersion": 1,
+  "phase": "40.7",
+  "entries": [
+    {
+      "requirementId": "P40-7-001",
+      "implementation": [
+        "crates/ngkg-owl-direct/src/lib.rs",
+        "crates/ngkg-sparql-compiler/src/lib.rs"
+      ],
+      "evidence": [
+        "docs/OWL_DIRECT_BGP_LEGALITY.md"
+      ]
+    },
+    {
+      "requirementId": "P40-7-002",
+      "implementation": [
+        "crates/ngkg-owl-direct/src/lib.rs",
+        "crates/ngkg-types/src/direct_legality.rs"
+      ],
+      "evidence": [
+        "test-corpus/phase40_7/direct-bgp-legality-valid-legal.json"
+      ]
+    },
+    {
+      "requirementId": "P40-7-003",
+      "implementation": [
+        "crates/ngkg-owl-direct/src/lib.rs"
+      ],
+      "evidence": [
+        "test-corpus/phase40_7/direct-bgp-legality-valid-illegal.json"
+      ]
+    },
+    {
+      "requirementId": "P40-7-004",
+      "implementation": [
+        "crates/ngkg-owl-direct/src/lib.rs",
+        "crates/ngkg-types/src/direct_legality.rs"
+      ],
+      "evidence": [
+        "docs/OWL_DIRECT_BGP_LEGALITY.md"
+      ]
+    },
+    {
+      "requirementId": "P40-7-005",
+      "implementation": [
+        "crates/ngkg-types/src/direct_legality.rs",
+        "services/online-serving/src/main.rs"
+      ],
+      "evidence": [
+        "contracts/direct-bgp-legality.schema.json"
+      ]
+    },
+    {
+      "requirementId": "P40-7-006",
+      "implementation": [
+        "services/online-serving/src/main.rs",
+        "api/online-openapi.yaml"
+      ],
+      "evidence": [
+        "api/online-openapi.yaml"
+      ]
+    },
+    {
+      "requirementId": "P40-7-007",
+      "implementation": [
+        "crates/ngkg-reasoner-client/src/lib.rs"
+      ],
+      "evidence": [
+        "docs/phases/PHASE_40_7.md"
+      ]
+    },
+    {
+      "requirementId": "P40-7-008",
+      "implementation": [
+        "contracts/direct-bgp-legality.schema.json",
+        "scripts/validate_direct_bgp_legality.py",
+        "scripts/verify_phase40_7_static.py"
+      ],
+      "evidence": [
+        "test-corpus/phase40_7/direct-bgp-legality-invalid-aggregate.json",
+        "test-corpus/phase40_7/direct-bgp-legality-invalid-missing-failure.json",
+        "test-corpus/phase40_7/direct-bgp-legality-invalid-variable-order.json",
+        "test-corpus/phase40_7/direct-bgp-legality-invalid-extra-field.json"
+      ]
+    }
+  ]
+}

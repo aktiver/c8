@@ -1,0 +1,81 @@
+{
+  "formatVersion": 1,
+  "phase": "40.6",
+  "entries": [
+    {
+      "requirementId": "P40-6-001",
+      "implementation": [
+        "adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/Main.java"
+      ],
+      "evidence": [
+        "adapters/hermit-reasoner/src/test/java/io/ngkg/reasoner/MainTest.java"
+      ]
+    },
+    {
+      "requirementId": "P40-6-002",
+      "implementation": [
+        "crates/ngkg-reference/src/model.rs",
+        "adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/Main.java"
+      ],
+      "evidence": [
+        "contracts/owl-consistency-qualification.schema.json",
+        "test-corpus/phase40_6/owl-consistency-qualification-valid-consistent.json"
+      ]
+    },
+    {
+      "requirementId": "P40-6-003",
+      "implementation": [
+        "crates/ngkg-reference/src/reasoner.rs",
+        "crates/ngkg-reference/src/compiler.rs",
+        "contracts/reasoner-report.schema.json",
+        "crates/ngkg-reference/src/lib.rs"
+      ],
+      "evidence": [
+        "docs/OWL_CONSISTENCY_QUALIFICATION.md"
+      ]
+    },
+    {
+      "requirementId": "P40-6-004",
+      "implementation": [
+        "crates/ngkg-reference/src/reasoner.rs",
+        "adapters/hermit-reasoner/src/main/java/io/ngkg/reasoner/Main.java"
+      ],
+      "evidence": [
+        "test-corpus/phase40_6/owl-consistency-qualification-valid-inconsistent.json"
+      ]
+    },
+    {
+      "requirementId": "P40-6-005",
+      "implementation": [
+        "crates/ngkg-reference/src/reasoner.rs",
+        "scripts/validate_owl_consistency_qualification.py"
+      ],
+      "evidence": [
+        "test-corpus/phase40_6/owl-consistency-qualification-invalid-loaded-count.json"
+      ]
+    },
+    {
+      "requirementId": "P40-6-006",
+      "implementation": [
+        "scripts/validate_owl_consistency_qualification.py",
+        "scripts/verify_phase40_6_static.py"
+      ],
+      "evidence": [
+        "test-corpus/phase40_6/owl-consistency-qualification-invalid-publication.json",
+        "test-corpus/phase40_6/owl-consistency-qualification-invalid-unchecked.json",
+        "test-corpus/phase40_6/owl-consistency-qualification-invalid-extra-field.json"
+      ]
+    },
+    {
+      "requirementId": "P40-6-007",
+      "implementation": [
+        "scripts/qualify_phase40_6.sh",
+        "acceptance/phase-gates.yaml"
+      ],
+      "evidence": [
+        "BUILD_STATUS_PHASE_40_6.md",
+        "verification/stabilization/phase-40.6.json"
+      ]
+    }
+  ]
+}

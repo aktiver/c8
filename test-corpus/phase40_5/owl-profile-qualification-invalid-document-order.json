@@ -1,0 +1,39 @@
+{
+  "formatVersion": 1,
+  "datasetId": "4d2e1a82-c2bc-536a-a809-fda7643ef1f7",
+  "snapshotId": "91054ecb-2f68-5a63-b31a-137333c64a7c",
+  "aggregateInputSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "owlSignatureSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "datatypePolicySha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "owlProfile": "OWL 2 DL",
+  "directSemantics": true,
+  "inputDocumentCount": 3,
+  "ontologyDocumentCount": 2,
+  "aboxDocumentCount": 1,
+  "loadedOntologyCount": 3,
+  "importDeclarationCount": 1,
+  "resolvedImportCount": 1,
+  "completeLocalImportClosure": true,
+  "mergedAxiomCount": 42,
+  "ontologyDocuments": [
+    {
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "ontologyIri": "https://example.test/root"
+    },
+    {
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "ontologyIri": "https://example.test/child",
+      "versionIri": "https://example.test/child/2026"
+    }
+  ],
+  "importResolutions": [
+    {
+      "sourceOntologyIri": "https://example.test/root",
+      "importedIri": "https://example.test/child/2026",
+      "resolvedDocumentSha256": "4444444444444444444444444444444444444444444444444444444444444444"
+    }
+  ],
+  "profileValid": true,
+  "profileViolationCount": 0,
+  "profileViolationSamples": []
+}

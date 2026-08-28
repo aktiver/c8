@@ -1,0 +1,13 @@
+{
+  "formatVersion": 1,
+  "phase": "40.6",
+  "requirements": [
+    {"id":"P40-6-001","text":"Run HermiT OWLReasoner.isConsistent over the complete merged OWL 2 DL ontology after Phase 40.5 qualification."},
+    {"id":"P40-6-002","text":"Emit deterministic consistency evidence bound to dataset, snapshot, ontology inputs, OWL signature, datatype policy, profile qualification and reasoner version."},
+    {"id":"P40-6-003","text":"Bind the reasoner report and immutable snapshot to the exact consistency qualification SHA-256 and independently verify it in Rust."},
+    {"id":"P40-6-004","text":"Reject publication for inconsistent ontologies and never substitute per-graph or arbitrary partition consistency for the global merged decision."},
+    {"id":"P40-6-005","text":"Require complete checksum-bound input coverage and match loaded ontology/axiom counts to the Phase 40.5 qualification evidence."},
+    {"id":"P40-6-006","text":"Provide strict JSON Schema, independent validator, positive/negative fixtures and Java/Rust regression coverage."},
+    {"id":"P40-6-007","text":"Preserve Phase 40.5 ancestry and cumulative gates without claiming Direct-BGP legality, arbitrary exact fallback or full OWL Direct completeness."}
+  ]
+}

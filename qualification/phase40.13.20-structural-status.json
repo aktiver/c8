@@ -1,0 +1,8 @@
+{
+  "phase": "40.13.20",
+  "command": "python3 scripts/structural_validate.py",
+  "status": "failed-inherited-findings",
+  "exitCode": 1,
+  "phaseImplementationUnresolvedTokens": 0,
+  "note": "The validator reports pre-existing placeholder tokens in the Phase 40.13.16 report, the Phase 40.13.19 structural status evidence, and vendored Oxigraph/spareval/sparopt sources. No Phase 40.13.20 implementation file contains an unresolved token."
+}

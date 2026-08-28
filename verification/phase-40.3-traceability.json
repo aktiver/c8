@@ -1,0 +1,73 @@
+{
+  "formatVersion": 1,
+  "phase": "40.3",
+  "entries": [
+    {
+      "requirementId": "P40-3-001",
+      "implementation": [
+        "crates/ngkg-types/src/direct_bgp.rs",
+        "crates/ngkg-types/src/lib.rs"
+      ],
+      "evidence": [
+        "docs/DIRECT_BGP_RESULT_CONTRACT.md"
+      ]
+    },
+    {
+      "requirementId": "P40-3-002",
+      "implementation": [
+        "crates/ngkg-types/src/direct_bgp.rs",
+        "contracts/direct-bgp-result.schema.json",
+        "crates/ngkg-reasoner-client/src/lib.rs"
+      ],
+      "evidence": [
+        "test-corpus/phase40_3/direct-bgp-result-valid-complete.json"
+      ]
+    },
+    {
+      "requirementId": "P40-3-003",
+      "implementation": [
+        "crates/ngkg-types/src/direct_bgp.rs"
+      ],
+      "evidence": [
+        "test-corpus/phase40_3/direct-bgp-result-valid-complete.json"
+      ]
+    },
+    {
+      "requirementId": "P40-3-004",
+      "implementation": [
+        "crates/ngkg-types/src/direct_bgp.rs",
+        "contracts/direct-bgp-result.schema.json"
+      ],
+      "evidence": [
+        "test-corpus/phase40_3/direct-bgp-result-valid-failed.json",
+        "test-corpus/phase40_3/direct-bgp-result-invalid-failed-partial.json"
+      ]
+    },
+    {
+      "requirementId": "P40-3-005",
+      "implementation": [
+        "crates/ngkg-types/src/direct_bgp.rs"
+      ],
+      "evidence": [
+        "docs/DIRECT_BGP_RESULT_CONTRACT.md"
+      ]
+    },
+    {
+      "requirementId": "P40-3-006",
+      "implementation": [
+        "contracts/direct-bgp-result.schema.json",
+        "scripts/validate_direct_bgp_result.py",
+        "scripts/verify_phase40_3_static.py",
+        "scripts/qualify_phase40_3.sh"
+      ],
+      "evidence": [
+        "test-corpus/phase40_3/direct-bgp-result-valid-complete.json",
+        "test-corpus/phase40_3/direct-bgp-result-valid-failed.json",
+        "test-corpus/phase40_3/direct-bgp-result-invalid-variable-order.json",
+        "test-corpus/phase40_3/direct-bgp-result-invalid-multiplicity-total.json",
+        "test-corpus/phase40_3/direct-bgp-result-invalid-failed-partial.json",
+        "test-corpus/phase40_3/direct-bgp-result-invalid-extra-field.json"
+      ]
+    }
+  ]
+}

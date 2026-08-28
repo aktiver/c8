@@ -1,0 +1,197 @@
+{
+  "formatVersion": 1,
+  "records": [
+    {
+      "phase": "15",
+      "path": "scripts/verify_phase15_static.py",
+      "exitCode": 0,
+      "output": "{\n  \"phase\": \"15\",\n  \"status\": \"passed\",\n  \"errors\": []\n}"
+    },
+    {
+      "phase": "16",
+      "path": "scripts/verify_phase16_static.py",
+      "exitCode": 0,
+      "output": "Phase 16 static contract verification passed"
+    },
+    {
+      "phase": "17",
+      "path": "scripts/verify_phase17_static.py",
+      "exitCode": 0,
+      "output": "Phase 17 static contract verification passed"
+    },
+    {
+      "phase": "18",
+      "path": "scripts/verify_phase18_static.py",
+      "exitCode": 0,
+      "output": "Phase 18 static contracts passed"
+    },
+    {
+      "phase": "19",
+      "path": "scripts/verify_phase19_static.py",
+      "exitCode": 0,
+      "output": "Phase 19 static contract verification passed"
+    },
+    {
+      "phase": "20",
+      "path": "scripts/verify_phase20_static.py",
+      "exitCode": 0,
+      "output": "Phase 20 static contract verification passed"
+    },
+    {
+      "phase": "21",
+      "path": "scripts/verify_phase21_static.py",
+      "exitCode": 0,
+      "output": "Phase 21 static contract verification passed"
+    },
+    {
+      "phase": "22",
+      "path": "scripts/verify_phase22_static.py",
+      "exitCode": 0,
+      "output": "Phase 22 static contract verification passed"
+    },
+    {
+      "phase": "23",
+      "path": "scripts/verify_phase23_static.py",
+      "exitCode": 0,
+      "output": "Phase 23 static contract verification passed"
+    },
+    {
+      "phase": "24",
+      "path": "scripts/verify_phase24_static.py",
+      "exitCode": 0,
+      "output": "Phase 24 static contract verification passed"
+    },
+    {
+      "phase": "25",
+      "path": "scripts/verify_phase25_static.py",
+      "exitCode": 0,
+      "output": "Phase 25 static contract verification passed"
+    },
+    {
+      "phase": "26",
+      "path": "scripts/verify_phase26_static.py",
+      "exitCode": 0,
+      "output": "Phase 26 static contract verification passed"
+    },
+    {
+      "phase": "27",
+      "path": "scripts/verify_phase27_static.py",
+      "exitCode": 0,
+      "output": "Phase 27 static contract verification passed"
+    },
+    {
+      "phase": "28",
+      "path": "scripts/verify_phase28_static.py",
+      "exitCode": 0,
+      "output": "Phase 28 static contract verification passed"
+    },
+    {
+      "phase": "29",
+      "path": "scripts/verify_phase29_static.py",
+      "exitCode": 0,
+      "output": "Phase 29 static contract verification passed"
+    },
+    {
+      "phase": "30",
+      "path": "scripts/verify_phase30_static.py",
+      "exitCode": 0,
+      "output": "Phase 30 static contract verification passed"
+    },
+    {
+      "phase": "31",
+      "path": "scripts/verify_phase31_static.py",
+      "exitCode": 0,
+      "output": "Phase 31 static contract verification passed"
+    },
+    {
+      "phase": "32",
+      "path": "scripts/verify_phase32_static.py",
+      "exitCode": 0,
+      "output": "Phase 32 static contract verification passed"
+    },
+    {
+      "phase": "33",
+      "path": "scripts/verify_phase33_static.py",
+      "exitCode": 0,
+      "output": "Phase 33 static contract verification passed"
+    },
+    {
+      "phase": "34",
+      "path": "scripts/verify_phase34_static.py",
+      "exitCode": 0,
+      "output": "Phase 34 static contract verification passed"
+    },
+    {
+      "phase": "35",
+      "path": "scripts/verify_phase35_static.py",
+      "exitCode": 0,
+      "output": "Phase 35 static contract verification passed"
+    },
+    {
+      "phase": "36",
+      "path": "scripts/verify_phase36_static.py",
+      "exitCode": 0,
+      "output": "Phase 36 static contract verification passed; live build/deploy gates remain mandatory"
+    },
+    {
+      "phase": "37",
+      "path": "scripts/verify_phase37_static.py",
+      "exitCode": 0,
+      "output": "Phase 37 static contract verification passed; runtime conformance gates remain mandatory"
+    },
+    {
+      "phase": "38",
+      "path": "scripts/verify_phase38_static.py",
+      "exitCode": 0,
+      "output": "Phase 38 static contract verification passed; Cargo/W3C/live RKE2 gates remain mandatory"
+    },
+    {
+      "phase": "39",
+      "path": "scripts/verify_phase39_static.py",
+      "exitCode": 0,
+      "output": "Phase 39 static contract verification passed; compiler/W3C/live RKE2 execution gates remain mandatory"
+    },
+    {
+      "phase": "39.1",
+      "path": "scripts/verify_phase39_1_static.py",
+      "exitCode": 0,
+      "output": "Phase 39.1 static contract verification passed; Cargo.lock still requires the pinned Cargo resolver"
+    },
+    {
+      "phase": "39.2",
+      "path": "scripts/verify_phase39_2_static.py",
+      "exitCode": 0,
+      "output": "Phase 39.2 static contract verification passed; actual W3C execution remains a native qualification gate"
+    },
+    {
+      "phase": "39.3",
+      "path": "scripts/verify_phase39_3_static.py",
+      "exitCode": 0,
+      "output": "Phase 39.3 static contract verification passed; Rust regression execution remains mandatory"
+    },
+    {
+      "phase": "39.4",
+      "path": "scripts/verify_phase39_4_static.py",
+      "exitCode": 0,
+      "output": "Phase 39.4 static contract verification passed; ad-hoc queries now have a bounded scalar exact-RDF path"
+    },
+    {
+      "phase": "39.5",
+      "path": "scripts/verify_phase39_5_static.py",
+      "exitCode": 0,
+      "output": "Phase 39.5 static contract verification passed; cumulative registry is complete through the stabilization phases"
+    },
+    {
+      "phase": "40",
+      "path": "scripts/verify_phase40_static.py",
+      "exitCode": 0,
+      "output": "Phase 40 static contract verification passed; baseline, API/OpenAPI parity, inheritance and HPC ceiling governance are coherent"
+    },
+    {
+      "phase": "40.1",
+      "path": "scripts/verify_phase40_1_static.py",
+      "exitCode": 0,
+      "output": "Phase 40.1 static verification passed; OWL signature runtime/schema/hash binding is coherent"
+    }
+  ]
+}

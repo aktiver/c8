@@ -1,0 +1,82 @@
+{
+  "changedParentFiles": [
+    {
+      "currentSha256": "19bffb15678b531586284c65729b7ca2482d30650f47dcdee82e5571d27862af",
+      "parentSha256": "6cbab9e7163eb1b44f4a3f0949e0673c19665ba72366fad6c10de465cd08dc9a",
+      "path": "Cargo.lock"
+    },
+    {
+      "currentSha256": "f76c077973db9d36fa00a0d60689c8ec9bd2ab326db0adda6e876e62580a90e5",
+      "parentSha256": "f98c1032197e67b68b8b1688897411f42d487b789c2562c891b7b8e9c7b44014",
+      "path": "acceptance/phase-gates.yaml"
+    },
+    {
+      "currentSha256": "085bfb5e78f2230bad342fc94584361517696b8f5afd4a3b72c42fa7f7f1c62c",
+      "parentSha256": "87eb7950de8c091e61a635ac34973ff8a6b9edce904bd59271b465c1a4705f97",
+      "path": "api/online-openapi.yaml"
+    },
+    {
+      "currentSha256": "b2af829850a4b00d9846597ee66c9261e907a06672a9efade30341faffa8f306",
+      "parentSha256": "fa51b28c47b0bb0c9557adfab3d72426bf86185e2588fd3c440198df7bf83375",
+      "path": "charts/ngkg-workloads/templates/autoscaling.yaml"
+    },
+    {
+      "currentSha256": "33666f90c6523e875a4ac110b963aa32d9a215ec0598db4706e2169f0e9cf8b9",
+      "parentSha256": "ad5671eafb1369eee327fb58dbefbdfe6ff7cc6b0a061aeefcde118be3a5d674",
+      "path": "charts/ngkg-workloads/templates/online-data-plane.yaml"
+    },
+    {
+      "currentSha256": "1c40a4ac9fac0080e184aef0bd3b01dd541cbc858a27a5e49a870eca3f4f6be8",
+      "parentSha256": "e71d22178611668b0aa587677a072e7f195433b16c6dfac1c52a8ffcf04cdb26",
+      "path": "charts/ngkg-workloads/values.schema.json"
+    },
+    {
+      "currentSha256": "03c692d49f8e3a5289decd2dc15617d737130ccbb7e6673f8e6abaf102cb6e0e",
+      "parentSha256": "961b3694b672ae474d8ad9945373b85271bd0a878c4b3b44161de5a330ff4525",
+      "path": "charts/ngkg-workloads/values.yaml"
+    },
+    {
+      "currentSha256": "9ba6b69ee2a587f146feaad17e2018038b904506813e0188c4c5cfc67515627a",
+      "parentSha256": "7ea091d2d6498895302015d9fb64695e89cd0f6f8a408d70d3c66ca52bbd4179",
+      "path": "conformance/sparql11-feature-matrix.json"
+    },
+    {
+      "currentSha256": "5e86f62c5942aca80a0ccc52fdf962f8669ed2f51760975f1f35cc71d88411d3",
+      "parentSha256": "48efc9365ffd368935337d53f01ea44fa0f6a0699e35a3d4ca7133eca97efbfb",
+      "path": "crates/ngkg-query-executor/src/lib.rs"
+    },
+    {
+      "currentSha256": "668741f8639577d1465f400cec54878e90332a95f6a75c3fc02e997317c0e2f0",
+      "parentSha256": "6bbf367382e6323949904d9e1584a083d1e82abbe2abb387cc83a867f51ffee2",
+      "path": "crates/ngkg-query-planner/src/lib.rs"
+    },
+    {
+      "currentSha256": "659136a9d29f31b90600f4e64c8d0e4b6c4f87c904dafe89bc63410ec118f1e0",
+      "parentSha256": "d3aa2270a618474c98f1b5787f578508c0c5893e9fcdce7689f1283a5eca25ee",
+      "path": "crates/ngkg-sparql-compiler/Cargo.toml"
+    },
+    {
+      "currentSha256": "99f2d66279b05a0d464064dc559b4681980b33c8bc741896a31394e7ed3a329e",
+      "parentSha256": "f3b3a15100e10a7418ba7039c9ccba2a6593be4da1e4325fe11f5f13e20d7b25",
+      "path": "crates/ngkg-sparql-compiler/src/lib.rs"
+    },
+    {
+      "currentSha256": "ed37e11d45b3bc8be7429f349b48011bfddf1b319f1eff301efc8ca10c934507",
+      "parentSha256": "845f5000183e1138e67e9880ef6157f6ecb79d70ce10e5dabedfc8ded4d2fc9f",
+      "path": "scripts/validate_helm_values.py"
+    },
+    {
+      "currentSha256": "6035e0b81de5c7210c7b9b5fb1866ca25905188f47e768f2f2e0923b512a4305",
+      "parentSha256": "6c65759734ee2bc772d01f8a3682599c415d30fd5a35b24a8bf37a82c59ee3cd",
+      "path": "services/online-serving/src/main.rs"
+    }
+  ],
+  "currentPhase": 9,
+  "deletedFiles": [],
+  "embeddedParentManifest": "verification/parents/phase-08-files.sha256",
+  "formatVersion": 1,
+  "parentArchiveSha256": "506f8c848396de9edf3d15998110e881492b4d6394d0e370a23d52e06567948e",
+  "parentFileManifestSha256": "2e1a56aae10e7cf983d9b64615c3cafc0f52cf539d35953b1f6098f222aab802",
+  "parentPayloadFileCount": 875,
+  "parentPhase": 8
+}

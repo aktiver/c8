@@ -1,0 +1,38 @@
+[package]
+name = "ngkg-reference-worker"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+futures.workspace = true
+hex.workspace = true
+ngkg-artifact-store = { path = "../../crates/ngkg-artifact-store" }
+ngkg-catalog = { path = "../../crates/ngkg-catalog" }
+ngkg-distributed-build = { path = "../../crates/ngkg-distributed-build" }
+ngkg-distributed-artifacts = { path = "../../crates/ngkg-distributed-artifacts" }
+ngkg-types = { path = "../../crates/ngkg-types" }
+ngkg-direct-reasoner = { path = "../../crates/ngkg-direct-reasoner" }
+ngkg-dataset = { path = "../../crates/ngkg-dataset" }
+ngkg-hydration = { path = "../../crates/ngkg-hydration" }
+ngkg-identity = { path = "../../crates/ngkg-identity" }
+ngkg-locator = { path = "../../crates/ngkg-locator" }
+ngkg-kube = { path = "../../crates/ngkg-kube" }
+ngkg-reference = { path = "../../crates/ngkg-reference" }
+ngkg-semantic-compiler = { path = "../../crates/ngkg-semantic-compiler" }
+ngkg-ontology-qualifier = { path = "../../crates/ngkg-ontology-qualifier" }
+ngkg-offline-reasoner = { path = "../../crates/ngkg-offline-reasoner" }
+ngkg-snapshot-activation = { path = "../../crates/ngkg-snapshot-activation" }
+oxigraph.workspace = true
+kube.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

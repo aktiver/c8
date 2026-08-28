@@ -1,0 +1,31 @@
+{
+  "formatVersion": 1,
+  "phase": "40.13.6",
+  "recordedAtUtc": "2026-08-27T14:41:37Z",
+  "sourceStaticGate": "passed",
+  "openApiParity": {
+    "status": "passed",
+    "controlPlaneOperations": 12,
+    "onlineDataPlaneOperations": 16
+  },
+  "dataFileParsing": "passed",
+  "inheritedStaticGates": {
+    "phase40_12": "passed",
+    "phase40_13": "passed",
+    "phase40_13_1": "passed",
+    "phase40_13_2": "passed",
+    "phase40_13_3": "passed",
+    "phase40_13_4": "passed",
+    "phase40_13_5": "passed"
+  },
+  "rustCargo": "unavailable",
+  "maven": "unavailable",
+  "helm": "unavailable",
+  "kubectl": "unavailable",
+  "featureMatrixJsonSchemaValidation": "blocked-jsonschema-module-unavailable",
+  "w3cHarnessExecution": "blocked-rdflib-7-unavailable",
+  "nativeBuild": "not-executed",
+  "javaAdapterTests": "not-executed",
+  "helmRender": "not-executed",
+  "liveKubernetes": "not-executed"
+}

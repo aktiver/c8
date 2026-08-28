@@ -1,0 +1,11 @@
+PREFIX ngkg: <https://ngkg.io/ontology/>
+SELECT ?observation ?message
+FROM NAMED <urn:ngkg:graph:hdfs>
+WHERE {
+  GRAPH <urn:ngkg:graph:hdfs> {
+    ?observation a ngkg:LatencyObservation .
+    OPTIONAL { ?observation ngkg:rawMessage ?message }
+  }
+}
+ORDER BY ?observation
+

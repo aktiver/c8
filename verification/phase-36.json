@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "phase": 36,
+  "status": "implementation-candidate-not-production-qualified",
+  "staticContractGate": "scripts/verify_phase36_static.py",
+  "qualificationGate": "scripts/qualify_phase36.sh",
+  "standardsClaimsEnabled": false,
+  "liveGatesExecutedInThisBuildEnvironment": false,
+  "blockedLiveGates": [
+    "cargo-format-clippy-test-with-lockfile",
+    "maven-verify",
+    "helm-lint-render",
+    "kubernetes-server-dry-run",
+    "rke2-preflight",
+    "pinned-w3c-suite-fetch-and-manifest-verification",
+    "cargo-lock-generation"
+  ]
+}

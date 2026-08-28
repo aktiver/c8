@@ -1,0 +1,82 @@
+{
+  "phase": "14",
+  "generatedAt": "2026-08-16T16:28:43-05:00",
+  "checks": {
+    "structural": {
+      "status": "passed",
+      "command": ["python3", "scripts/structural_validate.py", "--root", "."],
+      "exitCode": 0,
+      "summary": "Required Phase 14 artifacts were present; checked-in JSON, non-template YAML and TOML parsed; no unresolved forbidden tokens were found."
+    },
+    "pythonSyntax": {
+      "status": "passed",
+      "command": ["python3", "-m", "py_compile", "scripts/*.py"],
+      "exitCode": 0
+    },
+    "shellSyntax": {
+      "status": "passed",
+      "command": ["bash", "-n", "scripts/*.sh (individually)"],
+      "exitCode": 0
+    },
+    "rke2ValuesCrossFields": {
+      "status": "passed",
+      "command": ["python3", "scripts/validate_helm_values.py", "charts/ngkg-workloads/values.yaml", "--overlay", "charts/ngkg-workloads/profiles/rke2.yaml"],
+      "exitCode": 0
+    },
+    "bundleStaging": {
+      "status": "passed",
+      "command": ["python3", "scripts/stage_reference_bundle.py", "<checked-in reference corpus arguments>"],
+      "exitCode": 0,
+      "summary": "The helper produced bundle key bundles/sha256/481c9d8b24a917151bbb585beb5c86f0494a5fb62d7d4671786cd0964c9cb353/compilation-bundle.json with the same SHA-256, and every referenced immutable object existed with its declared checksum."
+    },
+    "crdStaticCompatibility": {
+      "status": "passed",
+      "command": ["python3", "<CRD static assertions>"],
+      "exitCode": 0,
+      "summary": "The CRD parsed as YAML and its object-key pattern contains no lookahead unsupported by Kubernetes RE2. Server-side CRD validation remains a cluster gate."
+    },
+    "gitWhitespace": {
+      "status": "passed",
+      "command": ["git", "diff", "--check"],
+      "exitCode": 0
+    },
+    "cargoFormatClippyTest": {
+      "status": "blocked",
+      "reason": "cargo, rustc and rustfmt are not installed, and a dependency-resolved Cargo.lock cannot be generated or reviewed in this workspace.",
+      "requiredCommands": [
+        "cargo generate-lockfile",
+        "cargo fmt --all --check",
+        "cargo clippy --locked --workspace --all-targets --all-features -- -D warnings",
+        "cargo test --locked --workspace --all-features"
+      ]
+    },
+    "hermitAdapter": {
+      "status": "blocked",
+      "reason": "OpenJDK 17.0.19 is available, but Maven is not installed, so the HermiT adapter and its tests could not be built.",
+      "requiredCommand": "mvn --batch-mode --no-transfer-progress -f adapters/hermit-reasoner/pom.xml clean package"
+    },
+    "postgresAndObjectStoreIntegration": {
+      "status": "blocked",
+      "reason": "PostgreSQL, psql, MinIO/S3 and container tooling are unavailable. Migrations, RLS isolation, idempotency races, immutable object publication, no-listing policy and failure injection were not simulated.",
+      "requiredCommand": "run the Phase 14 PostgreSQL plus local/S3-compatible integration matrix"
+    },
+    "helmAndKubernetes": {
+      "status": "blocked",
+      "reason": "Helm, kubectl, Kueue and a Kubernetes/RKE2 cluster are unavailable. Helm rendering, server-side CRD admission, operator reconciliation, Job execution and API smoke qualification did not run.",
+      "requiredCommands": [
+        "helm lint and template all NGKG charts with approved values",
+        "kubectl apply --dry-run=server for rendered resources",
+        "scripts/qualify_phase14.sh"
+      ]
+    },
+    "rke2AutoscalingAndRecovery": {
+      "status": "blocked",
+      "reason": "No RKE2/Rancher capacity provider is available. Node placement, Kueue admission, scale-from-zero, node loss, retry exhaustion and scale-down require the supported qualification cluster."
+    },
+    "referenceEndToEnd": {
+      "status": "blocked",
+      "reason": "The authenticated REST-to-catalog-to-Kubernetes-to-object-store-to-HermiT path requires all blocked toolchain and infrastructure dependencies. No generated success response was substituted."
+    }
+  },
+  "gateStatus": "blocked"
+}

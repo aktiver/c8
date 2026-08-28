@@ -1,0 +1,50 @@
+[package]
+name = "ngkg-online-serving"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+axum.workspace = true
+bytes.workspace = true
+futures.workspace = true
+hex.workspace = true
+ngkg-artifact-store = { path = "../../crates/ngkg-artifact-store" }
+ngkg-catalog = { path = "../../crates/ngkg-catalog" }
+ngkg-dataset = { path = "../../crates/ngkg-dataset" }
+ngkg-direct-reasoner = { path = "../../crates/ngkg-direct-reasoner" }
+ngkg-federation = { path = "../../crates/ngkg-federation" }
+ngkg-grace-join = { path = "../../crates/ngkg-grace-join" }
+ngkg-hydration = { path = "../../crates/ngkg-hydration" }
+ngkg-hpc-runtime = { path = "../../crates/ngkg-hpc-runtime" }
+ngkg-identity = { path = "../../crates/ngkg-identity" }
+ngkg-locator = { path = "../../crates/ngkg-locator" }
+ngkg-owl-direct = { path = "../../crates/ngkg-owl-direct" }
+ngkg-online-reasoning = { path = "../../crates/ngkg-online-reasoning" }
+ngkg-query-executor = { path = "../../crates/ngkg-query-executor" }
+ngkg-query-planner = { path = "../../crates/ngkg-query-planner" }
+ngkg-query-cache = { path = "../../crates/ngkg-query-cache" }
+ngkg-reference = { path = "../../crates/ngkg-reference" }
+ngkg-shuffle-cache = { path = "../../crates/ngkg-shuffle-cache" }
+ngkg-sparql-compiler = { path = "../../crates/ngkg-sparql-compiler" }
+ngkg-types = { path = "../../crates/ngkg-types" }
+oxigraph.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+serde_yaml.workspace = true
+spargebra.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tower-http.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+utoipa-swagger-ui.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

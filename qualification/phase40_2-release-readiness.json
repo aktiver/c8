@@ -1,0 +1,22 @@
+{
+  "formatVersion": 1,
+  "phase": "40.2",
+  "releaseStatus": "implementation-candidate-not-production-qualified",
+  "parent": "NGKG_PHASE_40_1_CANDIDATE.zip",
+  "parentArchiveSha256": "2b018851c617923f40551c1f777d497a3eb24c7e8d6a394c57eb8c22abf19028",
+  "parentPayloadFileCount": 409,
+  "changedInheritedFileCount": 14,
+  "deletedInheritedFileCount": 0,
+  "newFunctionalCapability": "checksum-bound OWL Direct datatype policy with deterministic parallel reasoning-literal validation and merged-ontology datatype coverage validation",
+  "datatypePolicyId": "ngkg-owl2-direct-datatype-policy-v1",
+  "supportedDatatypeCount": 31,
+  "maxValidationWorkers": 32,
+  "jsonSchemaCount": 28,
+  "openApiOperations": {
+    "control-plane": 12,
+    "online-data-plane": 14
+  },
+  "nativeQualificationExecuted": false,
+  "nativeQualificationReason": "cargo/rustc/mvn/helm/kubectl/rke2 are unavailable in this environment",
+  "nextPhase": "40.3 \u2014 Direct-BGP result runtime contract + JSON Schema"
+}

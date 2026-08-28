@@ -1,0 +1,73 @@
+{
+  "formatVersion": 1,
+  "parentLabel": "phase-40.2",
+  "currentLabel": "phase-40.3",
+  "parentFileManifestSha256": "aa6e9d0a07374fb29b24ff5c44cd4724a5089986736eed3f3119af9fbb68ccd0",
+  "embeddedParentManifest": "verification/stabilization/phase-40.2-parent-for-40.3-files.sha256",
+  "parentPayloadFileCount": 436,
+  "changedParentFiles": [
+    {
+      "path": "README.md",
+      "parentSha256": "55991e41bc08a2d5fe2d286d034fe20ce9f81e9a338c95fa4dd20ea4b6ba0971",
+      "currentSha256": "dddbc37aff769b38f5f49e813e64afcf201c676fb7c47af07af5535a6e4bb7fc"
+    },
+    {
+      "path": "acceptance/phase-gates.yaml",
+      "parentSha256": "f3d1fc38ad4705c44bed65e5279a15814026be5bdea72e99ef23c6bda0079c42",
+      "currentSha256": "d46786a0698f3ae8383afbf15696fe4446600ef9e011bca4272164418c38e263"
+    },
+    {
+      "path": "crates/ngkg-reasoner-client/Cargo.toml",
+      "parentSha256": "92efb9244a0dca0c084c0346c571a51dbdfb41862b008833214788d7397a2314",
+      "currentSha256": "ea8adc95993a743ddcb8c969f95d0c1c098f21b183cd48bd9cc774c9444c4d09"
+    },
+    {
+      "path": "crates/ngkg-reasoner-client/src/lib.rs",
+      "parentSha256": "65aaaef455d6b38116a40748743f27d3af7cafbb51b25bc9d35713cb88c7d404",
+      "currentSha256": "2037471885ee7731f53aa39d263755c381342e9b4fdeb5a8f251e5c01d586950"
+    },
+    {
+      "path": "crates/ngkg-types/src/lib.rs",
+      "parentSha256": "52b707533c314f6618e51f43bd76defc4e2c91740ad1e0919af7f247c14e6ea2",
+      "currentSha256": "1b4eb1accdef72eb33d8dd4a417599e6a31b8fe30de4c8e9d355422c21388d4e"
+    },
+    {
+      "path": "verification/phase-40-capability-status.json",
+      "parentSha256": "054bf1542f3940b1e39675e2d71d82e5cd67aed7a320eb3ff6e3c59db735c4d7",
+      "currentSha256": "31f97a6f4bd4a996656052bad03ec8ff8d43f01df7c641ce18ecdc4be132f83f"
+    }
+  ],
+  "deletedFiles": [],
+  "newFiles": [
+    "BUILD_STATUS_PHASE_40_3.md",
+    "contracts/direct-bgp-result.schema.json",
+    "crates/ngkg-types/src/direct_bgp.rs",
+    "docs/DIRECT_BGP_RESULT_CONTRACT.md",
+    "docs/phases/PHASE_40_3.md",
+    "qualification/cumulative-static-phase15-30.json",
+    "qualification/cumulative-static-phase15-40.3.json",
+    "qualification/cumulative-static-phase31-40.json",
+    "qualification/cumulative-static-phase40.1-40.3.json",
+    "qualification/phase40_3-api-openapi-parity.json",
+    "qualification/phase40_3-edit-artifact-scan.json",
+    "qualification/phase40_3-placeholder-scan.json",
+    "qualification/phase40_3-release-readiness.json",
+    "qualification/phase40_3-schema-meta.json",
+    "qualification/phase40_3-structural.json",
+    "qualification/phase40_3-summary.json",
+    "qualification/phase40_3-toolchain-availability.json",
+    "scripts/qualify_phase40_3.sh",
+    "scripts/validate_direct_bgp_result.py",
+    "scripts/verify_phase40_3_static.py",
+    "test-corpus/phase40_3/direct-bgp-result-invalid-extra-field.json",
+    "test-corpus/phase40_3/direct-bgp-result-invalid-failed-partial.json",
+    "test-corpus/phase40_3/direct-bgp-result-invalid-multiplicity-total.json",
+    "test-corpus/phase40_3/direct-bgp-result-invalid-variable-order.json",
+    "test-corpus/phase40_3/direct-bgp-result-valid-complete.json",
+    "test-corpus/phase40_3/direct-bgp-result-valid-failed.json",
+    "verification/phase-40.3-requirements.json",
+    "verification/phase-40.3-traceability.json",
+    "verification/phase-40.3.json",
+    "verification/stabilization/phase-40.2-parent-for-40.3-files.sha256"
+  ]
+}
