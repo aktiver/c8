@@ -2,6 +2,8 @@
 
 NGKG is an ontology-native, distributed HPC knowledge graph database. This repository is built cumulatively from the phase gates in `docs/ENGINEERING_SOURCE.md`: every phase tag contains all prior code, contracts, tests, deployment assets, and verification evidence.
 
+> Read the docs: https://aktiver-team.github.io/c8/
+
 ## Delivery model
 
 Each archive is produced from an immutable Git tag. `phase-00` is the semantic conformance foundation; later tags extend the same workspace. No phase is a disconnected sample project.
