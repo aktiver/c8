@@ -1,0 +1,133 @@
+openapi: 3.1.0
+info:
+  title: NGKG Optional Large Context-Slice Broker API
+  version: 0.10.0
+  description: Immutable snapshot-bound graph slices with capability-scoped verified range reads. Object keys are never exposed.
+servers: [{url: https://context-slices.example.invalid}]
+security: [{oauthBearer: [context-slices:read]}]
+paths:
+  /v1/context-slices:
+    post:
+      operationId: createContextSlice
+      summary: Create an immutable-slice upload session
+      security: [{oauthBearer: [context-slices:write]}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateSlice'}}}}
+      responses:
+        '201': {description: Upload session created, content: {application/json: {schema: {$ref: '#/components/schemas/Slice'}}}}
+        '400': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+  /v1/context-slices/{sliceId}:
+    parameters: [{$ref: '#/components/parameters/SliceId'}]
+    get:
+      operationId: getContextSlice
+      summary: Read the redacted slice lifecycle and semantic bindings
+      responses:
+        '200': {description: Slice, content: {application/json: {schema: {$ref: '#/components/schemas/Slice'}}}}
+        '404': {$ref: '#/components/responses/Error'}
+  /v1/context-slices/{sliceId}/chunks/{ordinal}:
+    parameters: [{$ref: '#/components/parameters/SliceId'}, {name: ordinal, in: path, required: true, schema: {type: integer, minimum: 0}}]
+    put:
+      operationId: putContextSliceChunk
+      summary: Store one checksum-bound immutable chunk
+      security: [{oauthBearer: [context-slices:write]}]
+      parameters: [{name: X-NGKG-Content-SHA256, in: header, required: true, schema: {$ref: '#/components/schemas/Sha256'}}]
+      requestBody: {required: true, content: {application/octet-stream: {schema: {type: string, contentEncoding: binary}}}}
+      responses: {'204': {description: Chunk accepted}, '409': {$ref: '#/components/responses/Error'}, '422': {$ref: '#/components/responses/Error'}}
+  /v1/context-slices/{sliceId}/finalize:
+    parameters: [{$ref: '#/components/parameters/SliceId'}]
+    post:
+      operationId: finalizeContextSlice
+      summary: Verify every chunk and atomically activate the manifest and mmap locator index
+      security: [{oauthBearer: [context-slices:write]}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, additionalProperties: false, required: [contentSha256], properties: {contentSha256: {$ref: '#/components/schemas/Sha256'}}}}}}
+      responses: {'200': {description: Active slice, content: {application/json: {schema: {$ref: '#/components/schemas/Slice'}}}}, '422': {$ref: '#/components/responses/Error'}}
+  /v1/context-slices/{sliceId}/capabilities:
+    parameters: [{$ref: '#/components/parameters/SliceId'}]
+    post:
+      operationId: issueContextSliceCapability
+      summary: Issue a short-lived subject, tenant, audience and byte-range-bound capability
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CapabilityRequest'}}}}
+      responses: {'200': {description: Capability, content: {application/json: {schema: {$ref: '#/components/schemas/Capability'}}}}, '403': {$ref: '#/components/responses/Error'}}
+  /v1/context-slices/{sliceId}/content:
+    parameters: [{$ref: '#/components/parameters/SliceId'}]
+    get:
+      operationId: readContextSliceRange
+      summary: Read the exact authorized range after index and per-chunk verification
+      security: []
+      parameters:
+        - {name: X-NGKG-Slice-Capability, in: header, required: true, schema: {type: string, maxLength: 16384}}
+        - {name: X-NGKG-Capability-Audience, in: header, required: true, schema: {type: string, maxLength: 256}}
+      responses:
+        '206': {description: Verified byte range, headers: {Content-Range: {schema: {type: string}}}, content: {application/octet-stream: {schema: {type: string, contentEncoding: binary}}, application/n-triples: {schema: {type: string}}}}
+        '403': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /v1/context-slices/{sliceId}/expire:
+    parameters: [{$ref: '#/components/parameters/SliceId'}]
+    post:
+      operationId: expireContextSlice
+      summary: Revoke new access and enter the recoverable deletion window
+      security: [{oauthBearer: [context-slices:write]}]
+      responses: {'200': {description: Expired slice, content: {application/json: {schema: {$ref: '#/components/schemas/Slice'}}}}}
+  /health/live: {get: {operationId: contextSliceLiveness, security: [], responses: {'204': {description: Alive}}}}
+  /health/ready: {get: {operationId: contextSliceReadiness, security: [], responses: {'204': {description: Ready}, '503': {description: Not ready}}}}
+  /metrics: {get: {operationId: contextSliceMetrics, security: [], responses: {'200': {description: Prometheus metrics, content: {text/plain: {schema: {type: string}}}}}}}
+components:
+  securitySchemes:
+    oauthBearer: {type: oauth2, flows: {clientCredentials: {tokenUrl: https://authorization.example.invalid/oauth/token, scopes: {context-slices:read: Read slices, context-slices:write: Create and expire slices}}}}
+  parameters:
+    SliceId: {name: sliceId, in: path, required: true, schema: {type: string, format: uuid}}
+  responses:
+    Error: {description: Fail-closed error, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
+  schemas:
+    Sha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+    CreateSlice:
+      type: object
+      additionalProperties: false
+      required: [datasetId, snapshotId, authorizedGraphSetSha256, semanticResultSha256, mediaType, chunkSizeBytes, expectedTotalBytes, totalTriples, ttlSeconds]
+      properties:
+        datasetId: {type: string, format: uuid}
+        snapshotId: {type: string, format: uuid}
+        authorizedGraphSetSha256: {$ref: '#/components/schemas/Sha256'}
+        semanticResultSha256: {$ref: '#/components/schemas/Sha256'}
+        mediaType: {type: string, maxLength: 128}
+        chunkSizeBytes: {type: integer, minimum: 65536, maximum: 268435456}
+        expectedTotalBytes: {type: integer, minimum: 1, maximum: 10995116277760}
+        totalTriples: {type: integer, minimum: 0}
+        ttlSeconds: {type: integer, minimum: 1}
+    Slice:
+      type: object
+      required: [sliceId, subject, datasetId, snapshotId, authorizedGraphSetSha256, semanticResultSha256, mediaType, state, stateVersion, chunkSizeBytes, expectedTotalBytes, totalTriples, createdAtEpochMs, expiresAtEpochMs, deleteAfterEpochMs]
+      properties:
+        sliceId: {type: string, format: uuid}
+        subject: {type: string}
+        datasetId: {type: string, format: uuid}
+        snapshotId: {type: string, format: uuid}
+        authorizedGraphSetSha256: {$ref: '#/components/schemas/Sha256'}
+        semanticResultSha256: {$ref: '#/components/schemas/Sha256'}
+        mediaType: {type: string}
+        state: {enum: [UPLOADING, ABANDONED, ACTIVE, EXPIRED_PENDING_DELETE, DELETING, DELETED, CORRUPT]}
+        stateVersion: {type: integer, minimum: 1}
+        chunkSizeBytes: {type: integer}
+        expectedTotalBytes: {type: integer}
+        totalBytes: {type: [integer, 'null']}
+        totalTriples: {type: integer}
+        contentSha256: {oneOf: [{$ref: '#/components/schemas/Sha256'}, {type: 'null'}]}
+        manifestSha256: {oneOf: [{$ref: '#/components/schemas/Sha256'}, {type: 'null'}]}
+        indexSha256: {oneOf: [{$ref: '#/components/schemas/Sha256'}, {type: 'null'}]}
+        indexBytes: {type: [integer, 'null']}
+        createdAtEpochMs: {type: integer}
+        expiresAtEpochMs: {type: integer}
+        deleteAfterEpochMs: {type: integer}
+    CapabilityRequest:
+      type: object
+      additionalProperties: false
+      required: [audience, rangeStart, rangeEndExclusive, ttlSeconds]
+      properties: {audience: {type: string, maxLength: 256}, rangeStart: {type: integer, minimum: 0}, rangeEndExclusive: {type: integer, minimum: 1}, ttlSeconds: {type: integer, minimum: 1, maximum: 300}}
+    Capability:
+      type: object
+      required: [capabilityId, token, expiresAtEpoch, rangeStart, rangeEndExclusive, audience]
+      properties: {capabilityId: {type: string, format: uuid}, token: {type: string, writeOnly: true}, expiresAtEpoch: {type: integer}, rangeStart: {type: integer}, rangeEndExclusive: {type: integer}, audience: {type: string}}
+    Error:
+      type: object
+      required: [code, message]
+      properties: {code: {type: string}, message: {type: string}}

@@ -252,7 +252,9 @@ pub fn path_partition_expansion_work_items(
         || !lower_hex_sha256(plan_sha256)
         || iteration >= plan.max_iterations
         || storage_partition >= plan.partition_count
-        || u64::try_from(frontier.len()).ok().is_none_or(|count| count > plan.max_frontier_items)
+        || u64::try_from(frontier.len())
+            .ok()
+            .is_none_or(|count| count > plan.max_frontier_items)
     {
         return Err(ExecutionError::PropertyPathIterationLimit);
     }
@@ -344,10 +346,7 @@ pub fn expand_path_work_item_borrowed(
         return Err(ExecutionError::InvalidPropertyPathIdentity);
     }
 
-    let closure = epsilon_closure(
-        automaton,
-        identity.frontier.automaton_state,
-    )?;
+    let closure = epsilon_closure(automaton, identity.frontier.automaton_state)?;
     let mut next = BTreeSet::new();
     let mut endpoints = BTreeSet::new();
     let mut scanned_edges = 0_u64;
@@ -389,7 +388,9 @@ pub fn expand_path_work_item_borrowed(
                     PathTransitionKind::NegatedPropertySet {
                         excluded_predicate_iris,
                         ..
-                    } => excluded_predicate_iris.binary_search(&edge.predicate_iri).is_err(),
+                    } => excluded_predicate_iris
+                        .binary_search(&edge.predicate_iri)
+                        .is_err(),
                     PathTransitionKind::Epsilon => false,
                 };
                 if !predicate_matches {
@@ -420,8 +421,12 @@ pub fn expand_path_work_item_borrowed(
             }
         }
     }
-    if u64::try_from(next.len()).ok().is_none_or(|count| count > max_frontier_items)
-        || u64::try_from(next.len()).ok().is_none_or(|count| count > max_visited_items)
+    if u64::try_from(next.len())
+        .ok()
+        .is_none_or(|count| count > max_frontier_items)
+        || u64::try_from(next.len())
+            .ok()
+            .is_none_or(|count| count > max_visited_items)
     {
         return Err(ExecutionError::PropertyPathFrontierLimit);
     }
@@ -556,8 +561,8 @@ pub fn build_path_checkpoint(
     max_checkpoint_bytes: u64,
 ) -> Result<PathCheckpoint, ExecutionError> {
     validate_checkpoint_state(&state)?;
-    let bytes = serde_json::to_vec(&state)
-        .map_err(|_| ExecutionError::InvalidPropertyPathIdentity)?;
+    let bytes =
+        serde_json::to_vec(&state).map_err(|_| ExecutionError::InvalidPropertyPathIdentity)?;
     let encoded_bytes =
         u64::try_from(bytes.len()).map_err(|_| ExecutionError::PropertyPathCheckpointLimit)?;
     if max_checkpoint_bytes == 0 || encoded_bytes > max_checkpoint_bytes {
@@ -721,11 +726,9 @@ fn result_sha256(
     Ok(hex_encode(&Sha256::digest(bytes)))
 }
 
-fn automaton_sha256(
-    automaton: &DistributedPathAutomaton,
-) -> Result<String, ExecutionError> {
-    let bytes = serde_json::to_vec(automaton)
-        .map_err(|_| ExecutionError::InvalidPropertyPathIdentity)?;
+fn automaton_sha256(automaton: &DistributedPathAutomaton) -> Result<String, ExecutionError> {
+    let bytes =
+        serde_json::to_vec(automaton).map_err(|_| ExecutionError::InvalidPropertyPathIdentity)?;
     Ok(hex_encode(&Sha256::digest(bytes)))
 }
 
@@ -914,16 +917,18 @@ mod tests {
         )?;
         let mut duplicated = work.clone();
         duplicated.push(first);
-        assert!(complete_path_iteration(
-            &duplicated,
-            vec![result],
-            &BTreeSet::from([seed]),
-            &BTreeSet::new(),
-            100,
-            1_000,
-            1_000_000,
-        )
-        .is_err());
+        assert!(
+            complete_path_iteration(
+                &duplicated,
+                vec![result],
+                &BTreeSet::from([seed]),
+                &BTreeSet::new(),
+                100,
+                1_000,
+                1_000_000,
+            )
+            .is_err()
+        );
         Ok(())
     }
 
@@ -972,9 +977,11 @@ mod tests {
             .copied()
             .collect::<BTreeSet<_>>();
         assert_eq!(endpoints.len(), 1);
-        assert!(endpoints.iter().all(|endpoint| {
-            endpoint.object_entity_id == 2 && endpoint.graph_id == Some(7)
-        }));
+        assert!(
+            endpoints
+                .iter()
+                .all(|endpoint| { endpoint.object_entity_id == 2 && endpoint.graph_id == Some(7) })
+        );
         Ok(())
     }
 }

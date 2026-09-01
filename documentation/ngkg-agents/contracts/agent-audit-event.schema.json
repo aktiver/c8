@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/schema/ngkg/agent-audit-event/1.0",
+  "title": "NGKG agent audit event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tenantId", "sequence", "eventId", "eventType", "subject", "requestId",
+    "outcome", "policyVersionSha256", "serviceBuildSha256",
+    "redactedPayloadSha256", "previousEventSha256", "eventSha256",
+    "eventTimeEpochMs"
+  ],
+  "properties": {
+    "tenantId": {"type": "string", "format": "uuid"},
+    "sequence": {"type": "integer", "minimum": 0},
+    "eventId": {"type": "string", "format": "uuid"},
+    "eventType": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,127}$"},
+    "subject": {"type": "string", "minLength": 1, "maxLength": 256},
+    "actor": {"type": ["string", "null"], "minLength": 1, "maxLength": 256},
+    "requestId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "outcome": {"enum": ["STARTED", "COMPLETED", "FAILED", "DENIED", "CANCELLED"]},
+    "policyVersionSha256": {"$ref": "#/$defs/sha256"},
+    "serviceBuildSha256": {"$ref": "#/$defs/sha256"},
+    "redactedPayloadSha256": {"$ref": "#/$defs/sha256"},
+    "previousEventSha256": {"$ref": "#/$defs/sha256"},
+    "eventSha256": {"$ref": "#/$defs/sha256"},
+    "eventTimeEpochMs": {"type": "integer", "minimum": 0}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

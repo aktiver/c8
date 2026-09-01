@@ -1,0 +1,34 @@
+{
+  "formatVersion": 1,
+  "phase": "enterprise-stabilization-phase-5",
+  "status": "SOURCE_IMPLEMENTED_NOT_PRODUCTION_QUALIFIED",
+  "sourceGates": {
+    "inputManifestVerification": "PASS",
+    "phase4CumulativeContract": "PASS",
+    "phase5Contract": "PASS",
+    "openapiYamlParse": "PASS",
+    "helmValuesYamlParse": "PASS",
+    "helmValuesSchemaParse": "PASS",
+    "pythonCompilation": "PASS",
+    "shellSyntax": "PASS"
+  },
+  "unavailableGates": [
+    "cargo-fmt-clippy-test",
+    "helm-lint-render",
+    "oci-build-sbom-scan-sign",
+    "postgresql-ha-migrations",
+    "rke2-live",
+    "eks-live",
+    "aks-live",
+    "gke-live",
+    "native-scalar-differential",
+    "owl-direct-live",
+    "multinode-chaos-capacity"
+  ],
+  "requiredCertificates": [
+    "phase3-certificate.json",
+    "phase4-live-certificate.json",
+    "phase5-live-certificate.json"
+  ],
+  "productionQualified": false
+}

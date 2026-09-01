@@ -10,8 +10,7 @@
 use std::{collections::BTreeSet, fs, io::Write, path::Path};
 
 use ngkg_dataset::{
-    DatasetSelectionSource, GraphCatalog, LogicalGraphName, ResolvedDataset,
-    validate_resolved_dataset,
+    GraphCatalog, ResolvedDataset, validate_resolved_dataset,
 };
 use ngkg_direct_reasoner::DirectExactOntologyBundle;
 use ngkg_types::{DirectBgpGraphContext, DirectBgpScope, DirectExactOntologyInput};
@@ -184,10 +183,11 @@ fn write_scoped_abox(
         if !include {
             continue;
         }
-        let standardize_apart = matches!(graph_context, DirectBgpGraphContext::Default { .. })
-            && resolved.selection_source != DatasetSelectionSource::ServiceDefault;
-        let subject = render_subject(&quad.subject, graph_record.graph_id, standardize_apart);
-        let object = render_object(&quad.object, graph_record.graph_id, standardize_apart);
+        // Use the same graph-IRI-scoped blank-node identity as the scalar,
+        // distributed, named-graph, and union-default query stores. Routing a
+        // BGP to exact OWL reasoning must not change joins or result identity.
+        let subject = render_subject(&quad.subject, graph.as_str());
+        let object = render_object(&quad.object, graph.as_str());
         triples.insert(format!(
             "{subject} <{}> {object} .\n",
             quad.predicate.as_str()
@@ -204,31 +204,30 @@ fn write_scoped_abox(
     Ok(())
 }
 
-fn render_subject(subject: &NamedOrBlankNode, graph_id: u32, standardize_apart: bool) -> String {
+fn render_subject(subject: &NamedOrBlankNode, graph_iri: &str) -> String {
     match subject {
         NamedOrBlankNode::NamedNode(node) => node.to_string(),
         NamedOrBlankNode::BlankNode(node) => {
-            render_blank(node.as_str(), graph_id, standardize_apart)
+            render_blank(node.as_str(), graph_iri)
         }
     }
 }
 
-fn render_object(object: &Term, graph_id: u32, standardize_apart: bool) -> String {
+fn render_object(object: &Term, graph_iri: &str) -> String {
     match object {
         Term::NamedNode(node) => node.to_string(),
-        Term::BlankNode(node) => render_blank(node.as_str(), graph_id, standardize_apart),
+        Term::BlankNode(node) => render_blank(node.as_str(), graph_iri),
         Term::Literal(literal) => literal.to_string(),
     }
 }
 
-fn render_blank(value: &str, graph_id: u32, standardize_apart: bool) -> String {
-    if standardize_apart {
-        // FROM/FROM NAMED uses RDF merge semantics. Prefixing with the dense source graph ID is a
-        // deterministic standardize-apart operation and cannot collide with a source blank label.
-        format!("_:ngkg_from_g{graph_id}_{value}")
-    } else {
-        format!("_:{value}")
-    }
+fn render_blank(value: &str, graph_iri: &str) -> String {
+    let mut digest = Sha256::new();
+    digest.update(b"ngkg-graph-scoped-blank-node-v1\0");
+    digest.update(graph_iri.as_bytes());
+    digest.update(b"\0");
+    digest.update(value.as_bytes());
+    format!("_:ngkg{}", hex::encode(digest.finalize()))
 }
 
 fn aggregate_hash(
@@ -251,7 +250,7 @@ fn sha256_file(path: &Path) -> Result<[u8; 32], std::io::Error> {
     use std::io::Read;
     let mut file = fs::File::open(path)?;
     let mut hash = Sha256::new();
-    let mut buffer = [0_u8; 1024 * 1024];
+    let mut buffer = vec![0_u8; 1024 * 1024].into_boxed_slice();
     loop {
         let read = file.read(&mut buffer)?;
         if read == 0 {
@@ -260,4 +259,19 @@ fn sha256_file(path: &Path) -> Result<[u8; 32], std::io::Error> {
         hash.update(&buffer[..read]);
     }
     Ok(hash.finalize().into())
+}
+
+#[cfg(test)]
+mod phase4_blank_node_tests {
+    use super::render_blank;
+
+    #[test]
+    fn exact_lane_uses_snapshot_graph_scoped_blank_identity() {
+        let first = render_blank("shared", "https://c8-next-generation.io/a/domain/semkg");
+        let repeated = render_blank("shared", "https://c8-next-generation.io/a/domain/semkg");
+        let other_graph = render_blank("shared", "https://c8-next-generation.io/b/domain/semkg");
+        assert_eq!(first, repeated);
+        assert_ne!(first, other_graph, "RDF merge must standardize graph inputs apart");
+        assert!(first.starts_with("_:ngkg"));
+    }
 }

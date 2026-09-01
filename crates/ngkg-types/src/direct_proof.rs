@@ -103,7 +103,11 @@ pub enum DirectProofValidationError {
 pub fn direct_binding_sha256(bindings: &BTreeMap<String, DirectBgpRdfTerm>) -> String {
     let mut hash = Sha256::new();
     hash.update(BINDING_DOMAIN);
-    hash.update(u64::try_from(bindings.len()).unwrap_or(u64::MAX).to_be_bytes());
+    hash.update(
+        u64::try_from(bindings.len())
+            .unwrap_or(u64::MAX)
+            .to_be_bytes(),
+    );
     for (variable, term) in bindings {
         update_string(&mut hash, variable);
         update_term(&mut hash, term);
@@ -163,18 +167,43 @@ pub fn validate_direct_proof_manifest(
     for (name, value) in [
         ("querySha256", manifest.query_sha256.as_str()),
         ("bgpSha256", manifest.bgp_sha256.as_str()),
-        ("activeDatasetSha256", manifest.active_dataset_sha256.as_str()),
-        ("authorizedGraphSetSha256", manifest.authorized_graph_set_sha256.as_str()),
+        (
+            "activeDatasetSha256",
+            manifest.active_dataset_sha256.as_str(),
+        ),
+        (
+            "authorizedGraphSetSha256",
+            manifest.authorized_graph_set_sha256.as_str(),
+        ),
         ("owlSignatureSha256", manifest.owl_signature_sha256.as_str()),
-        ("datatypePolicySha256", manifest.datatype_policy_sha256.as_str()),
-        ("directBgpResultSha256", manifest.direct_bgp_result_sha256.as_str()),
-        ("candidateSpaceSha256", manifest.candidate_space_sha256.as_str()),
-        ("executionRootSha256", manifest.execution_root_sha256.as_str()),
-        ("completionSupportId", manifest.completion_support_id.as_str()),
+        (
+            "datatypePolicySha256",
+            manifest.datatype_policy_sha256.as_str(),
+        ),
+        (
+            "directBgpResultSha256",
+            manifest.direct_bgp_result_sha256.as_str(),
+        ),
+        (
+            "candidateSpaceSha256",
+            manifest.candidate_space_sha256.as_str(),
+        ),
+        (
+            "executionRootSha256",
+            manifest.execution_root_sha256.as_str(),
+        ),
+        (
+            "completionSupportId",
+            manifest.completion_support_id.as_str(),
+        ),
     ] {
         require_sha(name, value)?;
     }
-    for value in [&manifest.reasoner_engine, &manifest.reasoner_version, &manifest.adapter_version] {
+    for value in [
+        &manifest.reasoner_engine,
+        &manifest.reasoner_version,
+        &manifest.adapter_version,
+    ] {
         if value.is_empty() || value.len() > 256 || value.chars().any(char::is_control) {
             return Err(DirectProofValidationError::Reasoner);
         }
@@ -189,8 +218,14 @@ pub fn validate_direct_proof_manifest(
         for (name, value) in [
             ("answerProof.requestSha256", proof.request_sha256.as_str()),
             ("answerProof.bindingSha256", proof.binding_sha256.as_str()),
-            ("answerProof.groundedRdfSha256", proof.grounded_rdf_sha256.as_str()),
-            ("answerProof.logicalAxiomsSha256", proof.logical_axioms_sha256.as_str()),
+            (
+                "answerProof.groundedRdfSha256",
+                proof.grounded_rdf_sha256.as_str(),
+            ),
+            (
+                "answerProof.logicalAxiomsSha256",
+                proof.logical_axioms_sha256.as_str(),
+            ),
             ("answerProof.supportId", proof.support_id.as_str()),
         ] {
             require_sha(name, value)?;
@@ -224,7 +259,8 @@ pub fn validate_direct_proof_bundle(
     validate_direct_certificate_result(certificate, result)
         .map_err(|_| DirectProofValidationError::BaseContract)?;
     require_sha("proofManifestSha256", manifest_sha256)?;
-    let result_sha = direct_bgp_result_sha256(result).map_err(|_| DirectProofValidationError::BaseContract)?;
+    let result_sha =
+        direct_bgp_result_sha256(result).map_err(|_| DirectProofValidationError::BaseContract)?;
     if manifest.direct_bgp_result_sha256 != result_sha
         || manifest.dataset_id != result.dataset_id
         || manifest.snapshot_id != result.snapshot_id
@@ -244,7 +280,10 @@ pub fn validate_direct_proof_bundle(
     let mut expected = BTreeMap::<String, u64>::new();
     for solution in &result.solutions {
         let binding_sha256 = direct_binding_sha256(&solution.bindings);
-        if expected.insert(binding_sha256, solution.multiplicity).is_some() {
+        if expected
+            .insert(binding_sha256, solution.multiplicity)
+            .is_some()
+        {
             // The exact result contract uses compressed bag rows. Two rows with the same canonical
             // binding would make proof multiplicity coverage ambiguous, so reject rather than merge.
             return Err(DirectProofValidationError::ResultCoverage);
@@ -253,7 +292,9 @@ pub fn validate_direct_proof_bundle(
     let mut observed = BTreeMap::<String, u64>::new();
     for proof in &manifest.answer_proofs {
         let entry = observed.entry(proof.binding_sha256.clone()).or_default();
-        *entry = entry.checked_add(1).ok_or(DirectProofValidationError::ResultCoverage)?;
+        *entry = entry
+            .checked_add(1)
+            .ok_or(DirectProofValidationError::ResultCoverage)?;
     }
     if expected != observed
         || u64::try_from(manifest.answer_proofs.len()).unwrap_or(u64::MAX)
@@ -272,21 +313,32 @@ pub fn validate_direct_proof_bundle(
         return Err(DirectProofValidationError::CertificateBinding);
     }
     let expected_ids = std::iter::once(manifest.completion_support_id.clone())
-        .chain(manifest.answer_proofs.iter().map(|proof| proof.support_id.clone()))
+        .chain(
+            manifest
+                .answer_proofs
+                .iter()
+                .map(|proof| proof.support_id.clone()),
+        )
         .collect::<BTreeSet<_>>();
-    let actual_ids = certificate.support_references.iter()
+    let actual_ids = certificate
+        .support_references
+        .iter()
         .map(|reference| reference.support_id.clone())
         .collect::<BTreeSet<_>>();
-    if expected_ids != actual_ids || certificate.support_references.iter().any(|reference| {
-        reference.kind != DirectSupportKind::ReasonerCheck
-            || reference.artifact_sha256.as_deref() != Some(manifest_sha256)
-    }) {
+    if expected_ids != actual_ids
+        || certificate.support_references.iter().any(|reference| {
+            reference.kind != DirectSupportKind::ReasonerCheck
+                || reference.artifact_sha256.as_deref() != Some(manifest_sha256)
+        })
+    {
         return Err(DirectProofValidationError::CertificateBinding);
     }
     Ok(())
 }
 
-fn validate_ontology_inputs(inputs: &[DirectProofOntologyInput]) -> Result<(), DirectProofValidationError> {
+fn validate_ontology_inputs(
+    inputs: &[DirectProofOntologyInput],
+) -> Result<(), DirectProofValidationError> {
     let mut previous: Option<&str> = None;
     for input in inputs {
         require_sha("ontologyInputs.sha256", &input.sha256)?;
@@ -306,14 +358,20 @@ fn validate_ontology_inputs(inputs: &[DirectProofOntologyInput]) -> Result<(), D
 }
 
 fn require_sha(name: &'static str, value: &str) -> Result<(), DirectProofValidationError> {
-    if value.len() != 64 || !value.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)) {
+    if value.len() != 64
+        || !value
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    {
         return Err(DirectProofValidationError::Hash(name));
     }
     Ok(())
 }
 
 fn absolute_iri(value: &str) -> bool {
-    let Some(colon) = value.find(':') else { return false; };
+    let Some(colon) = value.find(':') else {
+        return false;
+    };
     colon > 0 && !value.chars().any(char::is_whitespace)
 }
 
@@ -324,22 +382,44 @@ fn update_string(hash: &mut Sha256, value: &str) {
 
 fn update_graph(hash: &mut Sha256, graph: &DirectBgpGraphContext) {
     match graph {
-        DirectBgpGraphContext::Default { active_default_graph_sha256 } => {
-            hash.update([1]); update_string(hash, active_default_graph_sha256);
+        DirectBgpGraphContext::Default {
+            active_default_graph_sha256,
+        } => {
+            hash.update([1]);
+            update_string(hash, active_default_graph_sha256);
         }
         DirectBgpGraphContext::Named { graph_iri } => {
-            hash.update([2]); update_string(hash, graph_iri);
+            hash.update([2]);
+            update_string(hash, graph_iri);
         }
     }
 }
 
 fn update_term(hash: &mut Sha256, term: &DirectBgpRdfTerm) {
     match term {
-        DirectBgpRdfTerm::Iri { value } => { hash.update([1]); update_string(hash, value); }
-        DirectBgpRdfTerm::BlankNode { value } => { hash.update([2]); update_string(hash, value); }
-        DirectBgpRdfTerm::Literal { lexical_form, datatype_iri, language } => {
-            hash.update([3]); update_string(hash, lexical_form); update_string(hash, datatype_iri);
-            match language { Some(value) => { hash.update([1]); update_string(hash, value); }, None => hash.update([0]) }
+        DirectBgpRdfTerm::Iri { value } => {
+            hash.update([1]);
+            update_string(hash, value);
+        }
+        DirectBgpRdfTerm::BlankNode { value } => {
+            hash.update([2]);
+            update_string(hash, value);
+        }
+        DirectBgpRdfTerm::Literal {
+            lexical_form,
+            datatype_iri,
+            language,
+        } => {
+            hash.update([3]);
+            update_string(hash, lexical_form);
+            update_string(hash, datatype_iri);
+            match language {
+                Some(value) => {
+                    hash.update([1]);
+                    update_string(hash, value);
+                }
+                None => hash.update([0]),
+            }
         }
     }
 }

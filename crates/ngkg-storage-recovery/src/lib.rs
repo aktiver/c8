@@ -292,7 +292,7 @@ impl StorageRecoveryRepository {
     ) -> Result<(), StorageCatalogError> {
         if !matches!(
             (expected, next),
-            ("PLANNED", "RUNNING") | ("RUNNING", "VERIFYING") | ("PLANNED", "VERIFYING")
+            ("PLANNED", "RUNNING" | "VERIFYING") | ("RUNNING", "VERIFYING")
         ) {
             return Err(StorageCatalogError::InvalidCatalogState);
         }
@@ -452,7 +452,8 @@ impl StorageRecoveryRepository {
         manifest: &SnapshotStorageManifest,
         target: &StorageTarget,
     ) -> Result<(), StorageCatalogError> {
-        validate_storage_manifest(manifest).map_err(|_| StorageCatalogError::InvalidCatalogState)?;
+        validate_storage_manifest(manifest)
+            .map_err(|_| StorageCatalogError::InvalidCatalogState)?;
         let mut tx = self.pool.begin().await?;
         sqlx::query("SELECT set_config('ngkg.tenant_id', $1, true)")
             .bind(tenant_id.to_string())
@@ -941,7 +942,10 @@ pub fn build_restore_certificate(
         || recovery_certificate.operation_id != plan.operation_id
         || recovery_certificate.snapshot_id != plan.snapshot_id
         || plan.tasks.is_empty()
-        || plan.tasks.iter().any(|task| task.reason != TransferReason::Restore)
+        || plan
+            .tasks
+            .iter()
+            .any(|task| task.reason != TransferReason::Restore)
     {
         return Err(RecoveryError::Incomplete(
             "restore certificate requires a complete restore-only plan".to_owned(),
@@ -974,7 +978,10 @@ pub fn build_backup_manifest(
         || certificate.verified_task_count != u32::try_from(plan.tasks.len()).unwrap_or(u32::MAX)
         || !valid_sha256(certificate_sha256)
         || plan.tasks.is_empty()
-        || plan.tasks.iter().any(|task| task.reason != TransferReason::Backup)
+        || plan
+            .tasks
+            .iter()
+            .any(|task| task.reason != TransferReason::Backup)
     {
         return Err(RecoveryError::Incomplete(
             "backup requires one complete certified backup plan".to_owned(),
@@ -1001,9 +1008,9 @@ pub fn build_backup_manifest(
         })
         .collect::<Vec<_>>();
     let total_bytes = artifacts.iter().try_fold(0_u64, |total, artifact| {
-        total.checked_add(artifact.bytes).ok_or_else(|| {
-            RecoveryError::InvalidContract("backup byte total overflow".to_owned())
-        })
+        total
+            .checked_add(artifact.bytes)
+            .ok_or_else(|| RecoveryError::InvalidContract("backup byte total overflow".to_owned()))
     })?;
     Ok(SnapshotBackupManifest {
         format_version: STORAGE_RECOVERY_FORMAT_VERSION,
@@ -1044,10 +1051,16 @@ pub fn build_restore_plan(
         || !valid_sha256(backup_manifest_sha256)
         || max_parallelism_bytes == 0
         || backup.destination_target == destination_target
-        || !targets.iter().any(|target| target.name == destination_target && target.writable)
-        || !targets.iter().any(|target| target.name == backup.destination_target)
+        || !targets
+            .iter()
+            .any(|target| target.name == destination_target && target.writable)
+        || !targets
+            .iter()
+            .any(|target| target.name == backup.destination_target)
     {
-        return Err(RecoveryError::InvalidContract("restore request is invalid".to_owned()));
+        return Err(RecoveryError::InvalidContract(
+            "restore request is invalid".to_owned(),
+        ));
     }
     let mut tasks = Vec::with_capacity(backup.artifacts.len());
     for artifact in &backup.artifacts {
@@ -1117,7 +1130,9 @@ pub fn validate_backup_manifest(backup: &SnapshotBackupManifest) -> Result<(), R
         || backup.artifacts.is_empty()
         || !backup.complete
     {
-        return Err(RecoveryError::InvalidContract("backup manifest header is invalid".to_owned()));
+        return Err(RecoveryError::InvalidContract(
+            "backup manifest header is invalid".to_owned(),
+        ));
     }
     let mut previous: Option<(&str, &str)> = None;
     let total = backup.artifacts.iter().try_fold(0_u64, |sum, artifact| {
@@ -1125,9 +1140,14 @@ pub fn validate_backup_manifest(backup: &SnapshotBackupManifest) -> Result<(), R
             || !valid_object_key(&artifact.backup_object_key)
             || !valid_sha256(&artifact.sha256)
         {
-                return Err(RecoveryError::InvalidContract("backup artifact is invalid".to_owned()));
+            return Err(RecoveryError::InvalidContract(
+                "backup artifact is invalid".to_owned(),
+            ));
         }
-        let identity = (artifact.source_object_key.as_str(), artifact.backup_object_key.as_str());
+        let identity = (
+            artifact.source_object_key.as_str(),
+            artifact.backup_object_key.as_str(),
+        );
         if previous.is_some_and(|prior| prior >= identity) {
             return Err(RecoveryError::InvalidContract(
                 "backup artifacts must be sorted and duplicate-free".to_owned(),
@@ -1138,7 +1158,9 @@ pub fn validate_backup_manifest(backup: &SnapshotBackupManifest) -> Result<(), R
             .ok_or_else(|| RecoveryError::InvalidContract("backup bytes overflow".to_owned()))
     })?;
     if total != backup.total_bytes {
-        return Err(RecoveryError::InvalidContract("backup byte total mismatch".to_owned()));
+        return Err(RecoveryError::InvalidContract(
+            "backup byte total mismatch".to_owned(),
+        ));
     }
     Ok(())
 }
@@ -1150,7 +1172,9 @@ pub enum RecoveryError {
     #[error("invalid recovery contract: {0}")]
     InvalidContract(String),
     /// There are too few independent writable failure domains.
-    #[error("replication factor {requested} cannot be placed across {available} writable failure domains")]
+    #[error(
+        "replication factor {requested} cannot be placed across {available} writable failure domains"
+    )]
     InsufficientFailureDomains { requested: u16, available: usize },
     /// One or more partitions are absent, duplicated, corrupt, or unsuccessful.
     #[error("recovery completion barrier failed: {0}")]
@@ -1212,7 +1236,11 @@ pub async fn discover_artifact_closure(
     let mut queue = roots
         .iter()
         .cloned()
-        .map(|(key, sha256)| PendingArtifact { key, sha256, bytes: None })
+        .map(|(key, sha256)| PendingArtifact {
+            key,
+            sha256,
+            bytes: None,
+        })
         .collect::<VecDeque<_>>();
     let mut artifacts = BTreeMap::<String, SnapshotArtifact>::new();
     while let Some(pending) = queue.pop_front() {
@@ -1246,8 +1274,8 @@ pub async fn discover_artifact_closure(
             let bytes = store
                 .materialize_verified(&pending.key, &pending.sha256, max_json_bytes, &local)
                 .await?;
-            let document: serde_json::Value = serde_json::from_slice(&tokio::fs::read(&local).await?)
-                .map_err(|error| {
+            let document: serde_json::Value =
+                serde_json::from_slice(&tokio::fs::read(&local).await?).map_err(|error| {
                     RecoveryError::InvalidContract(format!(
                         "checksum-bound JSON artifact {} is invalid: {error}",
                         pending.key
@@ -1261,10 +1289,18 @@ pub async fn discover_artifact_closure(
             }
             bytes
         } else {
-            let ceiling = pending.bytes.unwrap_or(max_artifact_bytes).min(max_artifact_bytes);
-            store.verify_remote(&pending.key, &pending.sha256, ceiling).await?
+            let ceiling = pending
+                .bytes
+                .unwrap_or(max_artifact_bytes)
+                .min(max_artifact_bytes);
+            store
+                .verify_remote(&pending.key, &pending.sha256, ceiling)
+                .await?
         };
-        if pending.bytes.is_some_and(|expected| expected != observed_bytes) {
+        if pending
+            .bytes
+            .is_some_and(|expected| expected != observed_bytes)
+        {
             return Err(RecoveryError::Incomplete(format!(
                 "artifact {} byte length differs from its manifest",
                 pending.key
@@ -1299,7 +1335,9 @@ fn collect_json_references(
     match value {
         serde_json::Value::Object(object) => {
             if let (Some(relative), Some(sha256), Some(bytes)) = (
-                object.get("relativePath").and_then(serde_json::Value::as_str),
+                object
+                    .get("relativePath")
+                    .and_then(serde_json::Value::as_str),
                 object.get("sha256").and_then(serde_json::Value::as_str),
                 object.get("bytes").and_then(serde_json::Value::as_u64),
             ) {
@@ -1308,30 +1346,47 @@ fn collect_json_references(
                 } else {
                     format!("{parent}/{relative}")
                 };
-                output.push(PendingArtifact { key, sha256: sha256.to_owned(), bytes: Some(bytes) });
+                output.push(PendingArtifact {
+                    key,
+                    sha256: sha256.to_owned(),
+                    bytes: Some(bytes),
+                });
             }
             for (field, candidate) in object {
-                let Some(key) = candidate.as_str() else { continue };
+                let Some(key) = candidate.as_str() else {
+                    continue;
+                };
                 let (sha_field, bytes_field) = if field == "objectKey" {
                     (Some("sha256".to_owned()), Some("bytes".to_owned()))
                 } else if let Some(stem) = field.strip_suffix("ObjectKey") {
                     (Some(format!("{stem}Sha256")), Some(format!("{stem}Bytes")))
                 } else if field == "manifestPath" {
-                    (Some("manifestSha256".to_owned()), Some("manifestBytes".to_owned()))
+                    (
+                        Some("manifestSha256".to_owned()),
+                        Some("manifestBytes".to_owned()),
+                    )
                 } else if let Some(stem) = field.strip_suffix("ManifestPath") {
-                    (Some(format!("{stem}ManifestSha256")), Some(format!("{stem}ManifestBytes")))
+                    (
+                        Some(format!("{stem}ManifestSha256")),
+                        Some(format!("{stem}ManifestBytes")),
+                    )
                 } else {
                     (None, None)
                 };
                 let Some(sha_field) = sha_field else { continue };
-                let Some(sha256) = object.get(&sha_field).and_then(serde_json::Value::as_str) else {
+                let Some(sha256) = object.get(&sha_field).and_then(serde_json::Value::as_str)
+                else {
                     continue;
                 };
                 let bytes = bytes_field
                     .as_ref()
                     .and_then(|name| object.get(name))
                     .and_then(serde_json::Value::as_u64);
-                output.push(PendingArtifact { key: key.to_owned(), sha256: sha256.to_owned(), bytes });
+                output.push(PendingArtifact {
+                    key: key.to_owned(),
+                    sha256: sha256.to_owned(),
+                    bytes,
+                });
             }
             for child in object.values() {
                 collect_json_references(child, parent, output)?;
@@ -1394,7 +1449,12 @@ pub fn select_replica_targets(
             (hash.finalize().to_vec(), target)
         })
         .collect::<Vec<_>>();
-    scored.sort_by(|left, right| right.0.cmp(&left.0).then_with(|| left.1.name.cmp(&right.1.name)));
+    scored.sort_by(|left, right| {
+        right
+            .0
+            .cmp(&left.0)
+            .then_with(|| left.1.name.cmp(&right.1.name))
+    });
     let mut domains = BTreeSet::new();
     let selected = scored
         .into_iter()
@@ -1435,13 +1495,19 @@ pub fn build_recovery_plan(
             "plan identity, manifest digest, or byte budget is invalid".to_owned(),
         ));
     }
-    let target_names = targets.iter().map(|target| target.name.as_str()).collect::<BTreeSet<_>>();
+    let target_names = targets
+        .iter()
+        .map(|target| target.name.as_str())
+        .collect::<BTreeSet<_>>();
     if !target_names.contains(source_target) {
-        return Err(RecoveryError::InvalidContract("source target is not registered".to_owned()));
+        return Err(RecoveryError::InvalidContract(
+            "source target is not registered".to_owned(),
+        ));
     }
     let mut tasks = Vec::new();
     for artifact in &manifest.artifacts {
-        let selected = select_replica_targets(manifest.snapshot_id, artifact, targets, replication_factor)?;
+        let selected =
+            select_replica_targets(manifest.snapshot_id, artifact, targets, replication_factor)?;
         let verified = existing_verified.get(&artifact.sha256);
         for destination in selected {
             if destination == source_target
@@ -1449,9 +1515,8 @@ pub fn build_recovery_plan(
             {
                 continue;
             }
-            let task_index = u32::try_from(tasks.len()).map_err(|_| {
-                RecoveryError::InvalidContract("task count exceeds u32".to_owned())
-            })?;
+            let task_index = u32::try_from(tasks.len())
+                .map_err(|_| RecoveryError::InvalidContract("task count exceeds u32".to_owned()))?;
             let destination_object_key = format!(
                 "replicas/sha256/{}/{}/{}/{}",
                 &artifact.sha256[..2],
@@ -1518,12 +1583,7 @@ pub async fn execute_transfer(
     }
     let transfer = async {
         let copied = source
-            .materialize_verified(
-                &task.source_object_key,
-                &task.sha256,
-                task.bytes,
-                &scratch,
-            )
+            .materialize_verified(&task.source_object_key, &task.sha256, task.bytes, &scratch)
             .await?;
         if copied != task.bytes {
             return Err(RecoveryError::Incomplete(
@@ -1575,7 +1635,9 @@ pub fn certify_recovery(
         .map(|result| (result.task_index, result))
         .collect::<BTreeMap<_, _>>();
     if by_index.len() != results.len() {
-        return Err(RecoveryError::Incomplete("duplicate task result".to_owned()));
+        return Err(RecoveryError::Incomplete(
+            "duplicate task result".to_owned(),
+        ));
     }
     let mut accumulator = RecoveryCertificationAccumulator::new(plan, plan_sha256)?;
     for task in &plan.tasks {
@@ -1614,7 +1676,9 @@ fn validate_plan(plan: &RecoveryPlan) -> Result<(), RecoveryError> {
         || plan.replication_factor == 0
         || plan.max_in_flight_bytes == 0
     {
-        return Err(RecoveryError::InvalidContract("plan header is invalid".to_owned()));
+        return Err(RecoveryError::InvalidContract(
+            "plan header is invalid".to_owned(),
+        ));
     }
     for (index, task) in plan.tasks.iter().enumerate() {
         validate_task(task)?;
@@ -1647,7 +1711,9 @@ fn validate_plan(plan: &RecoveryPlan) -> Result<(), RecoveryError> {
 fn validate_task(task: &TransferTask) -> Result<(), RecoveryError> {
     if task.stable_work_id.len() != 71
         || !task.stable_work_id.starts_with("blake3:")
-        || !task.stable_work_id[7..].bytes().all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+        || !task.stable_work_id[7..]
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
         || task.source_target.is_empty()
         || task.destination_target.is_empty()
         || task.source_target == task.destination_target
@@ -1714,9 +1780,9 @@ fn stable_work_id(
 }
 
 fn scratch_path(root: &Path, work_id: &str) -> Result<PathBuf, RecoveryError> {
-    let digest = work_id.strip_prefix("blake3:").ok_or_else(|| {
-        RecoveryError::InvalidContract("work ID lacks BLAKE3 prefix".to_owned())
-    })?;
+    let digest = work_id
+        .strip_prefix("blake3:")
+        .ok_or_else(|| RecoveryError::InvalidContract("work ID lacks BLAKE3 prefix".to_owned()))?;
     Ok(root.join(format!("{digest}.partial")))
 }
 
@@ -1733,9 +1799,17 @@ fn valid_sha256(value: &str) -> bool {
 
 fn valid_dns_label(value: &str) -> bool {
     (1..=63).contains(&value.len())
-        && value.bytes().all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-')
-        && value.as_bytes().first().is_some_and(u8::is_ascii_alphanumeric)
-        && value.as_bytes().last().is_some_and(u8::is_ascii_alphanumeric)
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-')
+        && value
+            .as_bytes()
+            .first()
+            .is_some_and(u8::is_ascii_alphanumeric)
+        && value
+            .as_bytes()
+            .last()
+            .is_some_and(u8::is_ascii_alphanumeric)
 }
 
 fn valid_object_key(value: &str) -> bool {
@@ -1749,9 +1823,9 @@ fn valid_object_key(value: &str) -> bool {
                 && segment != "."
                 && segment != ".."
                 && segment.len() <= 255
-                && segment.bytes().all(|byte| {
-                    byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-')
-                })
+                && segment
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-'))
         })
 }
 
@@ -1881,8 +1955,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn artifact_closure_follows_checksum_bound_manifest_paths(
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    async fn artifact_closure_follows_checksum_bound_manifest_paths()
+    -> Result<(), Box<dyn std::error::Error>> {
         let nonce = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
         let root = std::env::temp_dir().join(format!(
             "ngkg-storage-closure-test-{}-{nonce}",
@@ -1923,7 +1997,11 @@ mod tests {
         )
         .await?;
         assert_eq!(closure.len(), 3);
-        assert!(closure.iter().any(|artifact| artifact.object_key == "snapshots/a/leaf.bin"));
+        assert!(
+            closure
+                .iter()
+                .any(|artifact| artifact.object_key == "snapshots/a/leaf.bin")
+        );
         std::fs::remove_dir_all(root)?;
         Ok(())
     }

@@ -12,8 +12,8 @@ use std::{
 
 use anyhow::{Context, Result};
 use axum::{
-    body::Body,
     Json, Router,
+    body::Body,
     extract::{Path, State},
     http::{
         HeaderMap, HeaderValue, StatusCode,
@@ -37,10 +37,10 @@ use ngkg_kube::{
     NgkgStorageRecoverySpec, NgkgStorageRecoveryStatus, StorageRecoveryKind,
 };
 use ngkg_storage_recovery::{
-    RecoveryPlan, RegisterStorageOperation, SnapshotBackupManifest,
-    SnapshotStorageManifest, StorageOperationKind, StorageRecoveryRepository, StorageTarget,
-    TransferReason, build_recovery_plan, build_restore_plan, derive_operation_id,
-    discover_artifact_closure, validate_backup_manifest,
+    RecoveryPlan, RegisterStorageOperation, SnapshotBackupManifest, SnapshotStorageManifest,
+    StorageOperationKind, StorageRecoveryRepository, StorageTarget, TransferReason,
+    build_recovery_plan, build_restore_plan, derive_operation_id, discover_artifact_closure,
+    validate_backup_manifest,
 };
 use ngkg_types::PublicationPolicy;
 use oxigraph::{
@@ -109,7 +109,7 @@ struct StorageTargetRegistry {
     targets: Vec<StorageTarget>,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct NamedGraphSummary {
     graph_iri: String,
@@ -130,7 +130,7 @@ struct TrigUploadMetadata {
     named_graphs: Vec<NamedGraphSummary>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct TrigUploadResponse {
     source_id: Uuid,
@@ -189,7 +189,7 @@ struct CreateIngestionRequest {
     bundle_object_key: String,
     bundle_sha256: String,
     parent_snapshot_id: Option<Uuid>,
-    target_snapshot_id: Option<Uuid>,
+    target_snapshot_id: Uuid,
     publication_policy: PublicationPolicy,
     resource_profile: String,
 }
@@ -209,7 +209,7 @@ struct CreateCloudImportRequest {
     exclude_segments: Vec<String>,
     identity_ref: String,
     version_policy: CloudObjectVersionPolicy,
-    target_snapshot_id: Uuid,
+    target_snapshot_id: Option<Uuid>,
     parent_snapshot_id: Option<Uuid>,
     publication_policy: PublicationPolicy,
     resource_profile: String,
@@ -335,24 +335,31 @@ struct ApiError {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        (self.status, Json(ErrorBody { code: self.code, message: self.message })).into_response()
+        (
+            self.status,
+            Json(ErrorBody {
+                code: self.code,
+                message: self.message,
+            }),
+        )
+            .into_response()
     }
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt().json().with_env_filter("info").init();
+    tracing_subscriber::fmt()
+        .json()
+        .with_env_filter("info")
+        .init();
     let database_url = required("NGKG_DATABASE_URL")?;
     let bind: SocketAddr = required("NGKG_BIND_ADDR")?
         .parse()
         .context("NGKG_BIND_ADDR must be a socket address")?;
     let namespace = required("NGKG_WORKLOAD_NAMESPACE")?;
     let token_file = PathBuf::from(required("NGKG_AUTH_TOKENS_FILE")?);
-    let authorizer = TokenAuthorizer::load(
-        &token_file,
-        &required("NGKG_AUTH_TOKENS_FILE_SHA256")?,
-    )
-    .map_err(anyhow::Error::msg)?;
+    let authorizer = TokenAuthorizer::load(&token_file, &required("NGKG_AUTH_TOKENS_FILE_SHA256")?)
+        .map_err(anyhow::Error::msg)?;
     let profiles = required("NGKG_ALLOWED_RESOURCE_PROFILES")?
         .split(',')
         .map(str::trim)
@@ -362,7 +369,9 @@ async fn main() -> Result<()> {
     if profiles.is_empty() {
         anyhow::bail!("NGKG_ALLOWED_RESOURCE_PROFILES must contain at least one profile");
     }
-    let artifact_store = Arc::new(ArtifactStore::from_base_url(&required("NGKG_ARTIFACT_BASE_URL")?)?);
+    let artifact_store = Arc::new(ArtifactStore::from_base_url(&required(
+        "NGKG_ARTIFACT_BASE_URL",
+    )?)?);
     let storage_registry_json = required("NGKG_STORAGE_TARGETS_JSON")?;
     let storage_registry: StorageTargetRegistry = serde_json::from_str(&storage_registry_json)
         .context("NGKG_STORAGE_TARGETS_JSON is invalid")?;
@@ -389,9 +398,7 @@ async fn main() -> Result<()> {
     let primary_store = ArtifactStore::from_base_url(&primary_target.base_url)
         .context("primary storage target URL is invalid")?;
     if primary_store.base_url() != artifact_store.base_url() {
-        anyhow::bail!(
-            "NGKG_ARTIFACT_BASE_URL must identify the registered primary storage target"
-        );
+        anyhow::bail!("NGKG_ARTIFACT_BASE_URL must identify the registered primary storage target");
     }
     prepare_storage_recovery_scratch(&storage_recovery.scratch_root)?;
     let source_upload = Arc::new(SourceUploadConfig {
@@ -409,7 +416,10 @@ async fn main() -> Result<()> {
     if max_source_uploads_in_flight > Semaphore::MAX_PERMITS {
         anyhow::bail!("NGKG_MAX_TRIG_UPLOADS_IN_FLIGHT exceeds the Tokio semaphore ceiling");
     }
-    let pool = PgPoolOptions::new().max_connections(32).connect(&database_url).await?;
+    let pool = PgPoolOptions::new()
+        .max_connections(32)
+        .connect(&database_url)
+        .await?;
     let kube_client = Client::try_default().await?;
     let state = ApiState {
         catalog: Arc::new(OperationRepository::new(pool.clone())),
@@ -438,7 +448,10 @@ async fn main() -> Result<()> {
             "/v1/datasets/{dataset_id}/sources/{source_id}",
             put(upload_trig_source),
         )
-        .route("/v1/datasets/{dataset_id}/ingestions", post(create_ingestion))
+        .route(
+            "/v1/datasets/{dataset_id}/ingestions",
+            post(create_ingestion),
+        )
         .route(
             "/v1/datasets/{dataset_name}/imports",
             post(create_cloud_import_by_name),
@@ -465,10 +478,7 @@ async fn main() -> Result<()> {
             "/v1/datasets/{dataset_name}/snapshots/{snapshot_id}/storage-operations",
             post(create_storage_operation),
         )
-        .route(
-            "/v1/datasets/{dataset_name}/restores",
-            post(create_restore),
-        )
+        .route("/v1/datasets/{dataset_name}/restores", post(create_restore))
         .route(
             "/v1/storage-operations/{operation_id}",
             get(get_storage_operation),
@@ -514,10 +524,9 @@ async fn openapi() -> impl IntoResponse {
 }
 
 async fn openapi_json() -> Result<Response, ApiError> {
-    let document = serde_yaml::from_str::<serde_json::Value>(include_str!(
-        "../../../api/openapi.yaml"
-    ))
-    .map_err(|error| internal_contract_error("embedded OpenAPI YAML is invalid", error))?;
+    let document =
+        serde_yaml::from_str::<serde_json::Value>(include_str!("../../../api/openapi.yaml"))
+            .map_err(|error| internal_contract_error("embedded OpenAPI YAML is invalid", error))?;
     let bytes = serde_json::to_vec(&document)
         .map_err(|error| internal_contract_error("OpenAPI JSON serialization failed", error))?;
     Ok(([(CONTENT_TYPE, "application/json; charset=utf-8")], bytes).into_response())
@@ -550,7 +559,10 @@ fn swagger_ui_response(asset: &str) -> Result<Response, ApiError> {
         return Ok(StatusCode::NOT_FOUND.into_response());
     };
     let content_type = HeaderValue::from_str(&file.content_type).map_err(|error| {
-        internal_contract_error("vendored Swagger UI returned an invalid content type", error)
+        internal_contract_error(
+            "vendored Swagger UI returned an invalid content type",
+            error,
+        )
     })?;
     let mut response = (StatusCode::OK, file.bytes.into_owned()).into_response();
     response.headers_mut().insert(CONTENT_TYPE, content_type);
@@ -575,7 +587,9 @@ async fn create_dataset(
 ) -> Result<impl IntoResponse, ApiError> {
     let identity = authorize(&state, &headers, "datasets:write")?;
     if request.policy_version.is_empty() || request.policy_version.len() > 128 {
-        return Err(unprocessable("policyVersion must contain 1..128 characters"));
+        return Err(unprocessable(
+            "policyVersion must contain 1..128 characters",
+        ));
     }
     state
         .catalog
@@ -598,7 +612,9 @@ async fn create_named_dataset(
     let identity = authorize(&state, &headers, "datasets:write")?;
     validate_dataset_name(&request.name)?;
     if request.policy_version.is_empty() || request.policy_version.len() > 128 {
-        return Err(unprocessable("policyVersion must contain 1..128 characters"));
+        return Err(unprocessable(
+            "policyVersion must contain 1..128 characters",
+        ));
     }
     let identity_namespace = Uuid::new_v5(
         &identity.tenant_id,
@@ -642,7 +658,9 @@ async fn upload_trig_source(
 ) -> Result<(StatusCode, Json<TrigUploadResponse>), ApiError> {
     let identity = authorize(&state, &headers, "sources:write")?;
     if dataset_id.is_nil() || source_id.is_nil() {
-        return Err(unprocessable("datasetId and sourceId must be non-nil UUIDs"));
+        return Err(unprocessable(
+            "datasetId and sourceId must be non-nil UUIDs",
+        ));
     }
     require_trig_content_type(&headers)?;
     if !state
@@ -658,10 +676,29 @@ async fn upload_trig_source(
         });
     }
     let expected_sha256 = content_sha256(&headers)?;
+    let expected_digest = decode_sha256(&expected_sha256)?;
+    if let Some(durable_response) = state
+        .catalog
+        .reserve_source_upload(
+            identity.tenant_id,
+            dataset_id,
+            source_id,
+            &expected_digest,
+        )
+        .await
+        .map_err(catalog_error)?
+    {
+        let response = serde_json::from_value::<TrigUploadResponse>(durable_response).map_err(
+            |error| internal_contract_error("durable source-upload response is invalid", error),
+        )?;
+        return Ok((StatusCode::CREATED, Json(response)));
+    }
     if let Some(content_length) = content_length(&headers)?
         && content_length > state.source_upload.max_bytes
     {
-        return Err(payload_too_large("TriG upload exceeds the configured byte ceiling"));
+        return Err(payload_too_large(
+            "TriG upload exceeds the configured byte ceiling",
+        ));
     }
     let _permit = Arc::clone(&state.source_upload_slots)
         .try_acquire_owned()
@@ -703,9 +740,10 @@ async fn upload_trig_source(
             message: format!("TriG request body terminated before completion: {error}"),
         })?;
         observed_bytes = observed_bytes
-            .checked_add(u64::try_from(chunk.len()).map_err(|_| {
-                payload_too_large("TriG upload chunk exceeds this platform")
-            })?)
+            .checked_add(
+                u64::try_from(chunk.len())
+                    .map_err(|_| payload_too_large("TriG upload chunk exceeds this platform"))?,
+            )
             .filter(|bytes| *bytes <= state.source_upload.max_bytes)
             .ok_or_else(|| payload_too_large("TriG upload exceeds the configured byte ceiling"))?;
         hasher.update(&chunk);
@@ -736,15 +774,14 @@ async fn upload_trig_source(
     let scan_path = scratch.path.clone();
     let max_quads = state.source_upload.max_quads;
     let max_named_graphs = state.source_upload.max_named_graphs;
-    let scan = tokio::task::spawn_blocking(move || {
-        inspect_trig(&scan_path, max_quads, max_named_graphs)
-    })
-    .await
-    .map_err(|error| ApiError {
-        status: StatusCode::SERVICE_UNAVAILABLE,
-        code: "TRIG_VALIDATION_WORKER_FAILED",
-        message: format!("TriG validation worker failed: {error}"),
-    })??;
+    let scan =
+        tokio::task::spawn_blocking(move || inspect_trig(&scan_path, max_quads, max_named_graphs))
+            .await
+            .map_err(|error| ApiError {
+                status: StatusCode::SERVICE_UNAVAILABLE,
+                code: "TRIG_VALIDATION_WORKER_FAILED",
+                message: format!("TriG validation worker failed: {error}"),
+            })??;
 
     let object_key = source_object_key(
         &state.source_upload.object_prefix,
@@ -813,9 +850,7 @@ async fn upload_trig_source(
         .await
         .map_err(artifact_upload_error)?;
 
-    Ok((
-        StatusCode::CREATED,
-        Json(TrigUploadResponse {
+    let response = TrigUploadResponse {
             source_id,
             dataset_id,
             object_key,
@@ -826,8 +861,21 @@ async fn upload_trig_source(
             named_graphs: scan.named_graphs,
             metadata_object_key,
             metadata_sha256,
-        }),
-    ))
+        };
+    let durable_response = serde_json::to_value(&response).map_err(|error| {
+        internal_contract_error("source-upload response could not be serialized", error)
+    })?;
+    state
+        .catalog
+        .publish_source_upload(
+            identity.tenant_id,
+            dataset_id,
+            source_id,
+            &durable_response,
+        )
+        .await
+        .map_err(catalog_error)?;
+    Ok((StatusCode::CREATED, Json(response)))
 }
 
 fn inspect_trig(
@@ -863,7 +911,9 @@ fn inspect_trig(
                         "TriG upload exceeds the configured named-graph ceiling",
                     ));
                 }
-                let count = named_graph_counts.entry(graph.as_str().to_owned()).or_default();
+                let count = named_graph_counts
+                    .entry(graph.as_str().to_owned())
+                    .or_default();
                 *count = count
                     .checked_add(1)
                     .ok_or_else(|| payload_too_large("named-graph quad count overflow"))?;
@@ -982,9 +1032,7 @@ fn source_object_key(
     sha256: &str,
     file_name: &str,
 ) -> String {
-    format!(
-        "{prefix}/{tenant_id}/{dataset_id}/{source_id}/{sha256}/{file_name}"
-    )
+    format!("{prefix}/{tenant_id}/{dataset_id}/{source_id}/{sha256}/{file_name}")
 }
 
 async fn write_synced_file(path: &std::path::Path, bytes: &[u8]) -> Result<(), ApiError> {
@@ -1016,8 +1064,13 @@ async fn create_ingestion(
             "targetSnapshotId must differ from parentSnapshotId",
         ));
     }
-    if !state.allowed_resource_profiles.contains(&request.resource_profile) {
-        return Err(unprocessable("resourceProfile is not enabled by the operator"));
+    if !state
+        .allowed_resource_profiles
+        .contains(&request.resource_profile)
+    {
+        return Err(unprocessable(
+            "resourceProfile is not enabled by the operator",
+        ));
     }
     let request_bytes = serde_json::to_vec(&request)
         .map_err(|_| unprocessable("request cannot be canonicalized"))?;
@@ -1079,13 +1132,7 @@ async fn create_cloud_import_by_name(
         .resolve_dataset_name(identity.tenant_id, &dataset_name)
         .await
         .map_err(catalog_error)?;
-    create_cloud_import(
-        State(state),
-        Path(dataset_id),
-        headers,
-        Json(request),
-    )
-    .await
+    create_cloud_import(State(state), Path(dataset_id), headers, Json(request)).await
 }
 
 async fn get_cloud_import_by_name(
@@ -1155,9 +1202,8 @@ async fn create_cloud_import(
     let request_bytes = serde_json::to_vec(&request)
         .map_err(|_| unprocessable("cloud import request cannot be canonicalized"))?;
     let request_hash = *blake3::hash(&request_bytes).as_bytes();
-    let qualification_request_sha256 = decode_sha256(
-        &request.ontology_qualification_request_sha256,
-    )?;
+    let qualification_request_sha256 =
+        decode_sha256(&request.ontology_qualification_request_sha256)?;
     let mut operation_name = Vec::with_capacity(256);
     operation_name.extend_from_slice(identity.tenant_id.as_bytes());
     operation_name.extend_from_slice(dataset_id.as_bytes());
@@ -1166,7 +1212,10 @@ async fn create_cloud_import(
     // Phase 40.13.10 used `Uuid::new_v5(&operation_id, b"ngkg-cloud-import-target-snapshot-v1")`.
     // The request-stable namespace is retained while PostgreSQL now owns operation identity.
     let target_snapshot_id = request.target_snapshot_id.unwrap_or_else(|| {
-        Uuid::new_v5(&deterministic_request_id, b"ngkg-cloud-import-target-snapshot-v1")
+        Uuid::new_v5(
+            &deterministic_request_id,
+            b"ngkg-cloud-import-target-snapshot-v1",
+        )
     });
     let durable = state
         .catalog
@@ -1209,7 +1258,8 @@ async fn create_cloud_import(
         max_source_bytes: request.max_source_bytes,
         max_source_objects: request.max_source_objects,
         logical_partitions: request.logical_partitions,
-        ontology_qualification_request_object_key: request.ontology_qualification_request_object_key,
+        ontology_qualification_request_object_key: request
+            .ontology_qualification_request_object_key,
         ontology_qualification_request_sha256: request.ontology_qualification_request_sha256,
     };
     let name = format!("ngkg-import-{}", operation_id.simple());
@@ -1223,15 +1273,11 @@ async fn create_cloud_import(
             return Err(ApiError {
                 status: StatusCode::CONFLICT,
                 code: "IDEMPOTENCY_CONFLICT",
-                message: "Idempotency-Key is already bound to a different cloud import"
-                    .to_owned(),
+                message: "Idempotency-Key is already bound to a different cloud import".to_owned(),
             });
         }
     } else {
-        let resource = NgkgSourceImport::new(
-            &name,
-            spec,
-        );
+        let resource = NgkgSourceImport::new(&name, spec);
         match state
             .source_imports
             .create(&PostParams::default(), &resource)
@@ -1261,7 +1307,9 @@ fn validate_cloud_import_request(
             "Phase 40.13.10 accepts require-immutable-checksum only; provider-version proof is not yet implemented",
         ));
     }
-    if request.target_snapshot_id.is_some_and(|target| target.is_nil())
+    if request
+        .target_snapshot_id
+        .is_some_and(|target| target.is_nil())
         || request
             .target_snapshot_id
             .is_some_and(|target| request.parent_snapshot_id == Some(target))
@@ -1271,15 +1319,18 @@ fn validate_cloud_import_request(
         ));
     }
     if !profiles.contains(&request.resource_profile) {
-        return Err(unprocessable("resourceProfile is not enabled by the operator"));
+        return Err(unprocessable(
+            "resourceProfile is not enabled by the operator",
+        ));
     }
     validate_dns_label(&request.identity_ref, "identityRef")?;
     validate_bucket_name(&request.bucket)?;
     match request.provider {
         CloudObjectProvider::AzureBlob => {
-            let account = request.account_name.as_deref().ok_or_else(|| {
-                unprocessable("accountName is required for provider azure-blob")
-            })?;
+            let account = request
+                .account_name
+                .as_deref()
+                .ok_or_else(|| unprocessable("accountName is required for provider azure-blob"))?;
             validate_dns_label(account, "accountName")?;
         }
         CloudObjectProvider::AwsS3 | CloudObjectProvider::Gcs => {
@@ -1298,8 +1349,7 @@ fn validate_cloud_import_request(
     if let Some(prefix) = &request.prefix {
         validate_cloud_prefix(prefix)?;
     }
-    if request.object_keys.len()
-        > usize::try_from(request.max_source_objects).unwrap_or(usize::MAX)
+    if request.object_keys.len() > usize::try_from(request.max_source_objects).unwrap_or(usize::MAX)
     {
         return Err(unprocessable("objectKeys exceeds maxSourceObjects"));
     }
@@ -1343,9 +1393,10 @@ fn validate_cloud_import_request(
     }
     validate_object_key(&request.ontology_qualification_request_object_key)?;
     if request.ontology_qualification_request_sha256.len() != 64
-        || !request.ontology_qualification_request_sha256.bytes().all(|byte| {
-            byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase()
-        })
+        || !request
+            .ontology_qualification_request_sha256
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
     {
         return Err(unprocessable(
             "ontologyQualificationRequestSha256 must be lowercase SHA-256",
@@ -1358,11 +1409,13 @@ fn validate_bucket_name(value: &str) -> Result<(), ApiError> {
     if !(3..=255).contains(&value.len())
         || value.starts_with(['.', '-'])
         || value.ends_with(['.', '-'])
-        || value.bytes().any(|byte| {
-            !(byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-' | b'_'))
-        })
+        || value
+            .bytes()
+            .any(|byte| !(byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-' | b'_')))
     {
-        return Err(unprocessable("bucket must be a normalized cloud bucket/container name"));
+        return Err(unprocessable(
+            "bucket must be a normalized cloud bucket/container name",
+        ));
     }
     Ok(())
 }
@@ -1394,9 +1447,13 @@ fn validate_cloud_prefix(value: &str) -> Result<(), ApiError> {
         || value.starts_with('/')
         || value.contains('\\')
         || value.contains("//")
-        || value.split('/').any(|segment| segment == "." || segment == "..")
+        || value
+            .split('/')
+            .any(|segment| segment == "." || segment == "..")
     {
-        return Err(unprocessable("prefix must be a normalized relative object prefix"));
+        return Err(unprocessable(
+            "prefix must be a normalized relative object prefix",
+        ));
     }
     Ok(())
 }
@@ -1523,8 +1580,12 @@ async fn create_storage_operation(
         .get_snapshot_recovery_roots(identity.tenant_id, dataset_id, snapshot_id)
         .await
         .map_err(catalog_error)?;
-    let (max_parallelism, max_in_flight_bytes, resource_profile) =
-        validate_storage_request(&state, request.max_parallelism, request.max_in_flight_bytes, request.resource_profile.as_deref())?;
+    let (max_parallelism, max_in_flight_bytes, resource_profile) = validate_storage_request(
+        &state,
+        request.max_parallelism,
+        request.max_in_flight_bytes,
+        request.resource_profile.as_deref(),
+    )?;
     let request_bytes = serde_json::to_vec(&request)
         .map_err(|_| unprocessable("storage request cannot be canonicalized"))?;
     let request_digest: [u8; 32] = Sha256::digest(&request_bytes).into();
@@ -1541,7 +1602,8 @@ async fn create_storage_operation(
         dataset_id,
         &roots,
         operation_id,
-    ).await?;
+    )
+    .await?;
     let (targets, replication_factor, reason) = storage_plan_inputs(&state, &request)?;
     let existing = manifest
         .artifacts
@@ -1589,20 +1651,18 @@ async fn create_storage_operation(
         )
         .await
         .map_err(storage_catalog_error)?;
-    let primary_target = state.storage_recovery.targets.iter()
+    let primary_target = state
+        .storage_recovery
+        .targets
+        .iter()
         .find(|target| target.name == state.storage_recovery.source_target)
         .ok_or_else(|| unprocessable("primary storage target is not registered"))?;
-    state.storage_catalog.register_primary_replicas(
-        identity.tenant_id,
-        operation_id,
-        &manifest,
-        primary_target,
-    ).await.map_err(storage_catalog_error)?;
-    let max_parallelism = cap_storage_parallelism(
-        max_parallelism,
-        max_in_flight_bytes,
-        &plan,
-    );
+    state
+        .storage_catalog
+        .register_primary_replicas(identity.tenant_id, operation_id, &manifest, primary_target)
+        .await
+        .map_err(storage_catalog_error)?;
+    let max_parallelism = cap_storage_parallelism(max_parallelism, max_in_flight_bytes, &plan);
     let spec = NgkgStorageRecoverySpec {
         tenant_id: identity.tenant_id,
         dataset_id,
@@ -1658,12 +1718,18 @@ async fn create_restore(
             message: "the tenant dataset does not own this backup".to_owned(),
         });
     }
-    let (max_parallelism, max_in_flight_bytes, resource_profile) =
-        validate_storage_request(&state, request.max_parallelism, request.max_in_flight_bytes, request.resource_profile.as_deref())?;
+    let (max_parallelism, max_in_flight_bytes, resource_profile) = validate_storage_request(
+        &state,
+        request.max_parallelism,
+        request.max_in_flight_bytes,
+        request.resource_profile.as_deref(),
+    )?;
     if request.destination_target == backup.destination_target
-        || !state.storage_recovery.targets.iter().any(|target| {
-            target.name == request.destination_target && target.writable
-        })
+        || !state
+            .storage_recovery
+            .targets
+            .iter()
+            .any(|target| target.name == request.destination_target && target.writable)
     {
         return Err(unprocessable(
             "restore destination must be a different writable registered target",
@@ -1678,24 +1744,28 @@ async fn create_restore(
         idempotency_key,
         &hex::encode(request_digest),
     );
-    let restored_snapshot_id = request.restored_snapshot_id.unwrap_or_else(|| {
-        Uuid::new_v5(&operation_id, b"ngkg-storage-restored-snapshot-v1")
-    });
+    let restored_snapshot_id = request
+        .restored_snapshot_id
+        .unwrap_or_else(|| Uuid::new_v5(&operation_id, b"ngkg-storage-restored-snapshot-v1"));
     if restored_snapshot_id.is_nil() {
         return Err(unprocessable("restoredSnapshotId must be non-nil"));
     }
     let scratch = recovery_scratch(&state, operation_id)?;
     let backup_path = scratch.join("backup-manifest.json");
     remove_file_if_present(&backup_path).await?;
-    state.artifact_store.materialize_verified(
-        &backup.backup_manifest_object_key,
-        &backup.backup_manifest_sha256,
-        state.storage_recovery.max_manifest_bytes,
-        &backup_path,
-    ).await.map_err(artifact_error)?;
-    let backup_manifest: SnapshotBackupManifest = serde_json::from_slice(
-        &tokio::fs::read(&backup_path).await.map_err(io_error)?,
-    ).map_err(|_| unprocessable("backup manifest is invalid"))?;
+    state
+        .artifact_store
+        .materialize_verified(
+            &backup.backup_manifest_object_key,
+            &backup.backup_manifest_sha256,
+            state.storage_recovery.max_manifest_bytes,
+            &backup_path,
+        )
+        .await
+        .map_err(artifact_error)?;
+    let backup_manifest: SnapshotBackupManifest =
+        serde_json::from_slice(&tokio::fs::read(&backup_path).await.map_err(io_error)?)
+            .map_err(|_| unprocessable("backup manifest is invalid"))?;
     validate_backup_manifest(&backup_manifest)
         .map_err(|error| unprocessable(&error.to_string()))?;
     if backup_manifest.backup_id != request.backup_id
@@ -1717,31 +1787,32 @@ async fn create_restore(
         &request.destination_target,
         &state.storage_recovery.targets,
         max_in_flight_bytes,
-    ).map_err(|error| unprocessable(&error.to_string()))?;
+    )
+    .map_err(|error| unprocessable(&error.to_string()))?;
     validate_storage_task_sizes(&state, &plan)?;
     let (plan_key, plan_sha256) = publish_recovery_plan(&state, &plan).await?;
-    let durable = state.storage_catalog.create_or_get(
-        identity.tenant_id,
-        idempotency_key,
-        &request_digest,
-        &RegisterStorageOperation {
-            operation_id,
-            dataset_id,
-            source_snapshot_id: backup.source_snapshot_id,
-            restored_snapshot_id: Some(restored_snapshot_id),
-            kind: StorageOperationKind::Restore,
-            plan_object_key: plan_key.clone(),
-            plan_sha256: decode_sha256(&plan_sha256)?,
-            task_count: u32::try_from(plan.tasks.len())
-                .map_err(|_| unprocessable("restore task count exceeds u32"))?,
-            max_in_flight_bytes,
-        },
-    ).await.map_err(storage_catalog_error)?;
-    let max_parallelism = cap_storage_parallelism(
-        max_parallelism,
-        max_in_flight_bytes,
-        &plan,
-    );
+    let durable = state
+        .storage_catalog
+        .create_or_get(
+            identity.tenant_id,
+            idempotency_key,
+            &request_digest,
+            &RegisterStorageOperation {
+                operation_id,
+                dataset_id,
+                source_snapshot_id: backup.source_snapshot_id,
+                restored_snapshot_id: Some(restored_snapshot_id),
+                kind: StorageOperationKind::Restore,
+                plan_object_key: plan_key.clone(),
+                plan_sha256: decode_sha256(&plan_sha256)?,
+                task_count: u32::try_from(plan.tasks.len())
+                    .map_err(|_| unprocessable("restore task count exceeds u32"))?,
+                max_in_flight_bytes,
+            },
+        )
+        .await
+        .map_err(storage_catalog_error)?;
+    let max_parallelism = cap_storage_parallelism(max_parallelism, max_in_flight_bytes, &plan);
     let spec = NgkgStorageRecoverySpec {
         tenant_id: identity.tenant_id,
         dataset_id,
@@ -1758,14 +1829,17 @@ async fn create_restore(
         resource_profile,
     };
     ensure_storage_recovery_resource(&state, &spec).await?;
-    Ok((StatusCode::ACCEPTED, Json(StorageOperationAccepted {
-        operation_id,
-        source_snapshot_id: backup.source_snapshot_id,
-        restored_snapshot_id: Some(restored_snapshot_id),
-        kind: StorageRecoveryKind::Restore,
-        task_count: durable.task_count,
-        state: durable.state,
-    })))
+    Ok((
+        StatusCode::ACCEPTED,
+        Json(StorageOperationAccepted {
+            operation_id,
+            source_snapshot_id: backup.source_snapshot_id,
+            restored_snapshot_id: Some(restored_snapshot_id),
+            kind: StorageRecoveryKind::Restore,
+            task_count: durable.task_count,
+            state: durable.state,
+        }),
+    ))
 }
 
 async fn get_storage_operation(
@@ -1780,7 +1854,11 @@ async fn get_storage_operation(
         .await
         .map_err(storage_catalog_error)?;
     let name = format!("ngkg-storage-{}", operation_id.simple());
-    let resource = state.storage_recoveries.get_opt(&name).await.map_err(kubernetes_api_error)?;
+    let resource = state
+        .storage_recoveries
+        .get_opt(&name)
+        .await
+        .map_err(kubernetes_api_error)?;
     let status = if let Some(resource) = resource {
         if resource.spec.tenant_id != identity.tenant_id
             || resource.spec.operation_id != operation_id
@@ -1827,14 +1905,29 @@ async fn build_and_publish_storage_manifest(
     )];
     if let Some(activation) = &roots.cloud_activation {
         root_objects.extend([
-            (activation.activation_manifest_object_key.clone(), activation.activation_manifest_sha256.clone()),
-            (activation.semantic_root_object_key.clone(), activation.semantic_root_sha256.clone()),
-            (activation.qualification_root_object_key.clone(), activation.qualification_root_sha256.clone()),
-            (activation.offline_root_object_key.clone(), activation.offline_root_sha256.clone()),
+            (
+                activation.activation_manifest_object_key.clone(),
+                activation.activation_manifest_sha256.clone(),
+            ),
+            (
+                activation.semantic_root_object_key.clone(),
+                activation.semantic_root_sha256.clone(),
+            ),
+            (
+                activation.qualification_root_object_key.clone(),
+                activation.qualification_root_sha256.clone(),
+            ),
+            (
+                activation.offline_root_object_key.clone(),
+                activation.offline_root_sha256.clone(),
+            ),
         ]);
     }
     if let Some(serving) = &roots.serving_root {
-        root_objects.push((serving.serving_root_object_key.clone(), serving.serving_root_sha256.clone()));
+        root_objects.push((
+            serving.serving_root_object_key.clone(),
+            serving.serving_root_sha256.clone(),
+        ));
     }
     let artifacts = discover_artifact_closure(
         &state.artifact_store,
@@ -1843,14 +1936,18 @@ async fn build_and_publish_storage_manifest(
         state.storage_recovery.max_manifest_bytes,
         state.storage_recovery.max_artifact_bytes,
         state.storage_recovery.max_artifacts,
-    ).await.map_err(|error| artifact_closure_error(&error.to_string()))?;
+    )
+    .await
+    .map_err(|error| artifact_closure_error(&error.to_string()))?;
     let manifest = SnapshotStorageManifest {
         format_version: 1,
         tenant_id,
         dataset_id,
         snapshot_id: snapshot.snapshot_id,
         snapshot_manifest_sha256: snapshot.manifest_sha256.clone(),
-        activation_manifest_sha256: roots.cloud_activation.as_ref()
+        activation_manifest_sha256: roots
+            .cloud_activation
+            .as_ref()
             .map(|activation| activation.activation_manifest_sha256.clone()),
         artifacts,
     };
@@ -1863,14 +1960,18 @@ async fn build_and_publish_storage_manifest(
         "storage-recovery/{}/snapshot-storage-manifest.json",
         operation_id.simple()
     );
-    state.artifact_store.put_file_immutable(
-        &key,
-        &sha256,
-        &path,
-        state.source_upload.single_put_max_bytes,
-        state.source_upload.multipart_buffer_bytes,
-        state.source_upload.multipart_concurrency,
-    ).await.map_err(artifact_error)?;
+    state
+        .artifact_store
+        .put_file_immutable(
+            &key,
+            &sha256,
+            &path,
+            state.source_upload.single_put_max_bytes,
+            state.source_upload.multipart_buffer_bytes,
+            state.source_upload.multipart_concurrency,
+        )
+        .await
+        .map_err(artifact_error)?;
     Ok((manifest, sha256))
 }
 
@@ -1878,24 +1979,33 @@ async fn publish_recovery_plan(
     state: &ApiState,
     plan: &RecoveryPlan,
 ) -> Result<(String, String), ApiError> {
-    let bytes = serde_json::to_vec(plan)
-        .map_err(|_| unprocessable("recovery plan cannot be encoded"))?;
+    let bytes =
+        serde_json::to_vec(plan).map_err(|_| unprocessable("recovery plan cannot be encoded"))?;
     if u64::try_from(bytes.len()).unwrap_or(u64::MAX) > state.storage_recovery.max_manifest_bytes {
-        return Err(unprocessable("recovery plan exceeds the operator byte ceiling"));
+        return Err(unprocessable(
+            "recovery plan exceeds the operator byte ceiling",
+        ));
     }
     let sha256 = hex::encode(Sha256::digest(&bytes));
     let scratch = recovery_scratch(state, plan.operation_id)?;
     let path = scratch.join("recovery-plan.json");
     tokio::fs::write(&path, bytes).await.map_err(io_error)?;
-    let key = format!("storage-recovery/{}/recovery-plan.json", plan.operation_id.simple());
-    state.artifact_store.put_file_immutable(
-        &key,
-        &sha256,
-        &path,
-        state.source_upload.single_put_max_bytes,
-        state.source_upload.multipart_buffer_bytes,
-        state.source_upload.multipart_concurrency,
-    ).await.map_err(artifact_error)?;
+    let key = format!(
+        "storage-recovery/{}/recovery-plan.json",
+        plan.operation_id.simple()
+    );
+    state
+        .artifact_store
+        .put_file_immutable(
+            &key,
+            &sha256,
+            &path,
+            state.source_upload.single_put_max_bytes,
+            state.source_upload.multipart_buffer_bytes,
+            state.source_upload.multipart_concurrency,
+        )
+        .await
+        .map_err(artifact_error)?;
     Ok((key, sha256))
 }
 
@@ -1908,16 +2018,33 @@ fn storage_plan_inputs(
     }
     let (reason, targets, factor) = match request.kind {
         StorageRecoveryKind::Backup => {
-            let destination = request.destination_target.as_deref()
+            let destination = request
+                .destination_target
+                .as_deref()
                 .ok_or_else(|| unprocessable("backup requires destinationTarget"))?;
             if destination == state.storage_recovery.source_target {
-                return Err(unprocessable("backup destination must differ from primary storage"));
+                return Err(unprocessable(
+                    "backup destination must differ from primary storage",
+                ));
             }
-            let selected = state.storage_recovery.targets.iter().filter(|target| {
-                target.name == state.storage_recovery.source_target || target.name == destination
-            }).cloned().collect::<Vec<_>>();
-            if selected.len() != 2 || !selected.iter().any(|target| target.name == destination && target.writable) {
-                return Err(unprocessable("backup destination is not a writable registered target"));
+            let selected = state
+                .storage_recovery
+                .targets
+                .iter()
+                .filter(|target| {
+                    target.name == state.storage_recovery.source_target
+                        || target.name == destination
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+            if selected.len() != 2
+                || !selected
+                    .iter()
+                    .any(|target| target.name == destination && target.writable)
+            {
+                return Err(unprocessable(
+                    "backup destination is not a writable registered target",
+                ));
             }
             (TransferReason::Backup, selected, 2)
         }
@@ -1929,13 +2056,28 @@ fn storage_plan_inputs(
         StorageRecoveryKind::Relocate => (
             TransferReason::Relocation,
             {
-                let destination = request.destination_target.as_deref()
+                let destination = request
+                    .destination_target
+                    .as_deref()
                     .ok_or_else(|| unprocessable("relocation requires destinationTarget"))?;
-                let selected = state.storage_recovery.targets.iter().filter(|target| {
-                    target.name == state.storage_recovery.source_target || target.name == destination
-                }).cloned().collect::<Vec<_>>();
-                if selected.len() != 2 || !selected.iter().any(|target| target.name == destination && target.writable) {
-                    return Err(unprocessable("relocation destination is not a writable registered target"));
+                let selected = state
+                    .storage_recovery
+                    .targets
+                    .iter()
+                    .filter(|target| {
+                        target.name == state.storage_recovery.source_target
+                            || target.name == destination
+                    })
+                    .cloned()
+                    .collect::<Vec<_>>();
+                if selected.len() != 2
+                    || !selected
+                        .iter()
+                        .any(|target| target.name == destination && target.writable)
+                {
+                    return Err(unprocessable(
+                        "relocation destination is not a writable registered target",
+                    ));
                 }
                 selected
             },
@@ -1966,7 +2108,9 @@ fn validate_storage_request(
         || bytes > state.storage_recovery.max_in_flight_bytes
         || profile != state.storage_recovery.resource_profile
     {
-        return Err(unprocessable("storage request exceeds the trusted recovery profile"));
+        return Err(unprocessable(
+            "storage request exceeds the trusted recovery profile",
+        ));
     }
     Ok((parallelism, bytes, profile.to_owned()))
 }
@@ -1996,7 +2140,12 @@ async fn ensure_storage_recovery_resource(
     spec: &NgkgStorageRecoverySpec,
 ) -> Result<(), ApiError> {
     let name = format!("ngkg-storage-{}", spec.operation_id.simple());
-    if let Some(existing) = state.storage_recoveries.get_opt(&name).await.map_err(kubernetes_api_error)? {
+    if let Some(existing) = state
+        .storage_recoveries
+        .get_opt(&name)
+        .await
+        .map_err(kubernetes_api_error)?
+    {
         if existing.spec == *spec {
             return Ok(());
         }
@@ -2007,7 +2156,11 @@ async fn ensure_storage_recovery_resource(
         });
     }
     let resource = NgkgStorageRecovery::new(&name, spec.clone());
-    match state.storage_recoveries.create(&PostParams::default(), &resource).await {
+    match state
+        .storage_recoveries
+        .create(&PostParams::default(), &resource)
+        .await
+    {
         Ok(_) => Ok(()),
         Err(kube::Error::Api(response)) if response.code == 409 => Ok(()),
         Err(error) => Err(kubernetes_api_error(error)),
@@ -2015,7 +2168,10 @@ async fn ensure_storage_recovery_resource(
 }
 
 fn recovery_scratch(state: &ApiState, operation_id: Uuid) -> Result<PathBuf, ApiError> {
-    let path = state.storage_recovery.scratch_root.join(format!("storage-{}", operation_id.simple()));
+    let path = state
+        .storage_recovery
+        .scratch_root
+        .join(format!("storage-{}", operation_id.simple()));
     std::fs::create_dir_all(&path).map_err(io_error)?;
     Ok(path)
 }
@@ -2090,7 +2246,8 @@ async fn ensure_compilation_resource(
             return Err(ApiError {
                 status: StatusCode::CONFLICT,
                 code: "KUBERNETES_RESOURCE_CONFLICT",
-                message: "durable operation conflicts with the existing compilation resource".to_owned(),
+                message: "durable operation conflicts with the existing compilation resource"
+                    .to_owned(),
             });
         }
         return Ok(());
@@ -2100,25 +2257,40 @@ async fn ensure_compilation_resource(
             name: Some(name.clone()),
             labels: Some(std::collections::BTreeMap::from([
                 ("app.kubernetes.io/name".to_owned(), "ngkg".to_owned()),
-                ("app.kubernetes.io/component".to_owned(), "compilation".to_owned()),
-                ("ngkg.io/operation-id".to_owned(), operation.operation_id.to_string()),
+                (
+                    "app.kubernetes.io/component".to_owned(),
+                    "compilation".to_owned(),
+                ),
+                (
+                    "ngkg.io/operation-id".to_owned(),
+                    operation.operation_id.to_string(),
+                ),
             ])),
             ..ObjectMeta::default()
         },
         spec,
         status: None,
     };
-    match state.compilations.create(&PostParams::default(), &resource).await {
+    match state
+        .compilations
+        .create(&PostParams::default(), &resource)
+        .await
+    {
         Ok(_) => Ok(()),
         Err(kube::Error::Api(response)) if response.code == 409 => {
-            let existing = state.compilations.get(&name).await.map_err(kubernetes_error)?;
+            let existing = state
+                .compilations
+                .get(&name)
+                .await
+                .map_err(kubernetes_error)?;
             if existing.spec == resource.spec {
                 Ok(())
             } else {
                 Err(ApiError {
                     status: StatusCode::CONFLICT,
                     code: "KUBERNETES_RESOURCE_CONFLICT",
-                    message: "concurrent compilation resource has different immutable content".to_owned(),
+                    message: "concurrent compilation resource has different immutable content"
+                        .to_owned(),
                 })
             }
         }
@@ -2150,18 +2322,21 @@ fn job_response(
 }
 
 fn authorize(state: &ApiState, headers: &HeaderMap, scope: &str) -> Result<Identity, ApiError> {
-    state.authorizer.authorize(headers, scope).map_err(|error| match error {
-        AuthError::Unauthenticated => ApiError {
-            status: StatusCode::UNAUTHORIZED,
-            code: "UNAUTHENTICATED",
-            message: "a valid bearer token is required".to_owned(),
-        },
-        AuthError::Forbidden => ApiError {
-            status: StatusCode::FORBIDDEN,
-            code: "FORBIDDEN",
-            message: "the authenticated principal lacks the required scope".to_owned(),
-        },
-    })
+    state
+        .authorizer
+        .authorize(headers, scope)
+        .map_err(|error| match error {
+            AuthError::Unauthenticated => ApiError {
+                status: StatusCode::UNAUTHORIZED,
+                code: "UNAUTHENTICATED",
+                message: "a valid bearer token is required".to_owned(),
+            },
+            AuthError::Forbidden => ApiError {
+                status: StatusCode::FORBIDDEN,
+                code: "FORBIDDEN",
+                message: "the authenticated principal lacks the required scope".to_owned(),
+            },
+        })
 }
 
 fn idempotency_key(headers: &HeaderMap) -> Result<&str, ApiError> {
@@ -2177,9 +2352,13 @@ fn idempotency_key(headers: &HeaderMap) -> Result<&str, ApiError> {
 
 fn decode_sha256(value: &str) -> Result<[u8; 32], ApiError> {
     if value.len() != 64
-        || value.bytes().any(|byte| !byte.is_ascii_hexdigit() || byte.is_ascii_uppercase())
+        || value
+            .bytes()
+            .any(|byte| !byte.is_ascii_hexdigit() || byte.is_ascii_uppercase())
     {
-        return Err(unprocessable("bundleSha256 must be 64 lowercase hexadecimal characters"));
+        return Err(unprocessable(
+            "bundleSha256 must be 64 lowercase hexadecimal characters",
+        ));
     }
     let bytes = hex::decode(value).map_err(|_| unprocessable("bundleSha256 is invalid"))?;
     let mut output = [0_u8; 32];
@@ -2256,7 +2435,8 @@ fn storage_catalog_error(error: ngkg_storage_recovery::StorageCatalogError) -> A
         ngkg_storage_recovery::StorageCatalogError::IdempotencyConflict => ApiError {
             status: StatusCode::CONFLICT,
             code: "IDEMPOTENCY_CONFLICT",
-            message: "Idempotency-Key is already bound to different storage recovery inputs".to_owned(),
+            message: "Idempotency-Key is already bound to different storage recovery inputs"
+                .to_owned(),
         },
         ngkg_storage_recovery::StorageCatalogError::Database(_)
         | ngkg_storage_recovery::StorageCatalogError::InvalidCatalogState => {
@@ -2270,12 +2450,14 @@ fn storage_catalog_error(error: ngkg_storage_recovery::StorageCatalogError) -> A
     }
 }
 
-fn cap_storage_parallelism(
-    requested: u32,
-    max_in_flight_bytes: u64,
-    plan: &RecoveryPlan,
-) -> u32 {
-    let largest = plan.tasks.iter().map(|task| task.bytes).max().unwrap_or(1).max(1);
+fn cap_storage_parallelism(requested: u32, max_in_flight_bytes: u64, plan: &RecoveryPlan) -> u32 {
+    let largest = plan
+        .tasks
+        .iter()
+        .map(|task| task.bytes)
+        .max()
+        .unwrap_or(1)
+        .max(1);
     let byte_limited = (max_in_flight_bytes / largest).max(1);
     let byte_limited = u32::try_from(byte_limited).unwrap_or(u32::MAX);
     requested.min(byte_limited).max(1)
@@ -2302,16 +2484,20 @@ fn validate_storage_task_sizes(state: &ApiState, plan: &RecoveryPlan) -> Result<
 
 fn artifact_error(error: ArtifactStoreError) -> ApiError {
     match error {
-        ArtifactStoreError::ChecksumMismatch { .. } | ArtifactStoreError::ImmutableConflict(_) => ApiError {
-            status: StatusCode::CONFLICT,
-            code: "STORAGE_CHECKSUM_CONFLICT",
-            message: "immutable storage evidence failed checksum verification".to_owned(),
-        },
-        ArtifactStoreError::SizeLimit { .. } | ArtifactStoreError::AggregateSizeLimit { .. } => ApiError {
-            status: StatusCode::PAYLOAD_TOO_LARGE,
-            code: "STORAGE_RECOVERY_LIMIT_EXCEEDED",
-            message: "storage recovery evidence exceeds its trusted byte ceiling".to_owned(),
-        },
+        ArtifactStoreError::ChecksumMismatch { .. } | ArtifactStoreError::ImmutableConflict(_) => {
+            ApiError {
+                status: StatusCode::CONFLICT,
+                code: "STORAGE_CHECKSUM_CONFLICT",
+                message: "immutable storage evidence failed checksum verification".to_owned(),
+            }
+        }
+        ArtifactStoreError::SizeLimit { .. } | ArtifactStoreError::AggregateSizeLimit { .. } => {
+            ApiError {
+                status: StatusCode::PAYLOAD_TOO_LARGE,
+                code: "STORAGE_RECOVERY_LIMIT_EXCEEDED",
+                message: "storage recovery evidence exceeds its trusted byte ceiling".to_owned(),
+            }
+        }
         ArtifactStoreError::BaseUrl(_)
         | ArtifactStoreError::UnsafeKey(_)
         | ArtifactStoreError::InvalidSha256
@@ -2560,9 +2746,9 @@ mod tests {
     use uuid::Uuid;
 
     use super::{
-        CloudObjectProvider, CloudObjectVersionPolicy, CreateCloudImportRequest,
-        PublicationPolicy, inspect_trig, require_trig_content_type, safe_object_path,
-        validate_cloud_import_request, validate_dataset_name,
+        CloudObjectProvider, CloudObjectVersionPolicy, CreateCloudImportRequest, PublicationPolicy,
+        inspect_trig, require_trig_content_type, safe_object_path, validate_cloud_import_request,
+        validate_dataset_name,
     };
 
     fn trig_file(contents: &str) -> std::io::Result<std::path::PathBuf> {
@@ -2572,15 +2758,13 @@ mod tests {
     }
 
     #[test]
-    fn trig_upload_profile_preserves_default_and_named_graph_counts(
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let path = trig_file(
-            concat!(
-                "<https://example.test/meta> <https://example.test/version> \"1\" .\n",
-                "<https://example.test/g1> { <https://example.test/s> <https://example.test/p> <https://example.test/o> . }\n",
-                "<https://example.test/g2> { <https://example.test/s2> <https://example.test/p> <https://example.test/o2> . }\n",
-            ),
-        )?;
+    fn trig_upload_profile_preserves_default_and_named_graph_counts()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let path = trig_file(concat!(
+            "<https://example.test/meta> <https://example.test/version> \"1\" .\n",
+            "<https://example.test/g1> { <https://example.test/s> <https://example.test/p> <https://example.test/o> . }\n",
+            "<https://example.test/g2> { <https://example.test/s2> <https://example.test/p> <https://example.test/o2> . }\n",
+        ))?;
         let scan = inspect_trig(&path, 10, 10)
             .map_err(|_| std::io::Error::other("valid TriG fixture was rejected"))?;
         fs::remove_file(path)?;
@@ -2604,8 +2788,8 @@ mod tests {
     }
 
     #[test]
-    fn trig_upload_requires_an_iri_named_subdomain_graph(
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    fn trig_upload_requires_an_iri_named_subdomain_graph() -> Result<(), Box<dyn std::error::Error>>
+    {
         let path = trig_file(
             "<https://example.test/s> <https://example.test/p> <https://example.test/o> .\n",
         )?;
@@ -2681,8 +2865,8 @@ mod tests {
             max_source_bytes: 500 * 1024 * 1024 * 1024,
             max_source_objects: 10_000,
             logical_partitions: 256,
-            ontology_qualification_request_object_key:
-                "imports/qualification-request.json".to_owned(),
+            ontology_qualification_request_object_key: "imports/qualification-request.json"
+                .to_owned(),
             ontology_qualification_request_sha256: "1".repeat(64),
         };
         let profiles = BTreeSet::from(["distributed-hpc-v1".to_owned()]);
@@ -2693,11 +2877,10 @@ mod tests {
     }
 
     #[test]
-    fn embedded_openapi_exposes_swagger_and_every_control_plane_operation(
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let document = serde_yaml::from_str::<serde_json::Value>(include_str!(
-            "../../../api/openapi.yaml"
-        ))?;
+    fn embedded_openapi_exposes_swagger_and_every_control_plane_operation()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let document =
+            serde_yaml::from_str::<serde_json::Value>(include_str!("../../../api/openapi.yaml"))?;
         let required = [
             "/docs",
             "/openapi.yaml",
@@ -2718,7 +2901,12 @@ mod tests {
         ];
         for path in required {
             assert!(
-                document.pointer(&format!("/paths/{}", path.replace('~', "~0").replace('/', "~1"))).is_some(),
+                document
+                    .pointer(&format!(
+                        "/paths/{}",
+                        path.replace('~', "~0").replace('/', "~1")
+                    ))
+                    .is_some(),
                 "missing OpenAPI path {path}"
             );
         }

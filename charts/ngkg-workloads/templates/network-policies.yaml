@@ -1,3 +1,9 @@
+{{- if not .Values.networking.dependencyCidrs }}
+{{- fail "networking.dependencyCidrs must contain the explicit PostgreSQL and object-store CIDRs; enterprise default-deny egress cannot safely infer provider networks" }}
+{{- end }}
+{{- if and .Values.onlineServing.federationEnabled (not .Values.networking.federationCidrs) }}
+{{- fail "networking.federationCidrs must be non-empty when federation is enabled" }}
+{{- end }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata: {name: ngkg-data-plane-default-deny}

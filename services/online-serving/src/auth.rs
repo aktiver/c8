@@ -16,10 +16,12 @@ const MAX_PRINCIPAL_ID_BYTES: usize = 256;
 const QUERY_EXECUTE_SCOPE: &str = "queries:execute";
 const QUERY_LOG_READ_SCOPE: &str = "query-logs:read";
 const QUERY_LOG_TEXT_SCOPE: &str = "query-logs:read:text";
-const VALID_SCOPES: [&str; 13] = [
+const VALID_SCOPES: [&str; 15] = [
     "datasets:write",
     "sources:write",
     "ingestions:create",
+    "imports:create",
+    "imports:read",
     "jobs:read",
     "jobs:cancel",
     "snapshots:read",

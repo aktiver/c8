@@ -194,9 +194,11 @@ impl QueryResultCache {
                     entries.insert(digest.clone(), CacheEntry { path, bytes: size });
                     order.push_back(digest);
                 }
-                Err(QueryCacheError::Io(_))
-                | Err(QueryCacheError::EntryTooLarge)
-                | Err(QueryCacheError::InvalidKey) => invalid.push(path),
+                Err(
+                    QueryCacheError::Io(_)
+                    | QueryCacheError::EntryTooLarge
+                    | QueryCacheError::InvalidKey,
+                ) => invalid.push(path),
                 Err(error) => return Err(error),
             }
         }
@@ -243,9 +245,11 @@ impl QueryResultCache {
         };
         match read_verified_mmap(&mut file, &digest, expected_bytes, self.max_entry_bytes) {
             Ok(payload) => Ok(QueryCacheLookup::Hit(payload)),
-            Err(QueryCacheError::Io(_))
-            | Err(QueryCacheError::EntryTooLarge)
-            | Err(QueryCacheError::InvalidKey) => {
+            Err(
+                QueryCacheError::Io(_)
+                | QueryCacheError::EntryTooLarge
+                | QueryCacheError::InvalidKey,
+            ) => {
                 drop(file);
                 self.remove_if_present(&digest, &path)?;
                 Ok(QueryCacheLookup::Miss)
@@ -295,12 +299,9 @@ impl QueryResultCache {
             touch(&mut state.least_to_most_recent, &digest);
             return Ok(());
         }
-        if let Err(error) = evict_for_insert(
-            &mut state,
-            total_bytes,
-            self.max_bytes,
-            self.max_entries,
-        ) {
+        if let Err(error) =
+            evict_for_insert(&mut state, total_bytes, self.max_bytes, self.max_entries)
+        {
             let _cleanup = fs::remove_file(&temp_path);
             return Err(error);
         }
@@ -433,9 +434,7 @@ fn validate_header(
     expected_bytes: u64,
     max_entry_bytes: u64,
 ) -> Result<[u8; CACHE_HEADER_BYTES], QueryCacheError> {
-    if expected_bytes > max_entry_bytes
-        || expected_bytes <= CACHE_HEADER_BYTES_U64
-    {
+    if expected_bytes > max_entry_bytes || expected_bytes <= CACHE_HEADER_BYTES_U64 {
         return Err(QueryCacheError::EntryTooLarge);
     }
     let mut header = [0_u8; CACHE_HEADER_BYTES];
@@ -500,10 +499,7 @@ fn validate_header_bytes(
             .try_into()
             .map_err(|_| QueryCacheError::InvalidKey)?,
     );
-    if payload_bytes
-        .checked_add(CACHE_HEADER_BYTES_U64)
-        != Some(expected_bytes)
-    {
+    if payload_bytes.checked_add(CACHE_HEADER_BYTES_U64) != Some(expected_bytes) {
         return Err(QueryCacheError::InvalidKey);
     }
     Ok(header)
@@ -722,7 +718,10 @@ mod tests {
         let cache = QueryResultCache::open(&root, 4096, 4, 2048)?;
         cache.insert(&key(false), b"exact")?;
         let path = root.join(format!("{}.cache", key(false).digest()?));
-        OpenOptions::new().append(true).open(path)?.write_all(b"corrupt")?;
+        OpenOptions::new()
+            .append(true)
+            .open(path)?
+            .write_all(b"corrupt")?;
         assert_eq!(cache.get(&key(false))?, QueryCacheLookup::Miss);
         assert_eq!(cache.usage()?, (0, 0));
         remove_root(&root)?;

@@ -289,9 +289,8 @@ pub fn stable_partition(
     let prefix: [u8; 8] = bytes[..8].try_into().map_err(|_| {
         PerformanceError::InvalidContract("partition digest is truncated".to_owned())
     })?;
-    u32::try_from(u64::from_be_bytes(prefix) % u64::from(partition_count)).map_err(|_| {
-        PerformanceError::InvalidContract("partition index exceeds u32".to_owned())
-    })
+    u32::try_from(u64::from_be_bytes(prefix) % u64::from(partition_count))
+        .map_err(|_| PerformanceError::InvalidContract("partition index exceeds u32".to_owned()))
 }
 
 /// Validate and certify a complete dense report set.
@@ -334,9 +333,11 @@ pub fn certify_performance(
             ));
         }
         for observation in &report.observations {
-            let scenario = expected.get(observation.scenario_id.as_str()).ok_or_else(|| {
-                PerformanceError::Incomplete("observation is outside the plan".to_owned())
-            })?;
+            let scenario = expected
+                .get(observation.scenario_id.as_str())
+                .ok_or_else(|| {
+                    PerformanceError::Incomplete("observation is outside the plan".to_owned())
+                })?;
             if scenario.partition != report.partition {
                 return Err(PerformanceError::Incomplete(
                     "observation was delivered by the wrong partition".to_owned(),
@@ -353,12 +354,13 @@ pub fn certify_performance(
     let mut families = BTreeSet::new();
     let mut capacity_artifacts = BTreeMap::<&str, BTreeSet<&str>>::new();
     for scenario in &plan.scenarios {
-        let rows = observations.get(scenario.scenario_id.as_str()).ok_or_else(|| {
-            PerformanceError::Incomplete("scenario has no observations".to_owned())
-        })?;
+        let rows = observations
+            .get(scenario.scenario_id.as_str())
+            .ok_or_else(|| {
+                PerformanceError::Incomplete("scenario has no observations".to_owned())
+            })?;
         let measured_ngkg = rows.iter().filter(|item| {
-            item.engine == BenchmarkEngine::NgkgRust
-                && item.trial_phase == TrialPhase::Measured
+            item.engine == BenchmarkEngine::NgkgRust && item.trial_phase == TrialPhase::Measured
         });
         let mut artifact_values = BTreeSet::new();
         let mut artifact_missing = false;
@@ -449,9 +451,7 @@ pub fn certify_performance(
         if scenarios.len() > 1 {
             let first = summary_by_id[scenarios[0].scenario_id.as_str()];
             let last = summary_by_id[scenarios[scenarios.len() - 1].scenario_id.as_str()];
-            if last.ngkg.median_throughput_per_second
-                < first.ngkg.median_throughput_per_second
-            {
+            if last.ngkg.median_throughput_per_second < first.ngkg.median_throughput_per_second {
                 return Err(PerformanceError::Incomplete(
                     "throughput regressed at the largest capacity point".to_owned(),
                 ));
@@ -643,7 +643,10 @@ fn validate_dense_trials(
     observations: &[&PerformanceObservation],
     expected: u32,
 ) -> Result<(), PerformanceError> {
-    let indices = observations.iter().map(|item| item.trial).collect::<BTreeSet<_>>();
+    let indices = observations
+        .iter()
+        .map(|item| item.trial)
+        .collect::<BTreeSet<_>>();
     if observations.len()
         != usize::try_from(expected).map_err(|_| {
             PerformanceError::InvalidContract("trial count exceeds usize".to_owned())
@@ -664,9 +667,10 @@ fn nearest_rank(values: &[u64], percentile: usize) -> Result<u64, PerformanceErr
         ));
     }
     let rank = values.len().saturating_mul(percentile).div_ceil(100);
-    values.get(rank.saturating_sub(1)).copied().ok_or_else(|| {
-        PerformanceError::InvalidContract("percentile rank is invalid".to_owned())
-    })
+    values
+        .get(rank.saturating_sub(1))
+        .copied()
+        .ok_or_else(|| PerformanceError::InvalidContract("percentile rank is invalid".to_owned()))
 }
 
 fn canonical_sha256<T: Serialize>(value: &T) -> Result<String, PerformanceError> {
@@ -684,7 +688,7 @@ fn is_sha256(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{nearest_rank, stable_partition, PerformanceError};
+    use super::{PerformanceError, nearest_rank, stable_partition};
 
     #[test]
     fn nearest_rank_is_deterministic_for_small_trial_sets() -> Result<(), PerformanceError> {

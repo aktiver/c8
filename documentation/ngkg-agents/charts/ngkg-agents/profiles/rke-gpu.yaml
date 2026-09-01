@@ -1,0 +1,13 @@
+# RKE uses the same external machine-pool contract as RKE2.
+vllm:
+  runtimeClassName: nvidia
+  nodeProvisioning: {provider: rke2, poolName: ngkg-gpu}
+  scheduling:
+    nodeSelector:
+      ngkg.io/accelerator: nvidia-gpu
+      kubernetes.io/arch: amd64
+    tolerations:
+      - {key: ngkg.io/gpu, operator: Equal, value: 'true', effect: NoSchedule}
+    topologyKey: topology.kubernetes.io/zone
+    capacityTypeValues: []
+  serviceAccountAnnotations: {}

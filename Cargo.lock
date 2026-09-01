@@ -2021,17 +2021,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ngkg-autoscaling"
-version = "1.0.0"
-dependencies = [
- "hex",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "thiserror",
-]
-
-[[package]]
 name = "ngkg-artifact-store"
 version = "1.0.0"
 dependencies = [
@@ -2043,7 +2032,17 @@ dependencies = [
  "thiserror",
  "tokio",
  "url",
- "uuid",
+]
+
+[[package]]
+name = "ngkg-autoscaling"
+version = "1.0.0"
+dependencies = [
+ "hex",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror",
 ]
 
 [[package]]
@@ -2180,6 +2179,7 @@ dependencies = [
  "ngkg-hydration",
  "ngkg-locator",
  "ngkg-reference",
+ "ngkg-semantic-compiler",
  "serde",
  "serde_json",
  "sha2 0.10.9",
@@ -2289,94 +2289,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ngkg-performance-qualification"
-version = "1.0.0"
-dependencies = [
- "hex",
- "reqwest",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "thiserror",
-]
-
-[[package]]
-name = "ngkg-release-qualification"
-version = "1.0.0"
-dependencies = [
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "thiserror",
-]
-
-[[package]]
-name = "ngkg-standards-qualification"
-version = "1.0.0"
-dependencies = [
- "hex",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "thiserror",
-]
-
-[[package]]
-name = "ngkg-storage-recovery"
-version = "1.0.0"
-dependencies = [
- "blake3",
- "hex",
- "ngkg-artifact-store",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "sqlx",
- "thiserror",
- "tokio",
- "uuid",
-]
-
-[[package]]
-name = "ngkg-storage-recovery-operator"
-version = "1.0.0"
-dependencies = [
- "anyhow",
- "futures",
- "hex",
- "k8s-openapi",
- "kube",
- "ngkg-artifact-store",
- "ngkg-kube",
- "ngkg-storage-recovery",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "sqlx",
- "thiserror",
- "tokio",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "ngkg-storage-recovery-worker"
-version = "1.0.0"
-dependencies = [
- "anyhow",
- "hex",
- "ngkg-artifact-store",
- "ngkg-hpc-runtime",
- "ngkg-storage-recovery",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tokio",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "ngkg-mapping"
 version = "1.0.0"
 dependencies = [
@@ -2406,6 +2318,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "ngkg-online-reasoning"
+version = "1.0.0"
+dependencies = [
+ "futures",
+ "hex",
+ "ngkg-direct-reasoner",
+ "ngkg-types",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "spargebra",
+ "thiserror",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "ngkg-native-runtime"
+version = "1.0.0"
+dependencies = [
+ "arrow-array",
+ "arrow-schema",
+ "hex",
+ "ngkg-query-planner",
+ "parquet",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror",
+]
+
+[[package]]
 name = "ngkg-online-serving"
 version = "1.0.0"
 dependencies = [
@@ -2424,8 +2369,9 @@ dependencies = [
  "ngkg-hydration",
  "ngkg-identity",
  "ngkg-locator",
- "ngkg-owl-direct",
+ "ngkg-native-runtime",
  "ngkg-online-reasoning",
+ "ngkg-owl-direct",
  "ngkg-query-cache",
  "ngkg-query-executor",
  "ngkg-query-planner",
@@ -2451,20 +2397,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "ngkg-online-reasoning"
+name = "ngkg-ontology-qualifier"
 version = "1.0.0"
 dependencies = [
- "futures",
  "hex",
- "ngkg-direct-reasoner",
- "ngkg-types",
- "reqwest",
+ "ngkg-semantic-compiler",
+ "oxigraph",
  "serde",
  "serde_json",
  "sha2 0.10.9",
- "spargebra",
  "thiserror",
- "tokio",
  "uuid",
 ]
 
@@ -2509,6 +2451,18 @@ dependencies = [
  "ngkg-types",
  "sha2 0.10.9",
  "spargebra",
+ "thiserror",
+]
+
+[[package]]
+name = "ngkg-performance-qualification"
+version = "1.0.0"
+dependencies = [
+ "hex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
  "thiserror",
 ]
 
@@ -2614,13 +2568,14 @@ dependencies = [
  "ngkg-distributed-build",
  "ngkg-hydration",
  "ngkg-identity",
- "ngkg-locator",
  "ngkg-kube",
+ "ngkg-locator",
  "ngkg-offline-reasoner",
  "ngkg-ontology-qualifier",
  "ngkg-reference",
  "ngkg-semantic-compiler",
  "ngkg-snapshot-activation",
+ "ngkg-source-planner",
  "ngkg-types",
  "oxigraph",
  "serde",
@@ -2633,17 +2588,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "ngkg-ontology-qualifier"
+name = "ngkg-release-qualification"
 version = "1.0.0"
 dependencies = [
- "hex",
- "ngkg-semantic-compiler",
- "oxigraph",
  "serde",
  "serde_json",
  "sha2 0.10.9",
  "thiserror",
- "uuid",
 ]
 
 [[package]]
@@ -2655,23 +2606,6 @@ dependencies = [
  "hex",
  "oxigraph",
  "parquet",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "thiserror",
- "uuid",
-]
-
-[[package]]
-name = "ngkg-snapshot-activation"
-version = "1.0.0"
-dependencies = [
- "hex",
- "ngkg-dataset",
- "ngkg-offline-reasoner",
- "ngkg-ontology-qualifier",
- "ngkg-reference",
- "ngkg-semantic-compiler",
  "serde",
  "serde_json",
  "sha2 0.10.9",
@@ -2701,6 +2635,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "ngkg-snapshot-activation"
+version = "1.0.0"
+dependencies = [
+ "hex",
+ "ngkg-dataset",
+ "ngkg-offline-reasoner",
+ "ngkg-ontology-qualifier",
+ "ngkg-reference",
+ "ngkg-semantic-compiler",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror",
+ "uuid",
+]
+
+[[package]]
 name = "ngkg-source-planner"
 version = "1.0.0"
 dependencies = [
@@ -2724,6 +2675,72 @@ dependencies = [
  "sha2 0.10.9",
  "spargebra",
  "thiserror",
+]
+
+[[package]]
+name = "ngkg-standards-qualification"
+version = "1.0.0"
+dependencies = [
+ "hex",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror",
+]
+
+[[package]]
+name = "ngkg-storage-recovery"
+version = "1.0.0"
+dependencies = [
+ "blake3",
+ "hex",
+ "ngkg-artifact-store",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "ngkg-storage-recovery-operator"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "futures",
+ "hex",
+ "k8s-openapi",
+ "kube",
+ "ngkg-artifact-store",
+ "ngkg-kube",
+ "ngkg-storage-recovery",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "ngkg-storage-recovery-worker"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "hex",
+ "ngkg-artifact-store",
+ "ngkg-hpc-runtime",
+ "ngkg-storage-recovery",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -3509,6 +3526,7 @@ checksum = "9d0946410b9f7b082a427e4ef5c8ff541a88b357bc6c637c40db3a68ac70a36f"
 dependencies = [
  "base64",
  "bytes",
+ "futures-channel",
  "futures-core",
  "futures-util",
  "h2",

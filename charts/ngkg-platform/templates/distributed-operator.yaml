@@ -26,7 +26,7 @@ spec:
           image: '{{ required "images.distributedOperator.repository is required" .Values.images.distributedOperator.repository }}@{{ required "images.distributedOperator.digest is required" .Values.images.distributedOperator.digest }}'
           envFrom:
             - configMapRef:
-                name: '{{ .Release.Name }}-phase40-reference-ceilings'
+                name: '{{ .Release.Name }}-phase40-reference-ceilings-{{ toJson .Values.phase40.direct | sha256sum | trunc 12 }}'
                 optional: false
           env:
             - {name: NGKG_NAMESPACE, valueFrom: {fieldRef: {fieldPath: metadata.namespace}}}

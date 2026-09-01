@@ -17,8 +17,10 @@ const MIB: u64 = 1024 * 1024;
 pub const ENV_MAX_CANDIDATE_BINDINGS: &str = "NGKG_PHASE40_DIRECT_MAX_CANDIDATE_BINDINGS";
 pub const ENV_MAX_PARTITION_CANDIDATES: &str = "NGKG_PHASE40_DIRECT_MAX_PARTITION_CANDIDATES";
 pub const ENV_MAX_EXACT_PARTITIONS: &str = "NGKG_PHASE40_DIRECT_MAX_EXACT_PARTITIONS";
-pub const ENV_MAX_GROUNDED_AXIOMS_PER_CANDIDATE: &str = "NGKG_PHASE40_DIRECT_MAX_GROUNDED_AXIOMS_PER_CANDIDATE";
-pub const ENV_MAX_GROUNDED_RDF_BYTES_PER_CANDIDATE: &str = "NGKG_PHASE40_DIRECT_MAX_GROUNDED_RDF_BYTES_PER_CANDIDATE";
+pub const ENV_MAX_GROUNDED_AXIOMS_PER_CANDIDATE: &str =
+    "NGKG_PHASE40_DIRECT_MAX_GROUNDED_AXIOMS_PER_CANDIDATE";
+pub const ENV_MAX_GROUNDED_RDF_BYTES_PER_CANDIDATE: &str =
+    "NGKG_PHASE40_DIRECT_MAX_GROUNDED_RDF_BYTES_PER_CANDIDATE";
 pub const ENV_REASONER_CONCURRENCY: &str = "NGKG_PHASE40_DIRECT_REASONER_CONCURRENCY";
 pub const ENV_REASONER_HEAP_MIB_PER_LANE: &str = "NGKG_PHASE40_DIRECT_REASONER_HEAP_MIB_PER_LANE";
 pub const ENV_REASONER_TIMEOUT_SECONDS: &str = "NGKG_PHASE40_DIRECT_REASONER_TIMEOUT_SECONDS";
@@ -47,7 +49,9 @@ impl TrustedPhase40DirectCeilings {
             max_partition_candidates: required_u64(ENV_MAX_PARTITION_CANDIDATES)?,
             max_exact_partitions: required_u64(ENV_MAX_EXACT_PARTITIONS)?,
             max_grounded_axioms_per_candidate: required_u64(ENV_MAX_GROUNDED_AXIOMS_PER_CANDIDATE)?,
-            max_grounded_rdf_bytes_per_candidate: required_u64(ENV_MAX_GROUNDED_RDF_BYTES_PER_CANDIDATE)?,
+            max_grounded_rdf_bytes_per_candidate: required_u64(
+                ENV_MAX_GROUNDED_RDF_BYTES_PER_CANDIDATE,
+            )?,
             reasoner_concurrency: required_usize(ENV_REASONER_CONCURRENCY)?,
             reasoner_heap_mib_per_lane: required_u64(ENV_REASONER_HEAP_MIB_PER_LANE)?,
             reasoner_timeout_seconds: required_u64(ENV_REASONER_TIMEOUT_SECONDS)?,
@@ -68,7 +72,9 @@ impl TrustedPhase40DirectCeilings {
 
     fn validate_cross_fields(&self) -> Result<(), String> {
         if self.max_partition_candidates > self.max_candidate_bindings {
-            return Err("Phase 40 direct maxPartitionCandidates exceeds maxCandidateBindings".to_owned());
+            return Err(
+                "Phase 40 direct maxPartitionCandidates exceeds maxCandidateBindings".to_owned(),
+            );
         }
         let required_partitions = self
             .max_candidate_bindings
@@ -124,16 +130,46 @@ impl TrustedPhase40DirectCeilings {
         let mut hash = Sha256::new();
         hash.update(b"ngkg-phase40-reference-worker-ceilings-v1\0");
         for (name, value) in [
-            (ENV_MAX_CANDIDATE_BINDINGS, self.max_candidate_bindings.to_string()),
-            (ENV_MAX_PARTITION_CANDIDATES, self.max_partition_candidates.to_string()),
-            (ENV_MAX_EXACT_PARTITIONS, self.max_exact_partitions.to_string()),
-            (ENV_MAX_GROUNDED_AXIOMS_PER_CANDIDATE, self.max_grounded_axioms_per_candidate.to_string()),
-            (ENV_MAX_GROUNDED_RDF_BYTES_PER_CANDIDATE, self.max_grounded_rdf_bytes_per_candidate.to_string()),
-            (ENV_REASONER_CONCURRENCY, self.reasoner_concurrency.to_string()),
-            (ENV_REASONER_HEAP_MIB_PER_LANE, self.reasoner_heap_mib_per_lane.to_string()),
-            (ENV_REASONER_TIMEOUT_SECONDS, self.reasoner_timeout_seconds.to_string()),
-            (ENV_MAX_CERTIFICATE_BYTES, self.max_certificate_bytes.to_string()),
-            (ENV_MAX_PROOF_SUPPORT_IDS, self.max_proof_support_ids.to_string()),
+            (
+                ENV_MAX_CANDIDATE_BINDINGS,
+                self.max_candidate_bindings.to_string(),
+            ),
+            (
+                ENV_MAX_PARTITION_CANDIDATES,
+                self.max_partition_candidates.to_string(),
+            ),
+            (
+                ENV_MAX_EXACT_PARTITIONS,
+                self.max_exact_partitions.to_string(),
+            ),
+            (
+                ENV_MAX_GROUNDED_AXIOMS_PER_CANDIDATE,
+                self.max_grounded_axioms_per_candidate.to_string(),
+            ),
+            (
+                ENV_MAX_GROUNDED_RDF_BYTES_PER_CANDIDATE,
+                self.max_grounded_rdf_bytes_per_candidate.to_string(),
+            ),
+            (
+                ENV_REASONER_CONCURRENCY,
+                self.reasoner_concurrency.to_string(),
+            ),
+            (
+                ENV_REASONER_HEAP_MIB_PER_LANE,
+                self.reasoner_heap_mib_per_lane.to_string(),
+            ),
+            (
+                ENV_REASONER_TIMEOUT_SECONDS,
+                self.reasoner_timeout_seconds.to_string(),
+            ),
+            (
+                ENV_MAX_CERTIFICATE_BYTES,
+                self.max_certificate_bytes.to_string(),
+            ),
+            (
+                ENV_MAX_PROOF_SUPPORT_IDS,
+                self.max_proof_support_ids.to_string(),
+            ),
         ] {
             hash.update(name.as_bytes());
             hash.update(b"=");
@@ -144,8 +180,16 @@ impl TrustedPhase40DirectCeilings {
     }
 
     pub fn enforce_job(&self, requested: &DirectJobLimits) -> Result<(), String> {
-        cap_u64("maxCandidateBindings", requested.max_candidate_bindings, self.max_candidate_bindings)?;
-        cap_u64("maxPartitionCandidates", requested.max_partition_candidates, self.max_partition_candidates)?;
+        cap_u64(
+            "maxCandidateBindings",
+            requested.max_candidate_bindings,
+            self.max_candidate_bindings,
+        )?;
+        cap_u64(
+            "maxPartitionCandidates",
+            requested.max_partition_candidates,
+            self.max_partition_candidates,
+        )?;
         cap_u64(
             "maxGroundedAxiomsPerCandidate",
             requested.max_grounded_axioms_per_candidate,
@@ -156,7 +200,9 @@ impl TrustedPhase40DirectCeilings {
             requested.max_grounded_rdf_bytes_per_candidate,
             self.max_grounded_rdf_bytes_per_candidate,
         )?;
-        if requested.max_local_reasoner_lanes == 0 || requested.max_local_reasoner_lanes > self.reasoner_concurrency {
+        if requested.max_local_reasoner_lanes == 0
+            || requested.max_local_reasoner_lanes > self.reasoner_concurrency
+        {
             return Err(format!(
                 "job maxLocalReasonerLanes {} exceeds trusted Phase 40 reasonerConcurrency {}",
                 requested.max_local_reasoner_lanes, self.reasoner_concurrency
@@ -181,15 +227,21 @@ fn cap_u64(name: &str, requested: u64, trusted: u64) -> Result<(), String> {
         return Err(format!("job {name} must be positive"));
     }
     if requested > trusted {
-        return Err(format!("job {name} {requested} exceeds trusted Phase 40 ceiling {trusted}"));
+        return Err(format!(
+            "job {name} {requested} exceeds trusted Phase 40 ceiling {trusted}"
+        ));
     }
     Ok(())
 }
 
 fn required_u64(name: &str) -> Result<u64, String> {
     let raw = required(name)?;
-    let value = raw.parse::<u64>().map_err(|_| format!("{name} must be an unsigned integer"))?;
-    if value == 0 { return Err(format!("{name} must be positive")); }
+    let value = raw
+        .parse::<u64>()
+        .map_err(|_| format!("{name} must be an unsigned integer"))?;
+    if value == 0 {
+        return Err(format!("{name} must be positive"));
+    }
     Ok(value)
 }
 
@@ -199,19 +251,35 @@ fn required_usize(name: &str) -> Result<usize, String> {
 }
 
 fn required(name: &str) -> Result<String, String> {
-    let value = env::var(name).map_err(|_| format!("required Phase 40 reference-worker ceiling {name} is missing"))?;
-    if value.trim().is_empty() { return Err(format!("required Phase 40 reference-worker ceiling {name} is empty")); }
+    let value = env::var(name)
+        .map_err(|_| format!("required Phase 40 reference-worker ceiling {name} is missing"))?;
+    if value.trim().is_empty() {
+        return Err(format!(
+            "required Phase 40 reference-worker ceiling {name} is empty"
+        ));
+    }
     Ok(value)
 }
 
 fn cgroup_memory_limit_bytes() -> Option<u64> {
-    for path in ["/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"] {
-        let Ok(raw) = fs::read_to_string(path) else { continue; };
+    for path in [
+        "/sys/fs/cgroup/memory.max",
+        "/sys/fs/cgroup/memory/memory.limit_in_bytes",
+    ] {
+        let Ok(raw) = fs::read_to_string(path) else {
+            continue;
+        };
         let raw = raw.trim();
-        if raw == "max" { return None; }
-        let Ok(value) = raw.parse::<u64>() else { continue; };
+        if raw == "max" {
+            return None;
+        }
+        let Ok(value) = raw.parse::<u64>() else {
+            continue;
+        };
         // Ignore the very large sentinel used by some cgroup-v1 runtimes for "unlimited".
-        if value > 0 && value < (1_u64 << 60) { return Some(value); }
+        if value > 0 && value < (1_u64 << 60) {
+            return Some(value);
+        }
     }
     None
 }

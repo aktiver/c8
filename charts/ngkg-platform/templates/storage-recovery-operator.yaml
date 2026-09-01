@@ -53,11 +53,17 @@ spec:
             - secretRef: {name: '{{ .Values.dependencies.objectStoreCredentialsSecret }}'}
           {{ end }}
           resources: {{- toYaml .Values.resources.storageRecoveryOperator | nindent 12 }}
+          volumeMounts:
+            - {name: operator-tmp, mountPath: /tmp}
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
             capabilities: {drop: [ALL]}
+      volumes:
+        - name: operator-tmp
+          emptyDir:
+            sizeLimit: 1Gi
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget

@@ -164,17 +164,35 @@ pub enum DirectCertificateValidationError {
 pub fn validate_direct_certificate(
     certificate: &DirectCertificate,
 ) -> Result<(), DirectCertificateValidationError> {
-    if !matches!(certificate.format_version, LEGACY_FORMAT_VERSION | PROOF_FORMAT_VERSION) {
+    if !matches!(
+        certificate.format_version,
+        LEGACY_FORMAT_VERSION | PROOF_FORMAT_VERSION
+    ) {
         return Err(DirectCertificateValidationError::FormatVersion);
     }
     for (name, value) in [
         ("querySha256", certificate.query_sha256.as_str()),
         ("bgpSha256", certificate.bgp_sha256.as_str()),
-        ("activeDatasetSha256", certificate.active_dataset_sha256.as_str()),
-        ("authorizedGraphSetSha256", certificate.authorized_graph_set_sha256.as_str()),
-        ("owlSignatureSha256", certificate.owl_signature_sha256.as_str()),
-        ("datatypePolicySha256", certificate.datatype_policy_sha256.as_str()),
-        ("directBgpResultSha256", certificate.direct_bgp_result_sha256.as_str()),
+        (
+            "activeDatasetSha256",
+            certificate.active_dataset_sha256.as_str(),
+        ),
+        (
+            "authorizedGraphSetSha256",
+            certificate.authorized_graph_set_sha256.as_str(),
+        ),
+        (
+            "owlSignatureSha256",
+            certificate.owl_signature_sha256.as_str(),
+        ),
+        (
+            "datatypePolicySha256",
+            certificate.datatype_policy_sha256.as_str(),
+        ),
+        (
+            "directBgpResultSha256",
+            certificate.direct_bgp_result_sha256.as_str(),
+        ),
     ] {
         require_sha256(name, value)?;
     }
@@ -194,7 +212,9 @@ pub fn validate_direct_certificate(
             }
         }
         PROOF_FORMAT_VERSION => {
-            let proof_manifest_sha256 = certificate.proof_manifest_sha256.as_deref()
+            let proof_manifest_sha256 = certificate
+                .proof_manifest_sha256
+                .as_deref()
                 .ok_or(DirectCertificateValidationError::InvalidProofCoverage)?;
             require_sha256("proofManifestSha256", proof_manifest_sha256)?;
             if certificate.proof_coverage != DirectProofCoverage::Complete
@@ -333,7 +353,11 @@ fn update_term(hash: &mut Sha256, term: &DirectBgpRdfTerm) {
             hash.update([0x02]);
             update_string(hash, value);
         }
-        DirectBgpRdfTerm::Literal { lexical_form, datatype_iri, language } => {
+        DirectBgpRdfTerm::Literal {
+            lexical_form,
+            datatype_iri,
+            language,
+        } => {
             hash.update([0x03]);
             update_string(hash, lexical_form);
             update_string(hash, datatype_iri);
@@ -349,7 +373,9 @@ fn update_term(hash: &mut Sha256, term: &DirectBgpRdfTerm) {
 
 fn update_graph_context(hash: &mut Sha256, context: &DirectBgpGraphContext) {
     match context {
-        DirectBgpGraphContext::Default { active_default_graph_sha256 } => {
+        DirectBgpGraphContext::Default {
+            active_default_graph_sha256,
+        } => {
             hash.update([0x01]);
             update_string(hash, active_default_graph_sha256);
         }
@@ -382,7 +408,9 @@ fn failure_code_tag(code: crate::DirectBgpFailureCode) -> u8 {
     }
 }
 
-fn validate_reasoner(identity: &DirectReasonerIdentity) -> Result<(), DirectCertificateValidationError> {
+fn validate_reasoner(
+    identity: &DirectReasonerIdentity,
+) -> Result<(), DirectCertificateValidationError> {
     for value in [
         identity.engine.as_str(),
         identity.engine_version.as_str(),
@@ -399,8 +427,14 @@ fn validate_reasoner(identity: &DirectReasonerIdentity) -> Result<(), DirectCert
 fn validate_completeness(
     evidence: &DirectCompletenessEvidence,
 ) -> Result<(), DirectCertificateValidationError> {
-    require_sha256("completeness.candidateSpaceSha256", &evidence.candidate_space_sha256)?;
-    require_sha256("completeness.executionRootSha256", &evidence.execution_root_sha256)?;
+    require_sha256(
+        "completeness.candidateSpaceSha256",
+        &evidence.candidate_space_sha256,
+    )?;
+    require_sha256(
+        "completeness.executionRootSha256",
+        &evidence.execution_root_sha256,
+    )?;
     if evidence.partition_count == 0
         || evidence.partition_count > 1_000_000
         || evidence.completed_partition_count != evidence.partition_count
@@ -440,10 +474,17 @@ fn validate_support_references(
     Ok(())
 }
 
-fn validate_graph_context(context: &DirectBgpGraphContext) -> Result<(), DirectCertificateValidationError> {
+fn validate_graph_context(
+    context: &DirectBgpGraphContext,
+) -> Result<(), DirectCertificateValidationError> {
     match context {
-        DirectBgpGraphContext::Default { active_default_graph_sha256 } => {
-            require_sha256("graphContext.activeDefaultGraphSha256", active_default_graph_sha256)?;
+        DirectBgpGraphContext::Default {
+            active_default_graph_sha256,
+        } => {
+            require_sha256(
+                "graphContext.activeDefaultGraphSha256",
+                active_default_graph_sha256,
+            )?;
         }
         DirectBgpGraphContext::Named { graph_iri } => {
             if !is_absolute_iri(graph_iri) {
@@ -454,10 +495,7 @@ fn validate_graph_context(context: &DirectBgpGraphContext) -> Result<(), DirectC
     Ok(())
 }
 
-fn require_sha256(
-    name: &'static str,
-    value: &str,
-) -> Result<(), DirectCertificateValidationError> {
+fn require_sha256(name: &'static str, value: &str) -> Result<(), DirectCertificateValidationError> {
     if value.len() != 64
         || !value
             .bytes()
@@ -474,13 +512,16 @@ fn is_absolute_iri(value: &str) -> bool {
     };
     colon > 0
         && !value.chars().any(char::is_whitespace)
-        && value[..colon].chars().enumerate().all(|(index, character)| {
-            if index == 0 {
-                character.is_ascii_alphabetic()
-            } else {
-                character.is_ascii_alphanumeric() || matches!(character, '+' | '-' | '.')
-            }
-        })
+        && value[..colon]
+            .chars()
+            .enumerate()
+            .all(|(index, character)| {
+                if index == 0 {
+                    character.is_ascii_alphabetic()
+                } else {
+                    character.is_ascii_alphanumeric() || matches!(character, '+' | '-' | '.')
+                }
+            })
 }
 
 #[cfg(test)]
@@ -491,9 +532,9 @@ mod phase40_4_tests {
 
     use super::{
         DirectCertificate, DirectCertifiedOutcome, DirectCompletenessEvidence,
-        DirectCompletenessMethod, DirectProofCoverage, DirectReasonerIdentity,
-        DirectSupportKind, DirectSupportReference, direct_bgp_result_sha256,
-        validate_direct_certificate, validate_direct_certificate_result,
+        DirectCompletenessMethod, DirectProofCoverage, DirectReasonerIdentity, DirectSupportKind,
+        DirectSupportReference, direct_bgp_result_sha256, validate_direct_certificate,
+        validate_direct_certificate_result,
     };
     use crate::{
         DirectBgpCompleteness, DirectBgpExactness, DirectBgpGraphContext, DirectBgpOutcome,
@@ -502,9 +543,19 @@ mod phase40_4_tests {
 
     fn result() -> DirectBgpResult {
         let mut a = BTreeMap::new();
-        a.insert("x".to_owned(), DirectBgpRdfTerm::Iri { value: "https://example.test/a".to_owned() });
+        a.insert(
+            "x".to_owned(),
+            DirectBgpRdfTerm::Iri {
+                value: "https://example.test/a".to_owned(),
+            },
+        );
         let mut b = BTreeMap::new();
-        b.insert("x".to_owned(), DirectBgpRdfTerm::Iri { value: "https://example.test/b".to_owned() });
+        b.insert(
+            "x".to_owned(),
+            DirectBgpRdfTerm::Iri {
+                value: "https://example.test/b".to_owned(),
+            },
+        );
         DirectBgpResult {
             format_version: 1,
             dataset_id: Uuid::from_u128(1),
@@ -516,13 +567,21 @@ mod phase40_4_tests {
             owl_signature_sha256: "55".repeat(32),
             datatype_policy_sha256: "66".repeat(32),
             entailment_regime: EntailmentRegime::Owl2Direct,
-            graph_context: DirectBgpGraphContext::Named { graph_iri: "https://example.test/g".to_owned() },
+            graph_context: DirectBgpGraphContext::Named {
+                graph_iri: "https://example.test/g".to_owned(),
+            },
             variables: vec!["x".to_owned()],
             candidate_binding_count: 8,
             solution_multiplicity_total: 3,
             solutions: vec![
-                DirectBgpSolution { bindings: a, multiplicity: 2 },
-                DirectBgpSolution { bindings: b, multiplicity: 1 },
+                DirectBgpSolution {
+                    bindings: a,
+                    multiplicity: 2,
+                },
+                DirectBgpSolution {
+                    bindings: b,
+                    multiplicity: 1,
+                },
             ],
             outcome: DirectBgpOutcome {
                 status: DirectBgpStatus::Complete,
@@ -582,7 +641,10 @@ mod phase40_4_tests {
         let result = result();
         let certificate = certificate(&result);
         assert_eq!(validate_direct_certificate(&certificate), Ok(()));
-        assert_eq!(validate_direct_certificate_result(&certificate, &result), Ok(()));
+        assert_eq!(
+            validate_direct_certificate_result(&certificate, &result),
+            Ok(())
+        );
     }
 
     #[test]
@@ -590,7 +652,10 @@ mod phase40_4_tests {
         let first = result();
         let mut second = first.clone();
         second.solutions.reverse();
-        assert_eq!(direct_bgp_result_sha256(&first), direct_bgp_result_sha256(&second));
+        assert_eq!(
+            direct_bgp_result_sha256(&first),
+            direct_bgp_result_sha256(&second)
+        );
     }
 
     #[test]
@@ -613,7 +678,9 @@ mod phase40_4_tests {
     fn support_references_must_be_sorted_unique() {
         let result = result();
         let mut certificate = certificate(&result);
-        certificate.support_references.push(certificate.support_references[0].clone());
+        certificate
+            .support_references
+            .push(certificate.support_references[0].clone());
         assert!(validate_direct_certificate(&certificate).is_err());
     }
 }

@@ -57,6 +57,7 @@ def main() -> int:
         "Cargo.toml",
         "rust-toolchain.toml",
         "README.md",
+        "QUICKSTART.md",
         "contracts/query-workload.schema.json",
         "benchmarks/workloads/cross-domain-v1.yaml",
         "test-corpus/datasets/cross-domain.trig",

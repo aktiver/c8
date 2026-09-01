@@ -1,0 +1,7 @@
+contextSlice:
+  enabled: true
+  storage:
+    provider: azure
+    azure: {container: replace-context-slices, account: replacestorageaccount, endpoint: ''}
+    serviceAccountAnnotations: {azure.workload.identity/client-id: replace-managed-identity-client-id}
+  scheduling: {nodeSelector: {ngkg.io/workload-class: cpu-hpc}, tolerations: []}

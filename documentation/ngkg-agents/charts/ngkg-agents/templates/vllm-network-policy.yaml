@@ -1,0 +1,81 @@
+{{- if and .Values.vllm.enabled .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-inference-gateway-default-deny}
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: inference-gateway}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-inference-gateway-allow}
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: inference-gateway}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - {key: app.kubernetes.io/component, operator: In, values: [orchestrator, mcp-gateway]}
+      ports: [{protocol: TCP, port: {{ .Values.inferenceGateway.port }}}]
+    {{- if .Values.serviceMonitor.enabled }}
+    - from:
+        - namespaceSelector:
+{{ toYaml .Values.serviceMonitor.ingressNamespaceSelector | nindent 12 }}
+          podSelector:
+{{ toYaml .Values.serviceMonitor.ingressPodSelector | nindent 12 }}
+      ports: [{protocol: TCP, port: {{ .Values.inferenceGateway.port }}}]
+    {{- end }}
+  egress:
+    - to:
+        - namespaceSelector:
+{{ toYaml .Values.networkPolicy.dnsNamespaceSelector | nindent 12 }}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    - to:
+        - podSelector:
+            matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: vllm-backend}
+      ports: [{protocol: TCP, port: {{ .Values.vllm.podAgentPort }}}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-vllm-backend-default-deny}
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: vllm-backend}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-vllm-backend-allow}
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: vllm-backend}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: inference-gateway}
+      ports: [{protocol: TCP, port: {{ .Values.vllm.podAgentPort }}}]
+    {{- if .Values.serviceMonitor.enabled }}
+    - from:
+        - namespaceSelector:
+{{ toYaml .Values.serviceMonitor.ingressNamespaceSelector | nindent 12 }}
+          podSelector:
+{{ toYaml .Values.serviceMonitor.ingressPodSelector | nindent 12 }}
+      ports: [{protocol: TCP, port: {{ .Values.vllm.podAgentPort }}}]
+    {{- end }}
+  egress:
+    - to:
+        - namespaceSelector:
+{{ toYaml .Values.networkPolicy.dnsNamespaceSelector | nindent 12 }}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    {{- if .Values.vllm.modelSourceEgressIpBlocks }}
+    - to:
+        {{- range .Values.vllm.modelSourceEgressIpBlocks }}
+        - ipBlock: {cidr: {{ . | quote }}}
+        {{- end }}
+      ports: [{protocol: TCP, port: 443}]
+    {{- end }}
+{{- end }}

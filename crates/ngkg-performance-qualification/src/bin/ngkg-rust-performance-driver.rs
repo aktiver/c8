@@ -19,6 +19,7 @@ use thiserror::Error;
 const MAX_CONCURRENCY: u32 = 10_000;
 const MAX_REQUEST_BYTES: u64 = 64 * 1024 * 1024;
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct DriverRequest {
@@ -46,6 +47,7 @@ struct ResourceEnvelope {
     memory_bytes: u64,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct PricingEvidence {
@@ -195,9 +197,8 @@ fn run() -> Result<(), DriverError> {
             .map(|handle| handle.join().map_err(|_| DriverError::Worker)?)
             .collect::<Result<Vec<_>, DriverError>>()
     })?;
-    let elapsed = u64::try_from(started.elapsed().as_nanos()).map_err(|_| {
-        DriverError::Invalid("duration exceeds u64 nanoseconds".to_owned())
-    })?;
+    let elapsed = u64::try_from(started.elapsed().as_nanos())
+        .map_err(|_| DriverError::Invalid("duration exceeds u64 nanoseconds".to_owned()))?;
     let cpu_after = cgroup_cpu_nanoseconds().unwrap_or(cpu_before);
     let first = calls
         .first()
@@ -216,7 +217,10 @@ fn run() -> Result<(), DriverError> {
     let input_bytes = u64::try_from(body.len())
         .map_err(|_| DriverError::Invalid("request body exceeds u64".to_owned()))?
         .saturating_mul(operations);
-    let response_bytes = checked_sum(calls.iter().map(|call| call.response_bytes), "response bytes")?;
+    let response_bytes = checked_sum(
+        calls.iter().map(|call| call.response_bytes),
+        "response bytes",
+    )?;
     let nodes = calls.iter().try_fold(0_u32, |total, call| {
         total
             .checked_add(call.nodes_activated)
@@ -383,7 +387,10 @@ fn query_log_resources(
             .map_err(|_| DriverError::Invalid("node count exceeds u32".to_owned()))?,
         pointer_u64(&value, "/resources/cpuMillicores")?,
         pointer_u64(&value, "/resources/ramBytes")?,
-        value.pointer("/resultRows").and_then(Value::as_u64).unwrap_or(0),
+        value
+            .pointer("/resultRows")
+            .and_then(Value::as_u64)
+            .unwrap_or(0),
     ))
 }
 
@@ -418,7 +425,10 @@ fn bounded_json(mut response: Response, maximum: u64) -> Result<Value, DriverErr
         )));
     }
     let mut bytes = Vec::new();
-    response.by_ref().take(maximum.saturating_add(1)).read_to_end(&mut bytes)?;
+    response
+        .by_ref()
+        .take(maximum.saturating_add(1))
+        .read_to_end(&mut bytes)?;
     if bytes.len() as u64 > maximum {
         return Err(DriverError::Invalid(
             "endpoint response exceeded its byte ceiling".to_owned(),
@@ -429,7 +439,9 @@ fn bounded_json(mut response: Response, maximum: u64) -> Result<Value, DriverErr
 
 fn trusted_url(environment: &str, path: &str) -> Result<Url, DriverError> {
     if !valid_environment_name(environment) || !path.starts_with('/') || path.starts_with("//") {
-        return Err(DriverError::Invalid("endpoint reference is invalid".to_owned()));
+        return Err(DriverError::Invalid(
+            "endpoint reference is invalid".to_owned(),
+        ));
     }
     let base = env::var(environment)
         .map_err(|_| DriverError::Invalid(format!("missing endpoint environment {environment}")))?;
@@ -446,7 +458,9 @@ fn trusted_url(environment: &str, path: &str) -> Result<Url, DriverError> {
 
 fn secret_environment(name: &str) -> Result<String, DriverError> {
     if !valid_environment_name(name) {
-        return Err(DriverError::Invalid("token environment name is invalid".to_owned()));
+        return Err(DriverError::Invalid(
+            "token environment name is invalid".to_owned(),
+        ));
     }
     env::var(name)
         .ok()
@@ -464,7 +478,10 @@ fn valid_environment_name(value: &str) -> bool {
 
 fn read_bounded_regular(path: &Path, maximum: u64) -> Result<Vec<u8>, DriverError> {
     let metadata = fs::symlink_metadata(path)?;
-    if !metadata.file_type().is_file() || metadata.file_type().is_symlink() || metadata.len() > maximum {
+    if !metadata.file_type().is_file()
+        || metadata.file_type().is_symlink()
+        || metadata.len() > maximum
+    {
         return Err(DriverError::Invalid(
             "request body is not one bounded regular file".to_owned(),
         ));
@@ -534,14 +551,15 @@ fn trial_cost(request: &DriverRequest, duration_ns: u64, nodes: u32) -> Result<u
         .saturating_mul(u128::from(operation.egress_bytes_per_request))
         .saturating_mul(operations)
         .div_ceil(1024 * 1024 * 1024);
-    u64::try_from(node.saturating_add(reads).saturating_add(writes).saturating_add(egress))
-        .map_err(|_| DriverError::Invalid("trial cost exceeds u64".to_owned()))
+    u64::try_from(
+        node.saturating_add(reads)
+            .saturating_add(writes)
+            .saturating_add(egress),
+    )
+    .map_err(|_| DriverError::Invalid("trial cost exceeds u64".to_owned()))
 }
 
-fn checked_sum(
-    values: impl IntoIterator<Item = u64>,
-    label: &str,
-) -> Result<u64, DriverError> {
+fn checked_sum(values: impl IntoIterator<Item = u64>, label: &str) -> Result<u64, DriverError> {
     values.into_iter().try_fold(0_u64, |total, value| {
         total
             .checked_add(value)

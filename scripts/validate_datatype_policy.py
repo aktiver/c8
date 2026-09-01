@@ -10,6 +10,8 @@ def main()->int:
     value=json.loads(args.policy.read_text(encoding='utf-8'))
     errors=sorted(Draft202012Validator(schema,format_checker=FormatChecker()).iter_errors(value),key=lambda e:list(e.path))
     if errors: raise RuntimeError(errors[0].message)
+    if value['policyId'] != 'ngkg-owl2-direct-datatype-policy-v1':
+        raise RuntimeError('all runtime lanes require ngkg-owl2-direct-datatype-policy-v1')
     iris=[row['iri'] for row in value['supportedDatatypes']]
     if iris != sorted(iris) or len(iris)!=len(set(iris)): raise RuntimeError('supportedDatatypes must be strictly sorted by IRI and duplicate-free')
     mapping={row['iri']:row['lexicalSpace'] for row in value['supportedDatatypes']}

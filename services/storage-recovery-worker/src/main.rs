@@ -6,9 +6,8 @@ use anyhow::{Context, Result};
 use ngkg_artifact_store::{ArtifactStore, ArtifactStoreError};
 use ngkg_hpc_runtime::{resource_envelope_report, validate_buffer_budget};
 use ngkg_storage_recovery::{
-    RecoveryCertificationAccumulator, RecoveryError, RecoveryPlan, StorageTarget,
-    TransferReason, TransferResult, TransferState, build_backup_manifest, execute_transfer,
-    validate_recovery_plan,
+    RecoveryCertificationAccumulator, RecoveryError, RecoveryPlan, StorageTarget, TransferReason,
+    TransferResult, TransferState, build_backup_manifest, execute_transfer, validate_recovery_plan,
 };
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
@@ -22,7 +21,10 @@ struct TargetRegistry {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt().json().with_env_filter("info").init();
+    tracing_subscriber::fmt()
+        .json()
+        .with_env_filter("info")
+        .init();
     run().await
 }
 
@@ -139,7 +141,10 @@ async fn run_transfer() -> Result<()> {
         "storage recovery partition completed"
     );
     if result.state != TransferState::Succeeded {
-        anyhow::bail!("storage recovery partition failed closed: {:?}", result.state);
+        anyhow::bail!(
+            "storage recovery partition failed closed: {:?}",
+            result.state
+        );
     }
     Ok(())
 }
@@ -241,8 +246,8 @@ async fn run_finalize() -> Result<()> {
 
 fn load_registry() -> Result<TargetRegistry> {
     let value = required("NGKG_STORAGE_TARGETS_JSON")?;
-    let registry: TargetRegistry = serde_json::from_str(&value)
-        .context("NGKG_STORAGE_TARGETS_JSON is invalid")?;
+    let registry: TargetRegistry =
+        serde_json::from_str(&value).context("NGKG_STORAGE_TARGETS_JSON is invalid")?;
     if registry.format_version != 1 || registry.targets.is_empty() {
         anyhow::bail!("storage target registry is empty or version-incompatible");
     }
@@ -263,7 +268,9 @@ fn target_store(registry: &TargetRegistry, name: &str) -> Result<ArtifactStore> 
         .iter()
         .map(|target| (target.name.as_str(), target))
         .collect::<BTreeMap<_, _>>();
-    let target = targets.get(name).context("plan references an unregistered storage target")?;
+    let target = targets
+        .get(name)
+        .context("plan references an unregistered storage target")?;
     ArtifactStore::from_base_url(&target.base_url).map_err(Into::into)
 }
 
@@ -302,7 +309,9 @@ fn failure_result(
         RecoveryError::Artifact(_)
         | RecoveryError::InvalidContract(_)
         | RecoveryError::InsufficientFailureDomains { .. }
-        | RecoveryError::Incomplete(_) => (TransferState::PermanentFailure, "RECOVERY_CONTRACT_FAILED"),
+        | RecoveryError::Incomplete(_) => {
+            (TransferState::PermanentFailure, "RECOVERY_CONTRACT_FAILED")
+        }
     };
     TransferResult {
         operation_id: plan.operation_id,

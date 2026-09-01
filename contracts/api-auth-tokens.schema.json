@@ -22,7 +22,7 @@
             "minItems": 1,
             "uniqueItems": true,
             "items": {
-              "enum": ["datasets:write", "sources:write", "ingestions:create", "jobs:read", "jobs:cancel", "snapshots:read", "snapshots:publish", "storage:read", "storage:write", "storage:restore", "queries:execute", "query-logs:read", "query-logs:read:text"]
+              "enum": ["datasets:write", "sources:write", "ingestions:create", "imports:create", "imports:read", "jobs:read", "jobs:cancel", "snapshots:read", "snapshots:publish", "storage:read", "storage:write", "storage:restore", "queries:execute", "query-logs:read", "query-logs:read:text"]
             }
           },
           "graphAuthorizationLabels": {

@@ -1,0 +1,1878 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "additionalProperties": false,
+    "$defs": {
+        "cpuAutoscaling": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "enabled",
+                "minReplicas",
+                "maxReplicas",
+                "cpuTargetPercent",
+                "memoryTargetPercent"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "minReplicas": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "maxReplicas": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "cpuTargetPercent": {
+                    "const": 80
+                },
+                "memoryTargetPercent": {
+                    "const": 80
+                }
+            }
+        },
+        "component": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "enabled",
+                "replicaCount",
+                "resources",
+                "autoscaling",
+                "scheduling"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "replicaCount": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "resources": {
+                    "type": "object",
+                    "required": [
+                        "requests",
+                        "limits"
+                    ]
+                },
+                "autoscaling": {
+                    "$ref": "#/$defs/cpuAutoscaling"
+                },
+                "scheduling": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "nodeSelector",
+                        "tolerations"
+                    ],
+                    "properties": {
+                        "nodeSelector": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        "tolerations": {
+                            "type": "array",
+                            "items": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "required": [
+        "image",
+        "replicaCount",
+        "service",
+        "query",
+        "auth",
+        "database",
+        "audit",
+        "catalogMigration",
+        "mcp",
+        "inputStorage",
+        "inputApi",
+        "managedAgents",
+        "toolBroker",
+        "memory",
+        "contextSlice",
+        "inferenceGateway",
+        "vllm",
+        "promptCompiler",
+        "components",
+        "qualificationWorker",
+        "gatewayApi",
+        "resources",
+        "autoscaling",
+        "podDisruptionBudget",
+        "scheduling",
+        "networkPolicy",
+        "serviceMonitor"
+    ],
+    "properties": {
+        "image": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "repository",
+                "digest",
+                "pullPolicy"
+            ],
+            "properties": {
+                "repository": {
+                    "type": "string"
+                },
+                "digest": {
+                    "type": "string",
+                    "pattern": "^$|^sha256:[0-9a-f]{64}$"
+                },
+                "pullPolicy": {
+                    "enum": [
+                        "Always",
+                        "IfNotPresent",
+                        "Never"
+                    ]
+                }
+            }
+        },
+        "replicaCount": {
+            "type": "integer",
+            "minimum": 3
+        },
+        "service": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "port"
+            ],
+            "properties": {
+                "port": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                }
+            }
+        },
+        "query": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "baseUrl",
+                "toolsEnabled",
+                "allowHttpLoopback"
+            ],
+            "properties": {
+                "baseUrl": {
+                    "type": "string",
+                    "pattern": "^https://|^http://(127\\.0\\.0\\.1|localhost|\\[::1\\])"
+                },
+                "toolsEnabled": {
+                    "type": "boolean"
+                },
+                "allowHttpLoopback": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "auth": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "mode",
+                "opaque",
+                "delegation"
+            ],
+            "properties": {
+                "mode": {
+                    "enum": [
+                        "opaque",
+                        "delegation"
+                    ]
+                },
+                "opaque": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "tokenSecret",
+                        "tokenSecretKey",
+                        "tokenFileSha256"
+                    ],
+                    "properties": {
+                        "tokenSecret": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "tokenSecretKey": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9._-]+$"
+                        },
+                        "tokenFileSha256": {
+                            "type": "string",
+                            "pattern": "^$|^[0-9a-f]{64}$"
+                        }
+                    }
+                },
+                "delegation": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "issuer",
+                        "audience",
+                        "jwksUrl",
+                        "resource",
+                        "authorizationServers",
+                        "allowedAlgorithms",
+                        "requiredTyp",
+                        "maximumTokenLifetimeSeconds",
+                        "clockSkewSeconds",
+                        "jwksCacheTtlSeconds",
+                        "lastKnownGoodSeconds",
+                        "connectTimeoutMilliseconds",
+                        "requestTimeoutMilliseconds",
+                        "allowHttpsLoopback",
+                        "egressIpBlocks",
+                        "exchange"
+                    ],
+                    "properties": {
+                        "issuer": {
+                            "type": "string"
+                        },
+                        "audience": {
+                            "type": "string"
+                        },
+                        "jwksUrl": {
+                            "type": "string"
+                        },
+                        "resource": {
+                            "type": "string"
+                        },
+                        "authorizationServers": {
+                            "type": "array",
+                            "uniqueItems": true,
+                            "items": {
+                                "type": "string",
+                                "pattern": "^https://"
+                            }
+                        },
+                        "allowedAlgorithms": {
+                            "type": "array",
+                            "minItems": 1,
+                            "uniqueItems": true,
+                            "items": {
+                                "enum": [
+                                    "RS256",
+                                    "RS384",
+                                    "RS512",
+                                    "PS256",
+                                    "PS384",
+                                    "PS512",
+                                    "ES256",
+                                    "ES384",
+                                    "EdDSA"
+                                ]
+                            }
+                        },
+                        "requiredTyp": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 32
+                        },
+                        "maximumTokenLifetimeSeconds": {
+                            "type": "integer",
+                            "minimum": 30,
+                            "maximum": 600
+                        },
+                        "clockSkewSeconds": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 120
+                        },
+                        "jwksCacheTtlSeconds": {
+                            "type": "integer",
+                            "minimum": 30,
+                            "maximum": 3600
+                        },
+                        "lastKnownGoodSeconds": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 3600
+                        },
+                        "connectTimeoutMilliseconds": {
+                            "type": "integer",
+                            "minimum": 100,
+                            "maximum": 30000
+                        },
+                        "requestTimeoutMilliseconds": {
+                            "type": "integer",
+                            "minimum": 100,
+                            "maximum": 60000
+                        },
+                        "allowHttpsLoopback": {
+                            "type": "boolean"
+                        },
+                        "egressIpBlocks": {
+                            "type": "array",
+                            "uniqueItems": true,
+                            "items": {
+                                "type": "string",
+                                "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}/[0-9]{1,2}$"
+                            }
+                        },
+                        "exchange": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                                "enabled",
+                                "endpoint",
+                                "scopes",
+                                "clientAuthentication",
+                                "clientId",
+                                "clientSecret",
+                                "clientSecretKey",
+                                "clientSecretFileSha256"
+                            ],
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean"
+                                },
+                                "endpoint": {
+                                    "type": "string"
+                                },
+                                "scopes": {
+                                    "type": "array",
+                                    "minItems": 1,
+                                    "uniqueItems": true,
+                                    "contains": {
+                                        "const": "queries:execute"
+                                    },
+                                    "items": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 128
+                                    }
+                                },
+                                "clientAuthentication": {
+                                    "enum": [
+                                        "workload-identity",
+                                        "client-secret-file"
+                                    ]
+                                },
+                                "clientId": {
+                                    "type": "string",
+                                    "maxLength": 256
+                                },
+                                "clientSecret": {
+                                    "type": "string"
+                                },
+                                "clientSecretKey": {
+                                    "type": "string",
+                                    "pattern": "^[A-Za-z0-9._-]+$"
+                                },
+                                "clientSecretFileSha256": {
+                                    "type": "string",
+                                    "pattern": "^$|^[0-9a-f]{64}$"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "mode": {
+                                "const": "opaque"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "opaque": {
+                                "properties": {
+                                    "tokenFileSha256": {
+                                        "pattern": "^[0-9a-f]{64}$"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "mode": {
+                                "const": "delegation"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "delegation": {
+                                "properties": {
+                                    "issuer": {
+                                        "pattern": "^https://"
+                                    },
+                                    "audience": {
+                                        "minLength": 1
+                                    },
+                                    "jwksUrl": {
+                                        "pattern": "^https://"
+                                    },
+                                    "resource": {
+                                        "pattern": "^https://"
+                                    },
+                                    "authorizationServers": {
+                                        "minItems": 1
+                                    },
+                                    "egressIpBlocks": {
+                                        "minItems": 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "database": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "runtimeSecret",
+                "runtimeSecretKey",
+                "migrationSecret",
+                "migrationSecretKey",
+                "runtimeRole",
+                "port",
+                "maximumConnections",
+                "acquireTimeoutMilliseconds",
+                "allowInsecureLoopback",
+                "podSelector",
+                "ipBlocks"
+            ],
+            "properties": {
+                "runtimeSecret": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "runtimeSecretKey": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9._-]+$"
+                },
+                "migrationSecret": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "migrationSecretKey": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9._-]+$"
+                },
+                "runtimeRole": {
+                    "type": "string",
+                    "pattern": "^[a-z_][a-z0-9_]{0,62}$"
+                },
+                "port": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "maximumConnections": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1024
+                },
+                "acquireTimeoutMilliseconds": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 60000
+                },
+                "allowInsecureLoopback": {
+                    "type": "boolean"
+                },
+                "podSelector": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "ipBlocks": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string",
+                        "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}/[0-9]{1,2}$"
+                    }
+                }
+            }
+        },
+        "audit": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "serviceBuildSha256"
+            ],
+            "properties": {
+                "serviceBuildSha256": {
+                    "type": "string",
+                    "pattern": "^$|^[0-9a-f]{64}$"
+                }
+            }
+        },
+        "catalogMigration": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "enabled",
+                "backoffLimit",
+                "activeDeadlineSeconds"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "backoffLimit": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10
+                },
+                "activeDeadlineSeconds": {
+                    "type": "integer",
+                    "minimum": 60,
+                    "maximum": 3600
+                }
+            }
+        },
+        "mcp": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "allowedHosts",
+                "allowedOrigins",
+                "maximumRequestBytes",
+                "maximumQueryBytes",
+                "maximumUpstreamResponseBytes",
+                "maximumInFlight",
+                "admissionTimeoutMilliseconds",
+                "connectTimeoutMilliseconds",
+                "requestTimeoutMilliseconds",
+                "maximumResultRows",
+                "maximumContextTriples",
+                "maximumContextBytes"
+            ],
+            "properties": {
+                "allowedHosts": {
+                    "type": "array",
+                    "minItems": 1,
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string",
+                        "minLength": 1
+                    }
+                },
+                "allowedOrigins": {
+                    "type": "array",
+                    "minItems": 1,
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string",
+                        "pattern": "^https://"
+                    }
+                },
+                "maximumRequestBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "maximumQueryBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "maximumUpstreamResponseBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "maximumInFlight": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "admissionTimeoutMilliseconds": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "connectTimeoutMilliseconds": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "requestTimeoutMilliseconds": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "maximumResultRows": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "maximumContextTriples": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "maximumContextBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                }
+            }
+        },
+        "inputStorage": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "provider",
+                "s3",
+                "azure",
+                "gcs",
+                "localTest",
+                "egressIpBlocks",
+                "serviceAccountAnnotations"
+            ],
+            "properties": {
+                "provider": {
+                    "enum": [
+                        "s3",
+                        "azure",
+                        "gcs",
+                        "local-test"
+                    ]
+                },
+                "s3": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "bucket",
+                        "region",
+                        "endpoint"
+                    ],
+                    "properties": {
+                        "bucket": {
+                            "type": "string"
+                        },
+                        "region": {
+                            "type": "string"
+                        },
+                        "endpoint": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "azure": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "container",
+                        "account",
+                        "endpoint"
+                    ],
+                    "properties": {
+                        "container": {
+                            "type": "string"
+                        },
+                        "account": {
+                            "type": "string"
+                        },
+                        "endpoint": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "gcs": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "bucket",
+                        "endpoint"
+                    ],
+                    "properties": {
+                        "bucket": {
+                            "type": "string"
+                        },
+                        "endpoint": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "localTest": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "root"
+                    ],
+                    "properties": {
+                        "root": {
+                            "type": "string",
+                            "pattern": "^/"
+                        }
+                    }
+                },
+                "egressIpBlocks": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "serviceAccountAnnotations": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "inputApi": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "maximumPartBytes",
+                "maximumParts",
+                "maximumBytes"
+            ],
+            "properties": {
+                "maximumPartBytes": {
+                    "type": "integer",
+                    "minimum": 1024,
+                    "maximum": 1073741824
+                },
+                "maximumParts": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100000
+                },
+                "maximumBytes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1099511627776
+                }
+            }
+        },
+        "managedAgents": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "enabled",
+                "providerSecret",
+                "providerFileKey",
+                "providerFileSha256",
+                "credentialSecret",
+                "maximumSourceBytes",
+                "maximumRequirements",
+                "maximumModelContextBytes",
+                "maximumClaims",
+                "maximumOutputTokens",
+                "providerEgressIpBlocks"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "providerSecret": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "providerFileKey": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "providerFileSha256": {
+                    "type": "string",
+                    "pattern": "^$|^[0-9a-f]{64}$"
+                },
+                "credentialSecret": {
+                    "type": "string"
+                },
+                "maximumSourceBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "maximumRequirements": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "maximumModelContextBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "maximumClaims": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10000
+                },
+                "maximumOutputTokens": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "providerEgressIpBlocks": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "enabled": {
+                                "const": true
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "providerFileSha256": {
+                                "pattern": "^[0-9a-f]{64}$"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "toolBroker": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "enabled",
+                "credentialsSecret",
+                "credentialsFileKey",
+                "credentialsFileSha256",
+                "protocolVersions",
+                "maximumTools",
+                "maximumSchemaDepth",
+                "maximumCatalogBytes",
+                "maximumRequestBytes",
+                "maximumResponseBytes",
+                "maximumCatalogPages",
+                "maximumInFlight",
+                "connectTimeoutMilliseconds",
+                "requestTimeoutMilliseconds",
+                "allowClusterPrivateEndpoints",
+                "externalEgressIpBlocks"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "credentialsSecret": {
+                    "type": "string"
+                },
+                "credentialsFileKey": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "credentialsFileSha256": {
+                    "type": "string",
+                    "pattern": "^$|^[0-9a-f]{64}$"
+                },
+                "protocolVersions": {
+                    "type": "array",
+                    "minItems": 1,
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string",
+                        "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+                    }
+                },
+                "maximumTools": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10000
+                },
+                "maximumSchemaDepth": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 128
+                },
+                "maximumCatalogBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "maximumRequestBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "maximumResponseBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "maximumCatalogPages": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1000
+                },
+                "maximumInFlight": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1024
+                },
+                "connectTimeoutMilliseconds": {
+                    "type": "integer",
+                    "minimum": 100,
+                    "maximum": 30000
+                },
+                "requestTimeoutMilliseconds": {
+                    "type": "integer",
+                    "minimum": 100,
+                    "maximum": 600000
+                },
+                "allowClusterPrivateEndpoints": {
+                    "type": "boolean"
+                },
+                "externalEgressIpBlocks": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "memory": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "enabled",
+                "maximumContentBytes",
+                "maximumSearchResults",
+                "maximumStatements",
+                "maximumWorkingTtlSeconds",
+                "maximumRetentionDays"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "maximumContentBytes": {
+                    "type": "integer",
+                    "minimum": 1024,
+                    "maximum": 1048576
+                },
+                "maximumSearchResults": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1000
+                },
+                "maximumStatements": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10000
+                },
+                "maximumWorkingTtlSeconds": {
+                    "type": "integer",
+                    "minimum": 60,
+                    "maximum": 604800
+                },
+                "maximumRetentionDays": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 36500
+                }
+            }
+        },
+        "inferenceGateway": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "replicaCount",
+                "port",
+                "maximumRequestBytes",
+                "maximumResponseBytes",
+                "maximumWaiting",
+                "maximumInFlight",
+                "coldStartTimeoutMilliseconds",
+                "readinessPollMilliseconds",
+                "connectTimeoutMilliseconds",
+                "upstreamTimeoutMilliseconds",
+                "resources",
+                "autoscaling",
+                "scheduling"
+            ],
+            "properties": {
+                "replicaCount": {
+                    "type": "integer",
+                    "minimum": 2
+                },
+                "port": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "maximumRequestBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "maximumResponseBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "maximumWaiting": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "maximumInFlight": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "coldStartTimeoutMilliseconds": {
+                    "type": "integer",
+                    "minimum": 1000
+                },
+                "readinessPollMilliseconds": {
+                    "type": "integer",
+                    "minimum": 100
+                },
+                "connectTimeoutMilliseconds": {
+                    "type": "integer",
+                    "minimum": 100
+                },
+                "upstreamTimeoutMilliseconds": {
+                    "type": "integer",
+                    "minimum": 1000
+                },
+                "resources": {
+                    "type": "object",
+                    "required": [
+                        "requests",
+                        "limits"
+                    ]
+                },
+                "autoscaling": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "enabled",
+                        "minReplicas",
+                        "maxReplicas",
+                        "cpuTargetPercent",
+                        "memoryTargetPercent"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "minReplicas": {
+                            "type": "integer",
+                            "minimum": 2
+                        },
+                        "maxReplicas": {
+                            "type": "integer",
+                            "minimum": 2
+                        },
+                        "cpuTargetPercent": {
+                            "const": 80
+                        },
+                        "memoryTargetPercent": {
+                            "const": 80
+                        }
+                    }
+                },
+                "scheduling": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "nodeSelector",
+                        "tolerations"
+                    ],
+                    "properties": {
+                        "nodeSelector": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        "tolerations": {
+                            "type": "array",
+                            "items": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "vllm": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "enabled",
+                "image",
+                "model",
+                "servedModelName",
+                "port",
+                "enginePort",
+                "podAgentPort",
+                "podAgentAdminPort",
+                "tensorParallelSize",
+                "maximumModelLength",
+                "runtimeClassName",
+                "serviceAccountAnnotations",
+                "podLabels",
+                "podAnnotations",
+                "modelCache",
+                "sharedMemorySizeLimit",
+                "maximumRequestBytes",
+                "maximumResponseBytes",
+                "maximumInFlightPerPod",
+                "connectTimeoutMilliseconds",
+                "upstreamTimeoutMilliseconds",
+                "readinessPollMilliseconds",
+                "startupFailureThreshold",
+                "drainTimeoutSeconds",
+                "terminationGracePeriodSeconds",
+                "modelSourceEgressIpBlocks",
+                "resources",
+                "podAgentResources",
+                "scheduling",
+                "nodeProvisioning",
+                "autoscaling"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "image": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "repository",
+                        "digest",
+                        "pullPolicy"
+                    ],
+                    "properties": {
+                        "repository": {
+                            "type": "string"
+                        },
+                        "digest": {
+                            "type": "string",
+                            "pattern": "^$|^sha256:[0-9a-f]{64}$"
+                        },
+                        "pullPolicy": {
+                            "enum": [
+                                "Always",
+                                "IfNotPresent",
+                                "Never"
+                            ]
+                        }
+                    }
+                },
+                "model": {
+                    "type": "string"
+                },
+                "servedModelName": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "port": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "enginePort": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "podAgentPort": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "podAgentAdminPort": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "tensorParallelSize": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 64
+                },
+                "maximumModelLength": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "runtimeClassName": {
+                    "type": "string"
+                },
+                "serviceAccountAnnotations": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "podLabels": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "podAnnotations": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "modelCache": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "enabled",
+                        "existingClaim",
+                        "mountPath",
+                        "readOnly"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "existingClaim": {
+                            "type": "string"
+                        },
+                        "mountPath": {
+                            "type": "string",
+                            "pattern": "^/"
+                        },
+                        "readOnly": {
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "sharedMemorySizeLimit": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "maximumRequestBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "maximumResponseBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "maximumInFlightPerPod": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "connectTimeoutMilliseconds": {
+                    "type": "integer",
+                    "minimum": 100
+                },
+                "upstreamTimeoutMilliseconds": {
+                    "type": "integer",
+                    "minimum": 1000
+                },
+                "readinessPollMilliseconds": {
+                    "type": "integer",
+                    "minimum": 100
+                },
+                "startupFailureThreshold": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "drainTimeoutSeconds": {
+                    "type": "integer",
+                    "minimum": 30
+                },
+                "terminationGracePeriodSeconds": {
+                    "type": "integer",
+                    "minimum": 60
+                },
+                "modelSourceEgressIpBlocks": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "resources": {
+                    "type": "object",
+                    "required": [
+                        "requests",
+                        "limits"
+                    ]
+                },
+                "podAgentResources": {
+                    "type": "object",
+                    "required": [
+                        "requests",
+                        "limits"
+                    ]
+                },
+                "scheduling": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "nodeSelector",
+                        "tolerations",
+                        "topologyKey",
+                        "capacityTypeValues"
+                    ],
+                    "properties": {
+                        "nodeSelector": {
+                            "type": "object",
+                            "minProperties": 1,
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        "tolerations": {
+                            "type": "array",
+                            "items": {
+                                "type": "object"
+                            }
+                        },
+                        "topologyKey": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "capacityTypeValues": {
+                            "type": "array",
+                            "items": {
+                                "enum": [
+                                    "on-demand",
+                                    "spot",
+                                    "reserved"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "nodeProvisioning": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "provider",
+                        "poolName"
+                    ],
+                    "properties": {
+                        "provider": {
+                            "enum": [
+                                "external",
+                                "rke2",
+                                "eks",
+                                "aks",
+                                "gke"
+                            ]
+                        },
+                        "poolName": {
+                            "type": "string",
+                            "minLength": 1
+                        }
+                    }
+                },
+                "autoscaling": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "enabled",
+                        "minReplicas",
+                        "maxReplicas",
+                        "cpuTargetPercent",
+                        "memoryTargetPercent",
+                        "waitingRequestsTarget",
+                        "activationWaitingRequests",
+                        "pollingIntervalSeconds",
+                        "cooldownSeconds",
+                        "prometheusServerAddress"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "minReplicas": {
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "maxReplicas": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "cpuTargetPercent": {
+                            "const": 80
+                        },
+                        "memoryTargetPercent": {
+                            "const": 80
+                        },
+                        "waitingRequestsTarget": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                    "activationWaitingRequests": {
+                        "type": "integer",
+                        "minimum": 0
+                        },
+                        "pollingIntervalSeconds": {
+                            "type": "integer",
+                            "minimum": 5
+                        },
+                        "cooldownSeconds": {
+                            "type": "integer",
+                            "minimum": 60
+                        },
+                        "prometheusServerAddress": {
+                            "type": "string",
+                            "pattern": "^https?://"
+                        }
+                    }
+                }
+            }
+        },
+        "promptCompiler": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "replicaCount",
+                "leaseMilliseconds",
+                "idlePollMilliseconds",
+                "targetChunkBytes",
+                "maximumChunkBytes",
+                "maximumChunksPerPart",
+                "maximumRequirementsPerPart",
+                "maximumPartBytes",
+                "threads",
+                "resources",
+                "autoscaling",
+                "scheduling"
+            ],
+            "properties": {
+                "replicaCount": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "leaseMilliseconds": {
+                    "type": "integer",
+                    "minimum": 1000,
+                    "maximum": 3600000
+                },
+                "idlePollMilliseconds": {
+                    "type": "integer",
+                    "minimum": 10,
+                    "maximum": 60000
+                },
+                "targetChunkBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "maximumChunkBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "maximumChunksPerPart": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "maximumRequirementsPerPart": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "maximumPartBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "threads": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "resources": {
+                    "type": "object",
+                    "required": [
+                        "requests",
+                        "limits"
+                    ]
+                },
+                "autoscaling": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "enabled",
+                        "minReplicas",
+                        "maxReplicas",
+                        "cpuTargetPercent",
+                        "memoryTargetPercent"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "minReplicas": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "maxReplicas": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "cpuTargetPercent": {
+                            "const": 80
+                        },
+                        "memoryTargetPercent": {
+                            "const": 80
+                        }
+                    }
+                },
+                "scheduling": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "nodeSelector",
+                        "tolerations"
+                    ],
+                    "properties": {
+                        "nodeSelector": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        "tolerations": {
+                            "type": "array",
+                            "items": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "components": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "orchestrator",
+                "memory",
+                "toolBroker"
+            ],
+            "properties": {
+                "orchestrator": {
+                    "$ref": "#/$defs/component"
+                },
+                "memory": {
+                    "$ref": "#/$defs/component"
+                },
+                "toolBroker": {
+                    "$ref": "#/$defs/component"
+                }
+            }
+        },
+        "contextSlice": {
+            "type": "object",
+            "required": ["enabled", "port", "replicaCount", "capabilitySecret", "capabilitySecretKey", "capabilityKeySha256", "capabilityIssuer", "capabilityAudiences", "capabilityMaximumTtlSeconds", "capabilityClockSkewSeconds", "maximumTtlSeconds", "recoveryWindowSeconds", "chunkBytes", "maximumRangeBytes", "maximumChunks", "maximumIndexBytes", "maximumInFlightReads", "maximumHashTasks", "kmsKeyIdSha256", "storage", "resources", "autoscaling", "scheduling", "gc"]
+        },
+        "qualificationWorker": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "enabled",
+                "replicaCount",
+                "leaseMilliseconds",
+                "idlePollMilliseconds",
+                "memoryFractionPercent",
+                "maximumPartitionBytes",
+                "maximumSpillBytes",
+                "spillSizeLimit",
+                "resources",
+                "autoscaling",
+                "scheduling"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "replicaCount": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "leaseMilliseconds": {
+                    "type": "integer",
+                    "minimum": 1000,
+                    "maximum": 3600000
+                },
+                "idlePollMilliseconds": {
+                    "type": "integer",
+                    "minimum": 10,
+                    "maximum": 60000
+                },
+                "memoryFractionPercent": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 90
+                },
+                "maximumPartitionBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "maximumSpillBytes": {
+                    "type": "integer",
+                    "minimum": 1024
+                },
+                "spillSizeLimit": {
+                    "type": "string",
+                    "minLength": 2
+                },
+                "resources": {
+                    "type": "object",
+                    "required": [
+                        "requests",
+                        "limits"
+                    ]
+                },
+                "autoscaling": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "enabled",
+                        "mode",
+                        "minReplicas",
+                        "maxReplicas",
+                        "cpuTargetPercent",
+                        "memoryTargetPercent",
+                        "queuePartitionsPerReplica",
+                        "prometheusServerAddress"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "mode": {
+                            "enum": [
+                                "hpa",
+                                "keda"
+                            ]
+                        },
+                        "minReplicas": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "maxReplicas": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "cpuTargetPercent": {
+                            "const": 80
+                        },
+                        "memoryTargetPercent": {
+                            "const": 80
+                        },
+                        "queuePartitionsPerReplica": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "prometheusServerAddress": {
+                            "type": "string",
+                            "pattern": "^https?://"
+                        }
+                    }
+                },
+                "scheduling": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "nodeSelector",
+                        "tolerations"
+                    ],
+                    "properties": {
+                        "nodeSelector": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        "tolerations": {
+                            "type": "array",
+                            "items": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "gatewayApi": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "enabled",
+                "parentRefs",
+                "hostnames"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "parentRefs": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "hostnames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "resources": {
+            "type": "object",
+            "required": [
+                "requests",
+                "limits"
+            ],
+            "properties": {
+                "requests": {
+                    "type": "object",
+                    "required": [
+                        "cpu",
+                        "memory"
+                    ]
+                },
+                "limits": {
+                    "type": "object",
+                    "required": [
+                        "cpu",
+                        "memory"
+                    ]
+                }
+            }
+        },
+        "autoscaling": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "enabled",
+                "minReplicas",
+                "maxReplicas",
+                "cpuTargetPercent",
+                "memoryTargetPercent"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "minReplicas": {
+                    "type": "integer",
+                    "minimum": 3
+                },
+                "maxReplicas": {
+                    "type": "integer",
+                    "minimum": 3
+                },
+                "cpuTargetPercent": {
+                    "const": 80
+                },
+                "memoryTargetPercent": {
+                    "const": 80
+                }
+            }
+        },
+        "podDisruptionBudget": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "minAvailable"
+            ],
+            "properties": {
+                "minAvailable": {
+                    "type": "integer",
+                    "minimum": 2
+                }
+            }
+        },
+        "scheduling": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "nodeSelector",
+                "tolerations",
+                "topologyKey"
+            ],
+            "properties": {
+                "nodeSelector": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "tolerations": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "topologyKey": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            }
+        },
+        "networkPolicy": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "enabled",
+                "ingressNamespaceSelector",
+                "ingressPodSelector",
+                "dnsNamespaceSelector"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "ingressNamespaceSelector": {
+                    "type": "object"
+                },
+                "ingressPodSelector": {
+                    "type": "object"
+                },
+                "dnsNamespaceSelector": {
+                    "type": "object"
+                }
+            }
+        },
+        "serviceMonitor": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "enabled",
+                "interval",
+                "labels",
+                "ingressNamespaceSelector",
+                "ingressPodSelector"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "interval": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]*[smh]$"
+                },
+                "labels": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "ingressNamespaceSelector": {
+                    "type": "object"
+                },
+                "ingressPodSelector": {
+                    "type": "object"
+                }
+            }
+        }
+    }
+}

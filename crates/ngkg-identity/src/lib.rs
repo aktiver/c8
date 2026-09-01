@@ -54,7 +54,10 @@ pub enum IdentityError {
 }
 
 /// Deterministic GUID for an authoritative canonical IRI.
-pub fn guid_for_canonical_iri(dataset_namespace: Uuid, canonical_iri: &str) -> Result<Uuid, IdentityError> {
+pub fn guid_for_canonical_iri(
+    dataset_namespace: Uuid,
+    canonical_iri: &str,
+) -> Result<Uuid, IdentityError> {
     let iri = Iri::parse(canonical_iri.to_owned())
         .map_err(|_| IdentityError::InvalidIri(canonical_iri.to_owned()))?;
     Ok(Uuid::new_v5(&dataset_namespace, iri.as_str().as_bytes()))
@@ -84,12 +87,17 @@ pub fn fact_identity(input: &FactIdentityInput<'_>) -> FactIdentity {
     let digest = hasher.finalize();
     let mut compact_id = [0_u8; 16];
     compact_id.copy_from_slice(&digest.as_bytes()[..16]);
-    FactIdentity { compact_id, collision_fingerprint: *digest.as_bytes() }
+    FactIdentity {
+        compact_id,
+        collision_fingerprint: *digest.as_bytes(),
+    }
 }
 
 /// Reject a compact-key collision rather than coalescing assertions.
 pub fn verify_fact_collision(left: FactIdentity, right: FactIdentity) -> Result<(), IdentityError> {
-    if left.compact_id == right.compact_id && left.collision_fingerprint != right.collision_fingerprint {
+    if left.compact_id == right.compact_id
+        && left.collision_fingerprint != right.collision_fingerprint
+    {
         return Err(IdentityError::FactIdCollision);
     }
     Ok(())
@@ -120,7 +128,11 @@ pub fn merge_dictionary_runs(runs: &[DictionaryRun]) -> Result<DenseDictionary, 
         append_component(&mut hasher, &term);
         entries.insert(term, id);
     }
-    Ok(DenseDictionary { entries, range_counts, root_hash: *hasher.finalize().as_bytes() })
+    Ok(DenseDictionary {
+        entries,
+        range_counts,
+        root_hash: *hasher.finalize().as_bytes(),
+    })
 }
 
 fn append_component(hasher: &mut blake3::Hasher, value: &[u8]) {
@@ -130,7 +142,10 @@ fn append_component(hasher: &mut blake3::Hasher, value: &[u8]) {
 
 #[cfg(test)]
 mod tests {
-    use super::{DictionaryRun, FactIdentityInput, fact_identity, guid_for_canonical_iri, merge_dictionary_runs};
+    use super::{
+        DictionaryRun, FactIdentityInput, fact_identity, guid_for_canonical_iri,
+        merge_dictionary_runs,
+    };
     use uuid::Uuid;
 
     #[test]
@@ -139,23 +154,33 @@ mod tests {
         let first = guid_for_canonical_iri(namespace, "https://ngkg.io/id/node-1");
         let second = guid_for_canonical_iri(namespace, "https://ngkg.io/id/node-1");
         assert_eq!(first, second);
-        let a = DictionaryRun { range_id: 1, canonical_terms: vec![b"z".to_vec(), b"a".to_vec()] };
-        let b = DictionaryRun { range_id: 2, canonical_terms: vec![b"m".to_vec(), b"a".to_vec()] };
-        assert_eq!(merge_dictionary_runs(&[a.clone(), b.clone()]).map(|value| value.entries), merge_dictionary_runs(&[b, a]).map(|value| value.entries));
+        let a = DictionaryRun {
+            range_id: 1,
+            canonical_terms: vec![b"z".to_vec(), b"a".to_vec()],
+        };
+        let b = DictionaryRun {
+            range_id: 2,
+            canonical_terms: vec![b"m".to_vec(), b"a".to_vec()],
+        };
+        assert_eq!(
+            merge_dictionary_runs(&[a.clone(), b.clone()]).map(|value| value.entries),
+            merge_dictionary_runs(&[b, a]).map(|value| value.entries)
+        );
     }
 
     #[test]
     fn graph_and_provenance_change_fact_identity() {
         let source = Uuid::from_u128(7);
-        let make = |graph: &str| fact_identity(&FactIdentityInput {
-            subject: b"s",
-            predicate_iri: "urn:p",
-            object_canonical: b"o",
-            graph_iri: graph,
-            source_guid: source,
-            source_snapshot: "source-v1",
-        });
+        let make = |graph: &str| {
+            fact_identity(&FactIdentityInput {
+                subject: b"s",
+                predicate_iri: "urn:p",
+                object_canonical: b"o",
+                graph_iri: graph,
+                source_guid: source,
+                source_snapshot: "source-v1",
+            })
+        };
         assert_ne!(make("urn:g1"), make("urn:g2"));
     }
 }
-

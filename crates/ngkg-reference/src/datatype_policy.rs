@@ -9,6 +9,8 @@ use thiserror::Error;
 use crate::rdf::{NormalizedFact, NormalizedObject};
 
 const EMBEDDED_POLICY: &[u8] = include_bytes!("../../../policies/owl-direct-datatype-policy.json");
+/// Every qualification, offline, and exact lane must accept this exact version identifier.
+pub const OWL_DIRECT_DATATYPE_POLICY_ID: &str = "ngkg-owl2-direct-datatype-policy-v1";
 
 /// One datatype IRI and the lexical-space validator applied to literals using it.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -123,7 +125,7 @@ pub fn read_policy(path: &Path) -> Result<(DatatypePolicy, String), DatatypePoli
 
 fn validate_policy_contract(policy: &DatatypePolicy) -> Result<(), DatatypePolicyError> {
     if policy.format_version != 1
-        || policy.policy_id.is_empty()
+        || policy.policy_id != OWL_DIRECT_DATATYPE_POLICY_ID
         || policy.unsupported_datatype_behavior != "reject_snapshot"
         || policy.ill_typed_literal_behavior != "reject_snapshot"
         || policy.canonicalization != "preserve_source_lexical_form"

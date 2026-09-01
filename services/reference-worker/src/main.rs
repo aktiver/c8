@@ -7,14 +7,14 @@ use ngkg_reference::{
     execute_snapshot_query, sha256_path, write_query_result,
 };
 
-mod object_compile;
-mod direct_job;
-mod cloud_import;
-mod cloud_decode;
-mod cloud_semantic;
-mod cloud_ontology;
-mod cloud_offline;
 mod cloud_activate;
+mod cloud_decode;
+mod cloud_import;
+mod cloud_offline;
+mod cloud_ontology;
+mod cloud_semantic;
+mod direct_job;
+mod object_compile;
 mod phase40_limits;
 
 #[tokio::main]
@@ -103,49 +103,39 @@ async fn run() -> Result<String, String> {
                 .await
                 .map_err(|error| error.to_string())
         }
-        "cloud-semantic-map" => {
-            cloud_semantic::execute_map(&options)
-                .await
-                .map_err(|error| error.to_string())
-        }
-        "cloud-semantic-dictionary" => {
-            cloud_semantic::execute_dictionary(&options)
-                .await
-                .map_err(|error| error.to_string())
-        }
-        "cloud-semantic-partition" => {
-            cloud_semantic::execute_partition(&options)
-                .await
-                .map_err(|error| error.to_string())
-        }
-        "cloud-semantic-finalize" => {
-            cloud_semantic::execute_finalize(&options)
-                .await
-                .map_err(|error| error.to_string())
-        }
-        "cloud-ontology-project" => {
-            cloud_ontology::execute_project(&options)
-                .await
-                .map_err(|error| error.to_string())
-        }
-        "cloud-ontology-assemble" => {
-            cloud_ontology::execute_assemble(&options)
-                .await
-                .map_err(|error| error.to_string())
-        }
-        "cloud-ontology-qualify" => {
-            cloud_ontology::execute_qualify(&options)
-                .await
-                .map_err(|error| error.to_string())
-        }
+        "cloud-semantic-map" => cloud_semantic::execute_map(&options)
+            .await
+            .map_err(|error| error.to_string()),
+        "cloud-semantic-dictionary" => cloud_semantic::execute_dictionary(&options)
+            .await
+            .map_err(|error| error.to_string()),
+        "cloud-semantic-partition" => cloud_semantic::execute_partition(&options)
+            .await
+            .map_err(|error| error.to_string()),
+        "cloud-semantic-finalize" => cloud_semantic::execute_finalize(&options)
+            .await
+            .map_err(|error| error.to_string()),
+        "cloud-ontology-project" => cloud_ontology::execute_project(&options)
+            .await
+            .map_err(|error| error.to_string()),
+        "cloud-ontology-assemble" => cloud_ontology::execute_assemble(&options)
+            .await
+            .map_err(|error| error.to_string()),
+        "cloud-ontology-qualify" => cloud_ontology::execute_qualify(&options)
+            .await
+            .map_err(|error| error.to_string()),
         "cloud-offline-plan" => cloud_offline::execute_plan(&options)
-            .await.map_err(|error| error.to_string()),
+            .await
+            .map_err(|error| error.to_string()),
         "cloud-offline-partition" => cloud_offline::execute_partition(&options)
-            .await.map_err(|error| error.to_string()),
+            .await
+            .map_err(|error| error.to_string()),
         "cloud-offline-finalize" => cloud_offline::execute_finalize(&options)
-            .await.map_err(|error| error.to_string()),
+            .await
+            .map_err(|error| error.to_string()),
         "cloud-snapshot-activate" => cloud_activate::execute(&options)
-            .await.map_err(|error| error.to_string()),
+            .await
+            .map_err(|error| error.to_string()),
         "compile-object-store" => {
             reject_unknown(
                 &options,
@@ -232,7 +222,10 @@ async fn run() -> Result<String, String> {
                 max_quads: required_u64(&options, "ceiling-quads")?,
                 max_dictionary_terms: required_u64(&options, "ceiling-dictionary-terms")?,
                 max_reasoner_seconds: required_u64(&options, "ceiling-reasoner-seconds")?,
-                max_parquet_row_group_rows: required_usize(&options, "ceiling-parquet-row-group-rows")?,
+                max_parquet_row_group_rows: required_usize(
+                    &options,
+                    "ceiling-parquet-row-group-rows",
+                )?,
                 max_named_individuals: required_u64(&options, "ceiling-named-individuals")?,
                 max_properties: required_u64(&options, "ceiling-properties")?,
             };
@@ -243,7 +236,7 @@ async fn run() -> Result<String, String> {
                 &trusted_reasoner,
                 ceilings,
             )
-                .map_err(|error| error.to_string())?;
+            .map_err(|error| error.to_string())?;
             let snapshot_sha256 = sha256_path(&snapshot).map_err(|error| error.to_string())?;
             Ok(serde_json::json!({
                 "status": "compiled",
@@ -279,8 +272,9 @@ async fn run() -> Result<String, String> {
                 Some(_) => return Err("--hydrate-payload must be true or false".to_owned()),
             };
             let snapshot_sha256 = required_value(&options, "snapshot-sha256")?;
-            let result = execute_snapshot_query(&snapshot, &snapshot_sha256, &query, &query_root, hydrate)
-                .map_err(|error| error.to_string())?;
+            let result =
+                execute_snapshot_query(&snapshot, &snapshot_sha256, &query, &query_root, hydrate)
+                    .map_err(|error| error.to_string())?;
             write_query_result(&output, &result).map_err(|error| error.to_string())?;
             Ok(serde_json::json!({"status": "queried", "output": output}).to_string())
         }
@@ -339,7 +333,10 @@ fn required_usize(options: &BTreeMap<String, String>, name: &str) -> Result<usiz
 }
 
 fn reject_unknown(options: &BTreeMap<String, String>, allowed: &[&str]) -> Result<(), String> {
-    if let Some(name) = options.keys().find(|name| !allowed.contains(&name.as_str())) {
+    if let Some(name) = options
+        .keys()
+        .find(|name| !allowed.contains(&name.as_str()))
+    {
         return Err(format!("unknown option --{name}"));
     }
     Ok(())

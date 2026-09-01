@@ -12,8 +12,8 @@ use k8s_openapi::{
             EnvFromSource, EnvVar, EnvVarSource, ObjectFieldSelector, ObjectReference,
             PersistentVolume, PersistentVolumeClaim, PersistentVolumeClaimSpec,
             PersistentVolumeClaimVolumeSource, PersistentVolumeSpec, PodSecurityContext, PodSpec,
-            PodTemplateSpec, ResourceRequirements, SeccompProfile, SecretEnvSource, ServiceAccount,
-            SecretKeySelector, SecurityContext, Toleration, Volume, VolumeMount,
+            PodTemplateSpec, ResourceRequirements, SeccompProfile, SecretEnvSource,
+            SecretKeySelector, SecurityContext, ServiceAccount, Toleration, Volume, VolumeMount,
             VolumeResourceRequirements,
         },
         rbac::v1::{PolicyRule, Role, RoleBinding, RoleRef, Subject},
@@ -24,12 +24,12 @@ use k8s_openapi::{
 use kube::{
     Api, Client, Resource, ResourceExt,
     api::{DeleteParams, ObjectMeta, Patch, PatchParams, PostParams},
-    runtime::{Controller, controller::Action, watcher},
+    runtime::{Controller, controller::Action, finalizer::{Event, finalizer}, watcher},
 };
 use ngkg_catalog::{CatalogError, JobState, OperationRepository};
 use ngkg_kube::{
     CloudObjectProvider, NgkgCompilation, NgkgCompilationSpec, NgkgCompilationStatus,
-    NgkgSourceImport, NgkgSourceImportStatus,
+    NgkgSourceImport, NgkgSourceImportStatus, source_import_status_apply_document,
 };
 use ngkg_operator_core::Phase40DirectCeilings;
 use serde_json::json;
@@ -70,18 +70,53 @@ struct WorkerConfig {
     options: Vec<(String, String)>,
 }
 
+const SOURCE_IMPORT_FINALIZER: &str = "ngkg.io/source-import-runtime-cleanup";
+
+// Keep the reference Job command line identical to the worker's
+// `compile-object-store` allowlist. Other values in WorkerConfig are used by
+// cloud/distributed stages and must never be forwarded to this command.
+const REFERENCE_COMPILE_OPTION_NAMES: &[&str] = &[
+    "java-executable",
+    "reasoner-adapter-jar",
+    "reasoner-adapter-sha256",
+    "reasoner-name",
+    "reasoner-version",
+    "ceiling-bundle-bytes",
+    "ceiling-staged-object-bytes",
+    "ceiling-staged-total-bytes",
+    "ceiling-staged-artifacts",
+    "ceiling-output-bytes",
+    "ceiling-output-artifacts",
+    "ceiling-input-bytes",
+    "ceiling-quads",
+    "ceiling-dictionary-terms",
+    "ceiling-reasoner-seconds",
+    "ceiling-parquet-row-group-rows",
+    "ceiling-named-individuals",
+    "ceiling-properties",
+    "download-concurrency",
+    "upload-concurrency",
+    "single-put-max-bytes",
+    "multipart-buffer-bytes",
+    "multipart-concurrency",
+    "hydration-worker-threads",
+    "ceiling-hydration-rows",
+];
+
 #[derive(Debug, Error)]
 enum OperatorError {
     #[error("catalog operation failed: {0}")]
     Catalog(#[from] CatalogError),
     #[error("Kubernetes operation failed: {0}")]
     Kubernetes(#[from] kube::Error),
+    #[error("status serialization failed: {0}")]
+    StatusSerialization(#[from] serde_json::Error),
+    #[error("source-import finalization failed: {0}")]
+    Finalization(String),
     #[error("compilation resource conflicts with durable catalog request: {0}")]
     SpecConflict(&'static str),
     #[error("resource profile is not served by this operator")]
     ResourceProfile,
-    #[error("Kubernetes resource quantity is invalid: {0}")]
-    Quantity(String),
 }
 
 #[tokio::main]
@@ -105,8 +140,10 @@ async fn main() -> Result<()> {
         worker,
     });
     let compilations: Api<NgkgCompilation> = Api::namespaced(client.clone(), &namespace);
-    let imports: Api<NgkgSourceImport> = Api::namespaced(client, &namespace);
+    let imports: Api<NgkgSourceImport> = Api::namespaced(client.clone(), &namespace);
+    let jobs: Api<Job> = Api::namespaced(client, &namespace);
     let compilation_controller = Controller::new(compilations, watcher::Config::default())
+        .owns(jobs.clone(), watcher::Config::default())
         .run(reconcile, error_policy, Arc::clone(&context))
         .for_each(|result| async move {
             if let Err(error) = result {
@@ -114,6 +151,7 @@ async fn main() -> Result<()> {
             }
         });
     let import_controller = Controller::new(imports, watcher::Config::default())
+        .owns(jobs, watcher::Config::default())
         .run(reconcile_import, import_error_policy, context)
         .for_each(|result| async move {
             if let Err(error) = result {
@@ -190,46 +228,142 @@ impl WorkerConfig {
                 "decode-max-parallelism",
                 "NGKG_CLOUD_DECODE_MAX_PARALLELISM",
             ),
-            ("semantic-map-max-parallelism", "NGKG_SEMANTIC_MAP_MAX_PARALLELISM"),
-            ("semantic-partition-max-parallelism", "NGKG_SEMANTIC_PARTITION_MAX_PARALLELISM"),
-            ("semantic-max-manifest-bytes", "NGKG_SEMANTIC_MAX_MANIFEST_BYTES"),
-            ("semantic-max-fragment-bytes", "NGKG_SEMANTIC_MAX_FRAGMENT_BYTES"),
-            ("semantic-max-fragment-quads", "NGKG_SEMANTIC_MAX_FRAGMENT_QUADS"),
-            ("semantic-map-rows-in-memory", "NGKG_SEMANTIC_MAP_ROWS_IN_MEMORY"),
+            (
+                "semantic-map-max-parallelism",
+                "NGKG_SEMANTIC_MAP_MAX_PARALLELISM",
+            ),
+            (
+                "semantic-partition-max-parallelism",
+                "NGKG_SEMANTIC_PARTITION_MAX_PARALLELISM",
+            ),
+            (
+                "semantic-max-manifest-bytes",
+                "NGKG_SEMANTIC_MAX_MANIFEST_BYTES",
+            ),
+            (
+                "semantic-max-fragment-bytes",
+                "NGKG_SEMANTIC_MAX_FRAGMENT_BYTES",
+            ),
+            (
+                "semantic-max-fragment-quads",
+                "NGKG_SEMANTIC_MAX_FRAGMENT_QUADS",
+            ),
+            (
+                "semantic-map-rows-in-memory",
+                "NGKG_SEMANTIC_MAP_ROWS_IN_MEMORY",
+            ),
             ("semantic-max-run-bytes", "NGKG_SEMANTIC_MAX_RUN_BYTES"),
-            ("semantic-max-dictionary-bytes", "NGKG_SEMANTIC_MAX_DICTIONARY_BYTES"),
+            (
+                "semantic-max-dictionary-bytes",
+                "NGKG_SEMANTIC_MAX_DICTIONARY_BYTES",
+            ),
             ("semantic-max-input-runs", "NGKG_SEMANTIC_MAX_INPUT_RUNS"),
-            ("semantic-max-partition-quads", "NGKG_SEMANTIC_MAX_PARTITION_QUADS"),
-            ("semantic-parquet-row-group-rows", "NGKG_SEMANTIC_PARQUET_ROW_GROUP_ROWS"),
-            ("semantic-max-artifact-bytes", "NGKG_SEMANTIC_MAX_ARTIFACT_BYTES"),
-            ("semantic-finalize-concurrency", "NGKG_SEMANTIC_FINALIZE_CONCURRENCY"),
-            ("ontology-project-max-parallelism", "NGKG_ONTOLOGY_PROJECT_MAX_PARALLELISM"),
-            ("ontology-max-manifest-bytes", "NGKG_ONTOLOGY_MAX_MANIFEST_BYTES"),
-            ("ontology-max-partition-quads", "NGKG_ONTOLOGY_MAX_PARTITION_QUADS"),
-            ("ontology-projection-rows-in-memory", "NGKG_ONTOLOGY_PROJECTION_ROWS_IN_MEMORY"),
-            ("ontology-max-artifact-bytes", "NGKG_ONTOLOGY_MAX_ARTIFACT_BYTES"),
-            ("ontology-download-concurrency", "NGKG_ONTOLOGY_DOWNLOAD_CONCURRENCY"),
-            ("ontology-reasoner-heap-mib", "NGKG_ONTOLOGY_REASONER_HEAP_MIB"),
-            ("ontology-reasoner-timeout-seconds", "NGKG_ONTOLOGY_REASONER_TIMEOUT_SECONDS"),
-            ("ontology-max-named-individuals", "NGKG_ONTOLOGY_MAX_NAMED_INDIVIDUALS"),
+            (
+                "semantic-max-partition-quads",
+                "NGKG_SEMANTIC_MAX_PARTITION_QUADS",
+            ),
+            (
+                "semantic-parquet-row-group-rows",
+                "NGKG_SEMANTIC_PARQUET_ROW_GROUP_ROWS",
+            ),
+            (
+                "semantic-max-artifact-bytes",
+                "NGKG_SEMANTIC_MAX_ARTIFACT_BYTES",
+            ),
+            (
+                "semantic-finalize-concurrency",
+                "NGKG_SEMANTIC_FINALIZE_CONCURRENCY",
+            ),
+            (
+                "ontology-project-max-parallelism",
+                "NGKG_ONTOLOGY_PROJECT_MAX_PARALLELISM",
+            ),
+            (
+                "ontology-max-manifest-bytes",
+                "NGKG_ONTOLOGY_MAX_MANIFEST_BYTES",
+            ),
+            (
+                "ontology-max-partition-quads",
+                "NGKG_ONTOLOGY_MAX_PARTITION_QUADS",
+            ),
+            (
+                "ontology-projection-rows-in-memory",
+                "NGKG_ONTOLOGY_PROJECTION_ROWS_IN_MEMORY",
+            ),
+            (
+                "ontology-max-artifact-bytes",
+                "NGKG_ONTOLOGY_MAX_ARTIFACT_BYTES",
+            ),
+            (
+                "ontology-download-concurrency",
+                "NGKG_ONTOLOGY_DOWNLOAD_CONCURRENCY",
+            ),
+            (
+                "ontology-reasoner-heap-mib",
+                "NGKG_ONTOLOGY_REASONER_HEAP_MIB",
+            ),
+            (
+                "ontology-reasoner-timeout-seconds",
+                "NGKG_ONTOLOGY_REASONER_TIMEOUT_SECONDS",
+            ),
+            (
+                "ontology-max-named-individuals",
+                "NGKG_ONTOLOGY_MAX_NAMED_INDIVIDUALS",
+            ),
             ("ontology-max-properties", "NGKG_ONTOLOGY_MAX_PROPERTIES"),
-            ("offline-partition-max-parallelism", "NGKG_OFFLINE_PARTITION_MAX_PARALLELISM"),
+            (
+                "offline-partition-max-parallelism",
+                "NGKG_OFFLINE_PARTITION_MAX_PARALLELISM",
+            ),
             ("offline-worker-cpu", "NGKG_OFFLINE_WORKER_CPU"),
             ("offline-worker-memory", "NGKG_OFFLINE_WORKER_MEMORY"),
             ("offline-scratch-size", "NGKG_OFFLINE_SCRATCH_SIZE"),
-            ("offline-logical-partitions", "NGKG_OFFLINE_LOGICAL_PARTITIONS"),
-            ("offline-max-manifest-bytes", "NGKG_OFFLINE_MAX_MANIFEST_BYTES"),
-            ("offline-max-artifact-bytes", "NGKG_OFFLINE_MAX_ARTIFACT_BYTES"),
-            ("offline-max-finalizer-local-bytes", "NGKG_OFFLINE_MAX_FINALIZER_LOCAL_BYTES"),
+            (
+                "offline-logical-partitions",
+                "NGKG_OFFLINE_LOGICAL_PARTITIONS",
+            ),
+            (
+                "offline-max-manifest-bytes",
+                "NGKG_OFFLINE_MAX_MANIFEST_BYTES",
+            ),
+            (
+                "offline-max-artifact-bytes",
+                "NGKG_OFFLINE_MAX_ARTIFACT_BYTES",
+            ),
+            (
+                "offline-max-finalizer-local-bytes",
+                "NGKG_OFFLINE_MAX_FINALIZER_LOCAL_BYTES",
+            ),
             ("offline-max-consequences", "NGKG_OFFLINE_MAX_CONSEQUENCES"),
-            ("offline-plan-rows-in-memory", "NGKG_OFFLINE_PLAN_ROWS_IN_MEMORY"),
+            (
+                "offline-plan-rows-in-memory",
+                "NGKG_OFFLINE_PLAN_ROWS_IN_MEMORY",
+            ),
             ("offline-max-run-bytes", "NGKG_OFFLINE_MAX_RUN_BYTES"),
-            ("offline-parquet-row-group-rows", "NGKG_OFFLINE_PARQUET_ROW_GROUP_ROWS"),
-            ("offline-finalize-concurrency", "NGKG_OFFLINE_FINALIZE_CONCURRENCY"),
-            ("activation-max-manifest-bytes", "NGKG_ACTIVATION_MAX_MANIFEST_BYTES"),
-            ("activation-max-partition-bytes", "NGKG_ACTIVATION_MAX_PARTITION_BYTES"),
-            ("activation-max-query-dataset-bytes", "NGKG_ACTIVATION_MAX_QUERY_DATASET_BYTES"),
-            ("activation-verify-concurrency", "NGKG_ACTIVATION_VERIFY_CONCURRENCY"),
+            (
+                "offline-parquet-row-group-rows",
+                "NGKG_OFFLINE_PARQUET_ROW_GROUP_ROWS",
+            ),
+            (
+                "offline-finalize-concurrency",
+                "NGKG_OFFLINE_FINALIZE_CONCURRENCY",
+            ),
+            (
+                "activation-max-manifest-bytes",
+                "NGKG_ACTIVATION_MAX_MANIFEST_BYTES",
+            ),
+            (
+                "activation-max-partition-bytes",
+                "NGKG_ACTIVATION_MAX_PARTITION_BYTES",
+            ),
+            (
+                "activation-max-query-dataset-bytes",
+                "NGKG_ACTIVATION_MAX_QUERY_DATASET_BYTES",
+            ),
+            (
+                "activation-verify-concurrency",
+                "NGKG_ACTIVATION_VERIFY_CONCURRENCY",
+            ),
         ]
         .into_iter()
         .map(|(option, variable)| Ok((option.to_owned(), required(variable)?)))
@@ -243,18 +377,12 @@ impl WorkerConfig {
             require_source_csi_driver_discovery: required_bool(
                 "NGKG_REQUIRE_SOURCE_CSI_DRIVER_DISCOVERY",
             )?,
-            aws_s3_csi_driver: required_exact(
-                "NGKG_AWS_S3_CSI_DRIVER",
-                "s3.csi.aws.com",
-            )?,
+            aws_s3_csi_driver: required_exact("NGKG_AWS_S3_CSI_DRIVER", "s3.csi.aws.com")?,
             azure_blob_csi_driver: required_exact(
                 "NGKG_AZURE_BLOB_CSI_DRIVER",
                 "blob.csi.azure.com",
             )?,
-            gcs_csi_driver: required_exact(
-                "NGKG_GCS_CSI_DRIVER",
-                "gcsfuse.csi.storage.gke.io",
-            )?,
+            gcs_csi_driver: required_exact("NGKG_GCS_CSI_DRIVER", "gcsfuse.csi.storage.gke.io")?,
             resource_profile: required("NGKG_REFERENCE_RESOURCE_PROFILE")?,
             queue_name: required("NGKG_REFERENCE_QUEUE")?,
             cpu: required("NGKG_REFERENCE_CPU")?,
@@ -384,6 +512,25 @@ async fn reconcile_import(
     import: Arc<NgkgSourceImport>,
     context: Arc<Context>,
 ) -> Result<Action, OperatorError> {
+    let imports: Api<NgkgSourceImport> =
+        Api::namespaced(context.client.clone(), &context.namespace);
+    finalizer(&imports, SOURCE_IMPORT_FINALIZER, import, move |event| {
+        let context = context.clone();
+        async move {
+            match event {
+                Event::Apply(import) => reconcile_import_apply(import, context).await,
+                Event::Cleanup(import) => cleanup_import_runtime(import, context).await,
+            }
+        }
+    })
+    .await
+    .map_err(|error| OperatorError::Finalization(error.to_string()))
+}
+
+async fn reconcile_import_apply(
+    import: Arc<NgkgSourceImport>,
+    context: Arc<Context>,
+) -> Result<Action, OperatorError> {
     if import.spec.resource_profile != context.worker.resource_profile {
         return Ok(Action::await_change());
     }
@@ -466,6 +613,38 @@ async fn reconcile_import(
     Ok(Action::requeue(Duration::from_secs(15)))
 }
 
+async fn cleanup_import_runtime(
+    import: Arc<NgkgSourceImport>,
+    context: Arc<Context>,
+) -> Result<Action, OperatorError> {
+    let base = format!("ngkg-import-{}", import.spec.operation_id.simple());
+    let jobs: Api<Job> = Api::namespaced(context.client.clone(), &context.namespace);
+    let selector = format!("ngkg.io/operation-id={}", import.spec.operation_id);
+    for job in jobs.list(&kube::api::ListParams::default().labels(&selector)).await? {
+        if let Some(name) = job.metadata.name.as_deref() {
+            match jobs.delete(name, &DeleteParams::default()).await {
+                Ok(_) => {}
+                Err(kube::Error::Api(kube_error)) if kube_error.code == 404 => {}
+                Err(error) => return Err(error.into()),
+            }
+        }
+    }
+    let claims: Api<PersistentVolumeClaim> =
+        Api::namespaced(context.client.clone(), &context.namespace);
+    match claims.delete(&base, &DeleteParams::default()).await {
+        Ok(_) => {}
+        Err(kube::Error::Api(kube_error)) if kube_error.code == 404 => {}
+        Err(error) => return Err(error.into()),
+    }
+    let volumes: Api<PersistentVolume> = Api::all(context.client.clone());
+    match volumes.delete(&base, &DeleteParams::default()).await {
+        Ok(_) => {}
+        Err(kube::Error::Api(kube_error)) if kube_error.code == 404 => {}
+        Err(error) => return Err(error.into()),
+    }
+    Ok(Action::await_change())
+}
+
 async fn reconcile_import_offline_reasoning(
     import: &NgkgSourceImport,
     context: &Context,
@@ -475,55 +654,109 @@ async fn reconcile_import_offline_reasoning(
     let jobs: Api<Job> = Api::namespaced(context.client.clone(), &context.namespace);
     let plan_name = format!("{base}-offline-plan");
     ensure_offline_plan_job(import, context, &plan_name, &current).await?;
-    let Some(plan_job) = jobs.get_opt(&plan_name).await? else { return Ok(Action::requeue(Duration::from_secs(5))); };
+    let Some(plan_job) = jobs.get_opt(&plan_name).await? else {
+        return Ok(Action::requeue(Duration::from_secs(5)));
+    };
     if job_condition_is_true(&plan_job, "Failed") {
-        patch_import_status(import, context, NgkgSourceImportStatus {
-            offline_reasoning_plan_job_name: Some(plan_name), condition: Some("OfflineReasoningPlanFailed".to_owned()), ..current
-        }).await?;
+        patch_import_status(
+            import,
+            context,
+            NgkgSourceImportStatus {
+                offline_reasoning_plan_job_name: Some(plan_name),
+                condition: Some("OfflineReasoningPlanFailed".to_owned()),
+                ..current
+            },
+        )
+        .await?;
         return Ok(Action::await_change());
     }
     if !job_condition_is_true(&plan_job, "Complete")
         || current.offline_reasoning_plan_sha256.is_none()
         || current.offline_reasoning_partition_count.is_none()
     {
-        patch_import_status(import, context, NgkgSourceImportStatus {
-            offline_reasoning_plan_job_name: Some(plan_name), condition: Some("OfflineReasoningPlanRunning".to_owned()), ..current
-        }).await?;
+        patch_import_status(
+            import,
+            context,
+            NgkgSourceImportStatus {
+                offline_reasoning_plan_job_name: Some(plan_name),
+                condition: Some("OfflineReasoningPlanRunning".to_owned()),
+                ..current
+            },
+        )
+        .await?;
         return Ok(Action::requeue(Duration::from_secs(15)));
     }
-    let completions = current.offline_reasoning_partition_count
-        .filter(|value| *value > 0).ok_or(OperatorError::SpecConflict("offlineReasoningPartitionCount"))?;
+    let completions = current
+        .offline_reasoning_partition_count
+        .filter(|value| *value > 0)
+        .ok_or(OperatorError::SpecConflict(
+            "offlineReasoningPartitionCount",
+        ))?;
     let partition_name = format!("{base}-offline-part");
     ensure_offline_partition_job(import, context, &partition_name, completions, &current).await?;
-    let Some(partition_job) = jobs.get_opt(&partition_name).await? else { return Ok(Action::requeue(Duration::from_secs(5))); };
+    let Some(partition_job) = jobs.get_opt(&partition_name).await? else {
+        return Ok(Action::requeue(Duration::from_secs(5)));
+    };
     if job_condition_is_true(&partition_job, "Failed") {
-        patch_import_status(import, context, NgkgSourceImportStatus {
-            offline_reasoning_plan_job_name: Some(plan_name), offline_reasoning_partition_job_name: Some(partition_name),
-            condition: Some("OfflineReasoningPartitionFailed".to_owned()), ..current
-        }).await?;
+        patch_import_status(
+            import,
+            context,
+            NgkgSourceImportStatus {
+                offline_reasoning_plan_job_name: Some(plan_name),
+                offline_reasoning_partition_job_name: Some(partition_name),
+                condition: Some("OfflineReasoningPartitionFailed".to_owned()),
+                ..current
+            },
+        )
+        .await?;
         return Ok(Action::await_change());
     }
     if !job_condition_is_true(&partition_job, "Complete") {
-        patch_import_status(import, context, NgkgSourceImportStatus {
-            offline_reasoning_plan_job_name: Some(plan_name), offline_reasoning_partition_job_name: Some(partition_name),
-            condition: Some("OfflineReasoningPartitionsRunning".to_owned()), ..current
-        }).await?;
+        patch_import_status(
+            import,
+            context,
+            NgkgSourceImportStatus {
+                offline_reasoning_plan_job_name: Some(plan_name),
+                offline_reasoning_partition_job_name: Some(partition_name),
+                condition: Some("OfflineReasoningPartitionsRunning".to_owned()),
+                ..current
+            },
+        )
+        .await?;
         return Ok(Action::requeue(Duration::from_secs(15)));
     }
     let finalize_name = format!("{base}-offline-final");
     ensure_offline_finalize_job(import, context, &finalize_name, &current).await?;
-    let Some(finalize_job) = jobs.get_opt(&finalize_name).await? else { return Ok(Action::requeue(Duration::from_secs(5))); };
+    let Some(finalize_job) = jobs.get_opt(&finalize_name).await? else {
+        return Ok(Action::requeue(Duration::from_secs(5)));
+    };
     if job_condition_is_true(&finalize_job, "Failed") {
-        patch_import_status(import, context, NgkgSourceImportStatus {
-            offline_reasoning_plan_job_name: Some(plan_name), offline_reasoning_partition_job_name: Some(partition_name),
-            offline_reasoning_finalize_job_name: Some(finalize_name), condition: Some("OfflineReasoningFinalizeFailed".to_owned()), ..current
-        }).await?;
+        patch_import_status(
+            import,
+            context,
+            NgkgSourceImportStatus {
+                offline_reasoning_plan_job_name: Some(plan_name),
+                offline_reasoning_partition_job_name: Some(partition_name),
+                offline_reasoning_finalize_job_name: Some(finalize_name),
+                condition: Some("OfflineReasoningFinalizeFailed".to_owned()),
+                ..current
+            },
+        )
+        .await?;
         return Ok(Action::await_change());
     }
-    patch_import_status(import, context, NgkgSourceImportStatus {
-        offline_reasoning_plan_job_name: Some(plan_name), offline_reasoning_partition_job_name: Some(partition_name),
-        offline_reasoning_finalize_job_name: Some(finalize_name), condition: Some("OfflineReasoningFinalizeRunning".to_owned()), ..current
-    }).await?;
+    patch_import_status(
+        import,
+        context,
+        NgkgSourceImportStatus {
+            offline_reasoning_plan_job_name: Some(plan_name),
+            offline_reasoning_partition_job_name: Some(partition_name),
+            offline_reasoning_finalize_job_name: Some(finalize_name),
+            condition: Some("OfflineReasoningFinalizeRunning".to_owned()),
+            ..current
+        },
+    )
+    .await?;
     Ok(Action::requeue(Duration::from_secs(15)))
 }
 
@@ -540,18 +773,28 @@ async fn reconcile_import_activation(
         return Ok(Action::requeue(Duration::from_secs(5)));
     };
     if job_condition_is_true(&job, "Failed") {
-        patch_import_status(import, context, NgkgSourceImportStatus {
-            snapshot_activation_job_name: Some(name),
-            condition: Some("SnapshotActivationFailedClosed".to_owned()),
-            ..current
-        }).await?;
+        patch_import_status(
+            import,
+            context,
+            NgkgSourceImportStatus {
+                snapshot_activation_job_name: Some(name),
+                condition: Some("SnapshotActivationFailedClosed".to_owned()),
+                ..current
+            },
+        )
+        .await?;
         return Ok(Action::await_change());
     }
-    patch_import_status(import, context, NgkgSourceImportStatus {
-        snapshot_activation_job_name: Some(name),
-        condition: Some("SnapshotActivationBarrierRunning".to_owned()),
-        ..current
-    }).await?;
+    patch_import_status(
+        import,
+        context,
+        NgkgSourceImportStatus {
+            snapshot_activation_job_name: Some(name),
+            condition: Some("SnapshotActivationBarrierRunning".to_owned()),
+            ..current
+        },
+    )
+    .await?;
     Ok(Action::requeue(Duration::from_secs(10)))
 }
 
@@ -568,19 +811,29 @@ async fn reconcile_import_ontology(
         return Ok(Action::requeue(Duration::from_secs(5)));
     };
     if job_condition_is_true(&projection, "Failed") {
-        patch_import_status(import, context, NgkgSourceImportStatus {
-            ontology_projection_job_name: Some(projection_name),
-            condition: Some("OntologyProjectionFailed".to_owned()),
-            ..current
-        }).await?;
+        patch_import_status(
+            import,
+            context,
+            NgkgSourceImportStatus {
+                ontology_projection_job_name: Some(projection_name),
+                condition: Some("OntologyProjectionFailed".to_owned()),
+                ..current
+            },
+        )
+        .await?;
         return Ok(Action::await_change());
     }
     if !job_condition_is_true(&projection, "Complete") {
-        patch_import_status(import, context, NgkgSourceImportStatus {
-            ontology_projection_job_name: Some(projection_name),
-            condition: Some("OntologyProjectionRunning".to_owned()),
-            ..current
-        }).await?;
+        patch_import_status(
+            import,
+            context,
+            NgkgSourceImportStatus {
+                ontology_projection_job_name: Some(projection_name),
+                condition: Some("OntologyProjectionRunning".to_owned()),
+                ..current
+            },
+        )
+        .await?;
         return Ok(Action::requeue(Duration::from_secs(15)));
     }
     let assembly_name = format!("{base}-owl-assemble");
@@ -589,21 +842,31 @@ async fn reconcile_import_ontology(
         return Ok(Action::requeue(Duration::from_secs(5)));
     };
     if job_condition_is_true(&assembly, "Failed") {
-        patch_import_status(import, context, NgkgSourceImportStatus {
-            ontology_projection_job_name: Some(projection_name),
-            ontology_assembly_job_name: Some(assembly_name),
-            condition: Some("OntologyAssemblyFailed".to_owned()),
-            ..current
-        }).await?;
+        patch_import_status(
+            import,
+            context,
+            NgkgSourceImportStatus {
+                ontology_projection_job_name: Some(projection_name),
+                ontology_assembly_job_name: Some(assembly_name),
+                condition: Some("OntologyAssemblyFailed".to_owned()),
+                ..current
+            },
+        )
+        .await?;
         return Ok(Action::await_change());
     }
     if !job_condition_is_true(&assembly, "Complete") || current.ontology_assembly_sha256.is_none() {
-        patch_import_status(import, context, NgkgSourceImportStatus {
-            ontology_projection_job_name: Some(projection_name),
-            ontology_assembly_job_name: Some(assembly_name),
-            condition: Some("OntologyAssemblyRunning".to_owned()),
-            ..current
-        }).await?;
+        patch_import_status(
+            import,
+            context,
+            NgkgSourceImportStatus {
+                ontology_projection_job_name: Some(projection_name),
+                ontology_assembly_job_name: Some(assembly_name),
+                condition: Some("OntologyAssemblyRunning".to_owned()),
+                ..current
+            },
+        )
+        .await?;
         return Ok(Action::requeue(Duration::from_secs(15)));
     }
     let qualify_name = format!("{base}-owl-qualify");
@@ -612,22 +875,32 @@ async fn reconcile_import_ontology(
         return Ok(Action::requeue(Duration::from_secs(5)));
     };
     if job_condition_is_true(&qualify, "Failed") {
-        patch_import_status(import, context, NgkgSourceImportStatus {
+        patch_import_status(
+            import,
+            context,
+            NgkgSourceImportStatus {
+                ontology_projection_job_name: Some(projection_name),
+                ontology_assembly_job_name: Some(assembly_name),
+                ontology_qualification_job_name: Some(qualify_name),
+                condition: Some("Owl2DlQualificationFailed".to_owned()),
+                ..current
+            },
+        )
+        .await?;
+        return Ok(Action::await_change());
+    }
+    patch_import_status(
+        import,
+        context,
+        NgkgSourceImportStatus {
             ontology_projection_job_name: Some(projection_name),
             ontology_assembly_job_name: Some(assembly_name),
             ontology_qualification_job_name: Some(qualify_name),
-            condition: Some("Owl2DlQualificationFailed".to_owned()),
+            condition: Some("Owl2DlQualificationRunning".to_owned()),
             ..current
-        }).await?;
-        return Ok(Action::await_change());
-    }
-    patch_import_status(import, context, NgkgSourceImportStatus {
-        ontology_projection_job_name: Some(projection_name),
-        ontology_assembly_job_name: Some(assembly_name),
-        ontology_qualification_job_name: Some(qualify_name),
-        condition: Some("Owl2DlQualificationRunning".to_owned()),
-        ..current
-    }).await?;
+        },
+    )
+    .await?;
     Ok(Action::requeue(Duration::from_secs(15)))
 }
 
@@ -914,9 +1187,9 @@ fn job_condition_is_true(job: &Job, condition_type: &str) -> bool {
         .as_ref()
         .and_then(|status| status.conditions.as_ref())
         .is_some_and(|conditions| {
-            conditions.iter().any(|condition| {
-                condition.type_ == condition_type && condition.status == "True"
-            })
+            conditions
+                .iter()
+                .any(|condition| condition.type_ == condition_type && condition.status == "True")
         })
 }
 
@@ -961,7 +1234,7 @@ async fn ensure_import_worker_rbac(
                 ..ObjectMeta::default()
             },
             role_ref: RoleRef {
-                api_group: "rbac.authorization.k8s.io".to_owned(),
+                api_group: Some("rbac.authorization.k8s.io".to_owned()),
                 kind: "Role".to_owned(),
                 name: name.to_owned(),
             },
@@ -995,6 +1268,10 @@ async fn ensure_import_volume(
     context: &Context,
     name: &str,
 ) -> Result<(), OperatorError> {
+    // Static bucket volumes are declarative mount handles, not one-PiB allocations.  Use the
+    // admitted import ceiling so schedulers and quota engines see a bounded, honest request.
+    let capacity_bytes = import.spec.max_source_bytes.max(1_048_576);
+    let capacity = Quantity(capacity_bytes.to_string());
     let persistent_volumes: Api<PersistentVolume> = Api::all(context.client.clone());
     if persistent_volumes.get_opt(name).await?.is_none() {
         let service_accounts: Api<ServiceAccount> =
@@ -1010,11 +1287,8 @@ async fn ensure_import_volume(
                 "Azure source identity lacks azure.workload.identity/client-id",
             ));
         }
-        let (driver, volume_handle, attributes) = import_csi_contract(
-            import,
-            azure_client_id.map(String::as_str),
-            &context.worker,
-        );
+        let (driver, volume_handle, attributes) =
+            import_csi_contract(import, azure_client_id.map(String::as_str), &context.worker);
         if context.worker.require_source_csi_driver_discovery {
             let drivers: Api<CSIDriver> = Api::all(context.client.clone());
             if drivers.get_opt(&driver).await?.is_none() {
@@ -1028,12 +1302,21 @@ async fn ensure_import_volume(
                 name: Some(name.to_owned()),
                 labels: Some(BTreeMap::from([
                     ("app.kubernetes.io/name".to_owned(), "ngkg".to_owned()),
-                    ("app.kubernetes.io/component".to_owned(), "source-import".to_owned()),
-                    ("ngkg.io/operation-id".to_owned(), import.spec.operation_id.to_string()),
+                    (
+                        "app.kubernetes.io/component".to_owned(),
+                        "source-import".to_owned(),
+                    ),
+                    (
+                        "ngkg.io/operation-id".to_owned(),
+                        import.spec.operation_id.to_string(),
+                    ),
                 ])),
                 annotations: Some(BTreeMap::from([(
                     "ngkg.io/source-spec-sha256".to_owned(),
                     import_spec_hash(import),
+                ), (
+                    "ngkg.io/lifecycle-owner".to_owned(),
+                    format!("{}/{}", context.namespace, import.name_any()),
                 )])),
                 ..ObjectMeta::default()
             },
@@ -1041,7 +1324,7 @@ async fn ensure_import_volume(
                 access_modes: Some(vec!["ReadOnlyMany".to_owned()]),
                 capacity: Some(BTreeMap::from([(
                     "storage".to_owned(),
-                    Quantity("1Pi".to_owned()),
+                    capacity.clone(),
                 )])),
                 claim_ref: Some(ObjectReference {
                     name: Some(name.to_owned()),
@@ -1055,14 +1338,19 @@ async fn ensure_import_volume(
                     volume_handle,
                     ..CSIPersistentVolumeSource::default()
                 }),
-                persistent_volume_reclaim_policy: Some("Retain".to_owned()),
+                // All three supported CSI drivers treat deletion of the static mount handle as
+                // unmount/reclamation; source buckets remain protected by read-only identity.
+                persistent_volume_reclaim_policy: Some("Delete".to_owned()),
                 storage_class_name: Some(String::new()),
                 volume_mode: Some("Filesystem".to_owned()),
                 ..PersistentVolumeSpec::default()
             }),
             status: None,
         };
-        match persistent_volumes.create(&PostParams::default(), &volume).await {
+        match persistent_volumes
+            .create(&PostParams::default(), &volume)
+            .await
+        {
             Ok(_) => {}
             Err(kube::Error::Api(kube_error)) if kube_error.code == 409 => {}
             Err(error) => return Err(error.into()),
@@ -1087,7 +1375,7 @@ async fn ensure_import_volume(
                 resources: Some(VolumeResourceRequirements {
                     requests: Some(BTreeMap::from([(
                         "storage".to_owned(),
-                        Quantity("1Pi".to_owned()),
+                        capacity,
                     )])),
                     ..VolumeResourceRequirements::default()
                 }),
@@ -1183,16 +1471,25 @@ async fn ensure_import_job(
     }
     let mut labels = BTreeMap::from([
         ("app.kubernetes.io/name".to_owned(), "ngkg".to_owned()),
-        ("app.kubernetes.io/component".to_owned(), "source-import".to_owned()),
-        ("ngkg.io/responsibility".to_owned(), "source-ingestion".to_owned()),
-        ("ngkg.io/operation-id".to_owned(), import.spec.operation_id.to_string()),
-        ("kueue.x-k8s.io/queue-name".to_owned(), context.worker.queue_name.clone()),
+        (
+            "app.kubernetes.io/component".to_owned(),
+            "source-import".to_owned(),
+        ),
+        (
+            "ngkg.io/responsibility".to_owned(),
+            "source-ingestion".to_owned(),
+        ),
+        (
+            "ngkg.io/operation-id".to_owned(),
+            import.spec.operation_id.to_string(),
+        ),
+        (
+            "kueue.x-k8s.io/queue-name".to_owned(),
+            context.worker.queue_name.clone(),
+        ),
     ]);
     if import.spec.provider == CloudObjectProvider::AzureBlob {
-        labels.insert(
-            "azure.workload.identity/use".to_owned(),
-            "true".to_owned(),
-        );
+        labels.insert("azure.workload.identity/use".to_owned(), "true".to_owned());
     }
     let source_spec_sha256 = import_spec_hash(import);
     let scratch_size = Quantity(context.worker.scratch_size.clone());
@@ -1523,24 +1820,46 @@ fn ontology_common_arguments(
     context: &Context,
     status: &NgkgSourceImportStatus,
 ) -> Result<Vec<String>, OperatorError> {
-    let root_key = status.semantic_compilation_root_object_key.as_deref()
-        .ok_or(OperatorError::SpecConflict("semanticCompilationRootObjectKey"))?;
-    let root_sha256 = status.semantic_compilation_root_sha256.as_deref()
+    let root_key = status
+        .semantic_compilation_root_object_key
+        .as_deref()
+        .ok_or(OperatorError::SpecConflict(
+            "semanticCompilationRootObjectKey",
+        ))?;
+    let root_sha256 = status
+        .semantic_compilation_root_sha256
+        .as_deref()
         .ok_or(OperatorError::SpecConflict("semanticCompilationRootSha256"))?;
     Ok(vec![
-        "--namespace".to_owned(), context.namespace.clone(),
-        "--import-name".to_owned(), import.name_any(),
-        "--artifact-base-url".to_owned(), context.worker.artifact_base_url.clone(),
-        "--scratch-root".to_owned(), "/scratch".to_owned(),
-        "--semantic-compilation-root-object-key".to_owned(), root_key.to_owned(),
-        "--semantic-compilation-root-sha256".to_owned(), root_sha256.to_owned(),
-        "--ontology-qualification-request-object-key".to_owned(), import.spec.ontology_qualification_request_object_key.clone(),
-        "--ontology-qualification-request-sha256".to_owned(), import.spec.ontology_qualification_request_sha256.clone(),
-        "--ontology-max-manifest-bytes".to_owned(), option_value(&context.worker.options, "ontology-max-manifest-bytes"),
-        "--ontology-max-artifact-bytes".to_owned(), option_value(&context.worker.options, "ontology-max-artifact-bytes"),
-        "--single-put-max-bytes".to_owned(), option_value(&context.worker.options, "single-put-max-bytes"),
-        "--multipart-buffer-bytes".to_owned(), option_value(&context.worker.options, "multipart-buffer-bytes"),
-        "--multipart-concurrency".to_owned(), option_value(&context.worker.options, "multipart-concurrency"),
+        "--namespace".to_owned(),
+        context.namespace.clone(),
+        "--import-name".to_owned(),
+        import.name_any(),
+        "--artifact-base-url".to_owned(),
+        context.worker.artifact_base_url.clone(),
+        "--scratch-root".to_owned(),
+        "/scratch".to_owned(),
+        "--semantic-compilation-root-object-key".to_owned(),
+        root_key.to_owned(),
+        "--semantic-compilation-root-sha256".to_owned(),
+        root_sha256.to_owned(),
+        "--ontology-qualification-request-object-key".to_owned(),
+        import
+            .spec
+            .ontology_qualification_request_object_key
+            .clone(),
+        "--ontology-qualification-request-sha256".to_owned(),
+        import.spec.ontology_qualification_request_sha256.clone(),
+        "--ontology-max-manifest-bytes".to_owned(),
+        option_value(&context.worker.options, "ontology-max-manifest-bytes"),
+        "--ontology-max-artifact-bytes".to_owned(),
+        option_value(&context.worker.options, "ontology-max-artifact-bytes"),
+        "--single-put-max-bytes".to_owned(),
+        option_value(&context.worker.options, "single-put-max-bytes"),
+        "--multipart-buffer-bytes".to_owned(),
+        option_value(&context.worker.options, "multipart-buffer-bytes"),
+        "--multipart-concurrency".to_owned(),
+        option_value(&context.worker.options, "multipart-concurrency"),
     ])
 }
 
@@ -1553,9 +1872,15 @@ async fn ensure_ontology_projection_job(
     let mut arguments = vec!["cloud-ontology-project".to_owned()];
     arguments.extend(ontology_common_arguments(import, context, status)?);
     arguments.extend([
-        "--completion-index".to_owned(), "$(JOB_COMPLETION_INDEX)".to_owned(),
-        "--ontology-max-partition-quads".to_owned(), option_value(&context.worker.options, "ontology-max-partition-quads"),
-        "--ontology-projection-rows-in-memory".to_owned(), option_value(&context.worker.options, "ontology-projection-rows-in-memory"),
+        "--completion-index".to_owned(),
+        "$(JOB_COMPLETION_INDEX)".to_owned(),
+        "--ontology-max-partition-quads".to_owned(),
+        option_value(&context.worker.options, "ontology-max-partition-quads"),
+        "--ontology-projection-rows-in-memory".to_owned(),
+        option_value(
+            &context.worker.options,
+            "ontology-projection-rows-in-memory",
+        ),
     ]);
     let maximum = option_value(&context.worker.options, "ontology-project-max-parallelism")
         .parse::<u32>()
@@ -1563,9 +1888,18 @@ async fn ensure_ontology_projection_job(
         .max(1);
     let completions = import.spec.logical_partitions;
     ensure_cloud_stage_job(
-        import, context, name, name, "ontology-project", arguments,
-        completions, completions.min(maximum), true, false,
-    ).await
+        import,
+        context,
+        name,
+        name,
+        "ontology-project",
+        arguments,
+        completions,
+        completions.min(maximum),
+        true,
+        false,
+    )
+    .await
 }
 
 async fn ensure_ontology_assembly_job(
@@ -1577,9 +1911,22 @@ async fn ensure_ontology_assembly_job(
     let mut arguments = vec!["cloud-ontology-assemble".to_owned()];
     arguments.extend(ontology_common_arguments(import, context, status)?);
     arguments.extend([
-        "--ontology-download-concurrency".to_owned(), option_value(&context.worker.options, "ontology-download-concurrency"),
+        "--ontology-download-concurrency".to_owned(),
+        option_value(&context.worker.options, "ontology-download-concurrency"),
     ]);
-    ensure_cloud_stage_job(import, context, name, name, "ontology-assemble", arguments, 1, 1, false, false).await
+    ensure_cloud_stage_job(
+        import,
+        context,
+        name,
+        name,
+        "ontology-assemble",
+        arguments,
+        1,
+        1,
+        false,
+        false,
+    )
+    .await
 }
 
 async fn ensure_ontology_qualification_job(
@@ -1588,26 +1935,53 @@ async fn ensure_ontology_qualification_job(
     name: &str,
     status: &NgkgSourceImportStatus,
 ) -> Result<(), OperatorError> {
-    let assembly_key = status.ontology_assembly_object_key.as_deref()
+    let assembly_key = status
+        .ontology_assembly_object_key
+        .as_deref()
         .ok_or(OperatorError::SpecConflict("ontologyAssemblyObjectKey"))?;
-    let assembly_sha256 = status.ontology_assembly_sha256.as_deref()
+    let assembly_sha256 = status
+        .ontology_assembly_sha256
+        .as_deref()
         .ok_or(OperatorError::SpecConflict("ontologyAssemblySha256"))?;
     let mut arguments = vec!["cloud-ontology-qualify".to_owned()];
     arguments.extend(ontology_common_arguments(import, context, status)?);
     arguments.extend([
-        "--ontology-assembly-object-key".to_owned(), assembly_key.to_owned(),
-        "--ontology-assembly-sha256".to_owned(), assembly_sha256.to_owned(),
-        "--java-executable".to_owned(), option_value(&context.worker.options, "java-executable"),
-        "--reasoner-adapter-jar".to_owned(), option_value(&context.worker.options, "reasoner-adapter-jar"),
-        "--reasoner-adapter-sha256".to_owned(), option_value(&context.worker.options, "reasoner-adapter-sha256"),
-        "--reasoner-name".to_owned(), option_value(&context.worker.options, "reasoner-name"),
-        "--reasoner-version".to_owned(), option_value(&context.worker.options, "reasoner-version"),
-        "--ontology-reasoner-heap-mib".to_owned(), option_value(&context.worker.options, "ontology-reasoner-heap-mib"),
-        "--ontology-reasoner-timeout-seconds".to_owned(), option_value(&context.worker.options, "ontology-reasoner-timeout-seconds"),
-        "--ontology-max-named-individuals".to_owned(), option_value(&context.worker.options, "ontology-max-named-individuals"),
-        "--ontology-max-properties".to_owned(), option_value(&context.worker.options, "ontology-max-properties"),
+        "--ontology-assembly-object-key".to_owned(),
+        assembly_key.to_owned(),
+        "--ontology-assembly-sha256".to_owned(),
+        assembly_sha256.to_owned(),
+        "--java-executable".to_owned(),
+        option_value(&context.worker.options, "java-executable"),
+        "--reasoner-adapter-jar".to_owned(),
+        option_value(&context.worker.options, "reasoner-adapter-jar"),
+        "--reasoner-adapter-sha256".to_owned(),
+        option_value(&context.worker.options, "reasoner-adapter-sha256"),
+        "--reasoner-name".to_owned(),
+        option_value(&context.worker.options, "reasoner-name"),
+        "--reasoner-version".to_owned(),
+        option_value(&context.worker.options, "reasoner-version"),
+        "--ontology-reasoner-heap-mib".to_owned(),
+        option_value(&context.worker.options, "ontology-reasoner-heap-mib"),
+        "--ontology-reasoner-timeout-seconds".to_owned(),
+        option_value(&context.worker.options, "ontology-reasoner-timeout-seconds"),
+        "--ontology-max-named-individuals".to_owned(),
+        option_value(&context.worker.options, "ontology-max-named-individuals"),
+        "--ontology-max-properties".to_owned(),
+        option_value(&context.worker.options, "ontology-max-properties"),
     ]);
-    ensure_cloud_stage_job(import, context, name, name, "ontology-qualify", arguments, 1, 1, false, false).await
+    ensure_cloud_stage_job(
+        import,
+        context,
+        name,
+        name,
+        "ontology-qualify",
+        arguments,
+        1,
+        1,
+        false,
+        false,
+    )
+    .await
 }
 
 fn offline_common_arguments(
@@ -1615,80 +1989,170 @@ fn offline_common_arguments(
     context: &Context,
     status: &NgkgSourceImportStatus,
 ) -> Result<Vec<String>, OperatorError> {
-    let root_key = status.ontology_qualification_root_object_key.as_deref()
-        .ok_or(OperatorError::SpecConflict("ontologyQualificationRootObjectKey"))?;
-    let root_sha256 = status.ontology_qualification_root_sha256.as_deref()
-        .ok_or(OperatorError::SpecConflict("ontologyQualificationRootSha256"))?;
-    let qualification_prefix = root_key.strip_suffix("/root/ontology-qualification-root.json")
-        .ok_or(OperatorError::SpecConflict("ontologyQualificationRootObjectKey"))?;
+    let root_key = status
+        .ontology_qualification_root_object_key
+        .as_deref()
+        .ok_or(OperatorError::SpecConflict(
+            "ontologyQualificationRootObjectKey",
+        ))?;
+    let root_sha256 =
+        status
+            .ontology_qualification_root_sha256
+            .as_deref()
+            .ok_or(OperatorError::SpecConflict(
+                "ontologyQualificationRootSha256",
+            ))?;
+    let qualification_prefix = root_key
+        .strip_suffix("/root/ontology-qualification-root.json")
+        .ok_or(OperatorError::SpecConflict(
+            "ontologyQualificationRootObjectKey",
+        ))?;
     Ok(vec![
-        "--namespace".to_owned(), context.namespace.clone(),
-        "--import-name".to_owned(), import.name_any(),
-        "--artifact-base-url".to_owned(), context.worker.artifact_base_url.clone(),
-        "--scratch-root".to_owned(), "/scratch".to_owned(),
-        "--ontology-qualification-root-object-key".to_owned(), root_key.to_owned(),
-        "--ontology-qualification-root-sha256".to_owned(), root_sha256.to_owned(),
-        "--offline-finite-closure-object-key".to_owned(), format!("{qualification_prefix}/reasoner/finite-closure.nt"),
-        "--offline-max-manifest-bytes".to_owned(), option_value(&context.worker.options, "offline-max-manifest-bytes"),
-        "--offline-max-artifact-bytes".to_owned(), option_value(&context.worker.options, "offline-max-artifact-bytes"),
-        "--offline-max-finalizer-local-bytes".to_owned(), option_value(&context.worker.options, "offline-max-finalizer-local-bytes"),
-        "--single-put-max-bytes".to_owned(), option_value(&context.worker.options, "single-put-max-bytes"),
-        "--multipart-buffer-bytes".to_owned(), option_value(&context.worker.options, "multipart-buffer-bytes"),
-        "--multipart-concurrency".to_owned(), option_value(&context.worker.options, "multipart-concurrency"),
+        "--namespace".to_owned(),
+        context.namespace.clone(),
+        "--import-name".to_owned(),
+        import.name_any(),
+        "--artifact-base-url".to_owned(),
+        context.worker.artifact_base_url.clone(),
+        "--scratch-root".to_owned(),
+        "/scratch".to_owned(),
+        "--ontology-qualification-root-object-key".to_owned(),
+        root_key.to_owned(),
+        "--ontology-qualification-root-sha256".to_owned(),
+        root_sha256.to_owned(),
+        "--offline-finite-closure-object-key".to_owned(),
+        format!("{qualification_prefix}/reasoner/finite-closure.nt"),
+        "--offline-max-manifest-bytes".to_owned(),
+        option_value(&context.worker.options, "offline-max-manifest-bytes"),
+        "--offline-max-artifact-bytes".to_owned(),
+        option_value(&context.worker.options, "offline-max-artifact-bytes"),
+        "--offline-max-finalizer-local-bytes".to_owned(),
+        option_value(&context.worker.options, "offline-max-finalizer-local-bytes"),
+        "--single-put-max-bytes".to_owned(),
+        option_value(&context.worker.options, "single-put-max-bytes"),
+        "--multipart-buffer-bytes".to_owned(),
+        option_value(&context.worker.options, "multipart-buffer-bytes"),
+        "--multipart-concurrency".to_owned(),
+        option_value(&context.worker.options, "multipart-concurrency"),
     ])
 }
 
 async fn ensure_offline_plan_job(
-    import: &NgkgSourceImport, context: &Context, name: &str, status: &NgkgSourceImportStatus,
+    import: &NgkgSourceImport,
+    context: &Context,
+    name: &str,
+    status: &NgkgSourceImportStatus,
 ) -> Result<(), OperatorError> {
     let mut arguments = vec!["cloud-offline-plan".to_owned()];
     arguments.extend(offline_common_arguments(import, context, status)?);
     arguments.extend([
-        "--offline-logical-partitions".to_owned(), option_value(&context.worker.options, "offline-logical-partitions"),
-        "--offline-max-consequences".to_owned(), option_value(&context.worker.options, "offline-max-consequences"),
-        "--offline-plan-rows-in-memory".to_owned(), option_value(&context.worker.options, "offline-plan-rows-in-memory"),
-        "--offline-max-run-bytes".to_owned(), option_value(&context.worker.options, "offline-max-run-bytes"),
+        "--offline-logical-partitions".to_owned(),
+        option_value(&context.worker.options, "offline-logical-partitions"),
+        "--offline-max-consequences".to_owned(),
+        option_value(&context.worker.options, "offline-max-consequences"),
+        "--offline-plan-rows-in-memory".to_owned(),
+        option_value(&context.worker.options, "offline-plan-rows-in-memory"),
+        "--offline-max-run-bytes".to_owned(),
+        option_value(&context.worker.options, "offline-max-run-bytes"),
     ]);
-    ensure_cloud_stage_job(import, context, name, name, "offline-plan", arguments, 1, 1, false, false).await
+    ensure_cloud_stage_job(
+        import,
+        context,
+        name,
+        name,
+        "offline-plan",
+        arguments,
+        1,
+        1,
+        false,
+        false,
+    )
+    .await
 }
 
 async fn ensure_offline_partition_job(
-    import: &NgkgSourceImport, context: &Context, name: &str, completions: u32,
+    import: &NgkgSourceImport,
+    context: &Context,
+    name: &str,
+    completions: u32,
     status: &NgkgSourceImportStatus,
 ) -> Result<(), OperatorError> {
-    let plan_key = status.offline_reasoning_plan_object_key.as_deref()
+    let plan_key = status
+        .offline_reasoning_plan_object_key
+        .as_deref()
         .ok_or(OperatorError::SpecConflict("offlineReasoningPlanObjectKey"))?;
-    let plan_sha256 = status.offline_reasoning_plan_sha256.as_deref()
+    let plan_sha256 = status
+        .offline_reasoning_plan_sha256
+        .as_deref()
         .ok_or(OperatorError::SpecConflict("offlineReasoningPlanSha256"))?;
     let mut arguments = vec!["cloud-offline-partition".to_owned()];
     arguments.extend(offline_common_arguments(import, context, status)?);
     arguments.extend([
-        "--offline-reasoning-plan-object-key".to_owned(), plan_key.to_owned(),
-        "--offline-reasoning-plan-sha256".to_owned(), plan_sha256.to_owned(),
-        "--completion-index".to_owned(), "$(JOB_COMPLETION_INDEX)".to_owned(),
-        "--offline-parquet-row-group-rows".to_owned(), option_value(&context.worker.options, "offline-parquet-row-group-rows"),
+        "--offline-reasoning-plan-object-key".to_owned(),
+        plan_key.to_owned(),
+        "--offline-reasoning-plan-sha256".to_owned(),
+        plan_sha256.to_owned(),
+        "--completion-index".to_owned(),
+        "$(JOB_COMPLETION_INDEX)".to_owned(),
+        "--offline-parquet-row-group-rows".to_owned(),
+        option_value(&context.worker.options, "offline-parquet-row-group-rows"),
     ]);
     let maximum = option_value(&context.worker.options, "offline-partition-max-parallelism")
-        .parse::<u32>().map_err(|_| OperatorError::SpecConflict("offlinePartitionMaxParallelism"))?.max(1);
-    ensure_cloud_stage_job(import, context, name, name, "offline-partition", arguments,
-        completions, completions.min(maximum), true, false).await
+        .parse::<u32>()
+        .map_err(|_| OperatorError::SpecConflict("offlinePartitionMaxParallelism"))?
+        .max(1);
+    ensure_cloud_stage_job(
+        import,
+        context,
+        name,
+        name,
+        "offline-partition",
+        arguments,
+        completions,
+        completions.min(maximum),
+        true,
+        false,
+    )
+    .await
 }
 
 async fn ensure_offline_finalize_job(
-    import: &NgkgSourceImport, context: &Context, name: &str, status: &NgkgSourceImportStatus,
+    import: &NgkgSourceImport,
+    context: &Context,
+    name: &str,
+    status: &NgkgSourceImportStatus,
 ) -> Result<(), OperatorError> {
-    let plan_key = status.offline_reasoning_plan_object_key.as_deref()
+    let plan_key = status
+        .offline_reasoning_plan_object_key
+        .as_deref()
         .ok_or(OperatorError::SpecConflict("offlineReasoningPlanObjectKey"))?;
-    let plan_sha256 = status.offline_reasoning_plan_sha256.as_deref()
+    let plan_sha256 = status
+        .offline_reasoning_plan_sha256
+        .as_deref()
         .ok_or(OperatorError::SpecConflict("offlineReasoningPlanSha256"))?;
     let mut arguments = vec!["cloud-offline-finalize".to_owned()];
     arguments.extend(offline_common_arguments(import, context, status)?);
     arguments.extend([
-        "--offline-reasoning-plan-object-key".to_owned(), plan_key.to_owned(),
-        "--offline-reasoning-plan-sha256".to_owned(), plan_sha256.to_owned(),
-        "--offline-finalize-concurrency".to_owned(), option_value(&context.worker.options, "offline-finalize-concurrency"),
+        "--offline-reasoning-plan-object-key".to_owned(),
+        plan_key.to_owned(),
+        "--offline-reasoning-plan-sha256".to_owned(),
+        plan_sha256.to_owned(),
+        "--offline-finalize-concurrency".to_owned(),
+        option_value(&context.worker.options, "offline-finalize-concurrency"),
     ]);
-    ensure_cloud_stage_job(import, context, name, name, "offline-finalize", arguments, 1, 1, false, false).await
+    ensure_cloud_stage_job(
+        import,
+        context,
+        name,
+        name,
+        "offline-finalize",
+        arguments,
+        1,
+        1,
+        false,
+        false,
+    )
+    .await
 }
 
 async fn ensure_snapshot_activation_job(
@@ -1697,33 +2161,90 @@ async fn ensure_snapshot_activation_job(
     name: &str,
     status: &NgkgSourceImportStatus,
 ) -> Result<(), OperatorError> {
-    let value = |field: Option<&str>, name| field
-        .map(str::to_owned)
-        .ok_or(OperatorError::SpecConflict(name));
+    let value = |field: Option<&str>, name| {
+        field
+            .map(str::to_owned)
+            .ok_or(OperatorError::SpecConflict(name))
+    };
     let mut arguments = vec![
         "cloud-snapshot-activate".to_owned(),
-        "--namespace".to_owned(), context.namespace.clone(),
-        "--import-name".to_owned(), import.name_any(),
-        "--artifact-base-url".to_owned(), context.worker.artifact_base_url.clone(),
-        "--scratch-root".to_owned(), "/scratch".to_owned(),
-        "--semantic-compilation-root-object-key".to_owned(), value(status.semantic_compilation_root_object_key.as_deref(), "semanticCompilationRootObjectKey")?,
-        "--semantic-compilation-root-sha256".to_owned(), value(status.semantic_compilation_root_sha256.as_deref(), "semanticCompilationRootSha256")?,
-        "--ontology-qualification-request-object-key".to_owned(), import.spec.ontology_qualification_request_object_key.clone(),
-        "--ontology-qualification-request-sha256".to_owned(), import.spec.ontology_qualification_request_sha256.clone(),
-        "--ontology-qualification-root-object-key".to_owned(), value(status.ontology_qualification_root_object_key.as_deref(), "ontologyQualificationRootObjectKey")?,
-        "--ontology-qualification-root-sha256".to_owned(), value(status.ontology_qualification_root_sha256.as_deref(), "ontologyQualificationRootSha256")?,
-        "--offline-reasoning-root-object-key".to_owned(), value(status.offline_reasoning_root_object_key.as_deref(), "offlineReasoningRootObjectKey")?,
-        "--offline-reasoning-root-sha256".to_owned(), value(status.offline_reasoning_root_sha256.as_deref(), "offlineReasoningRootSha256")?,
-        "--activation-max-manifest-bytes".to_owned(), option_value(&context.worker.options, "activation-max-manifest-bytes"),
-        "--activation-max-partition-bytes".to_owned(), option_value(&context.worker.options, "activation-max-partition-bytes"),
-        "--activation-max-query-dataset-bytes".to_owned(), option_value(&context.worker.options, "activation-max-query-dataset-bytes"),
-        "--activation-verify-concurrency".to_owned(), option_value(&context.worker.options, "activation-verify-concurrency"),
-        "--single-put-max-bytes".to_owned(), option_value(&context.worker.options, "single-put-max-bytes"),
-        "--multipart-buffer-bytes".to_owned(), option_value(&context.worker.options, "multipart-buffer-bytes"),
-        "--multipart-concurrency".to_owned(), option_value(&context.worker.options, "multipart-concurrency"),
+        "--namespace".to_owned(),
+        context.namespace.clone(),
+        "--import-name".to_owned(),
+        import.name_any(),
+        "--artifact-base-url".to_owned(),
+        context.worker.artifact_base_url.clone(),
+        "--scratch-root".to_owned(),
+        "/scratch".to_owned(),
+        "--semantic-compilation-root-object-key".to_owned(),
+        value(
+            status.semantic_compilation_root_object_key.as_deref(),
+            "semanticCompilationRootObjectKey",
+        )?,
+        "--semantic-compilation-root-sha256".to_owned(),
+        value(
+            status.semantic_compilation_root_sha256.as_deref(),
+            "semanticCompilationRootSha256",
+        )?,
+        "--ontology-qualification-request-object-key".to_owned(),
+        import
+            .spec
+            .ontology_qualification_request_object_key
+            .clone(),
+        "--ontology-qualification-request-sha256".to_owned(),
+        import.spec.ontology_qualification_request_sha256.clone(),
+        "--ontology-qualification-root-object-key".to_owned(),
+        value(
+            status.ontology_qualification_root_object_key.as_deref(),
+            "ontologyQualificationRootObjectKey",
+        )?,
+        "--ontology-qualification-root-sha256".to_owned(),
+        value(
+            status.ontology_qualification_root_sha256.as_deref(),
+            "ontologyQualificationRootSha256",
+        )?,
+        "--offline-reasoning-root-object-key".to_owned(),
+        value(
+            status.offline_reasoning_root_object_key.as_deref(),
+            "offlineReasoningRootObjectKey",
+        )?,
+        "--offline-reasoning-root-sha256".to_owned(),
+        value(
+            status.offline_reasoning_root_sha256.as_deref(),
+            "offlineReasoningRootSha256",
+        )?,
+        "--activation-max-manifest-bytes".to_owned(),
+        option_value(&context.worker.options, "activation-max-manifest-bytes"),
+        "--activation-max-partition-bytes".to_owned(),
+        option_value(&context.worker.options, "activation-max-partition-bytes"),
+        "--activation-max-query-dataset-bytes".to_owned(),
+        option_value(
+            &context.worker.options,
+            "activation-max-query-dataset-bytes",
+        ),
+        "--activation-verify-concurrency".to_owned(),
+        option_value(&context.worker.options, "activation-verify-concurrency"),
+        "--single-put-max-bytes".to_owned(),
+        option_value(&context.worker.options, "single-put-max-bytes"),
+        "--multipart-buffer-bytes".to_owned(),
+        option_value(&context.worker.options, "multipart-buffer-bytes"),
+        "--multipart-concurrency".to_owned(),
+        option_value(&context.worker.options, "multipart-concurrency"),
     ];
     arguments.shrink_to_fit();
-    ensure_cloud_stage_job(import, context, name, name, "snapshot-activation", arguments, 1, 1, false, false).await
+    ensure_cloud_stage_job(
+        import,
+        context,
+        name,
+        name,
+        "snapshot-activation",
+        arguments,
+        1,
+        1,
+        false,
+        false,
+    )
+    .await
 }
 
 async fn ensure_semantic_map_job(
@@ -1890,16 +2411,25 @@ async fn ensure_cloud_stage_job(
     let jobs: Api<Job> = Api::namespaced(context.client.clone(), &context.namespace);
     let stage_cpu = if component.starts_with("offline-") {
         option_value(&context.worker.options, "offline-worker-cpu")
-    } else { context.worker.cpu.clone() };
+    } else {
+        context.worker.cpu.clone()
+    };
     let stage_memory = if component.starts_with("offline-") {
         option_value(&context.worker.options, "offline-worker-memory")
-    } else { context.worker.memory.clone() };
+    } else {
+        context.worker.memory.clone()
+    };
     let stage_scratch = if component.starts_with("offline-") {
         option_value(&context.worker.options, "offline-scratch-size")
-    } else if component.starts_with("semantic-") || component.starts_with("ontology-") || component == "snapshot-activation" {
+    } else if component.starts_with("semantic-")
+        || component.starts_with("ontology-")
+        || component == "snapshot-activation"
+    {
         context.worker.semantic_scratch_size.clone()
-    } else { context.worker.scratch_size.clone() };
-    let stage_spec_sha256 = hex::encode(Sha256::digest(
+    } else {
+        context.worker.scratch_size.clone()
+    };
+    let stage_spec_digest: [u8; 32] = Sha256::digest(
         serde_json::to_vec(&json!({
             "importSpec": &import.spec,
             "component": component,
@@ -1915,7 +2445,23 @@ async fn ensure_cloud_stage_job(
             "mountSource": mount_source
         }))
         .unwrap_or_default(),
-    ));
+    )
+    .into();
+    let stage_spec_sha256 = hex::encode(stage_spec_digest);
+    let durable_stage = context
+        .catalog
+        .reserve_orchestration_stage(
+            import.spec.tenant_id,
+            import.spec.operation_id,
+            component,
+            &stage_spec_digest,
+            &context.namespace,
+            name,
+        )
+        .await?;
+    if durable_stage.state == "SUCCEEDED" {
+        return Ok(());
+    }
     if let Some(existing) = jobs.get_opt(name).await? {
         let observed = existing
             .metadata
@@ -1929,13 +2475,66 @@ async fn ensure_cloud_stage_job(
             .and_then(|values| values.get("ngkg.io/stage-spec-sha256"));
         if observed != Some(&import_spec_hash(import))
             || observed_stage.is_some_and(|value| value != &stage_spec_sha256)
-            || ((component.starts_with("semantic-") || component.starts_with("ontology-") || component.starts_with("offline-") || component == "snapshot-activation") && observed_stage.is_none())
+            || ((component.starts_with("semantic-")
+                || component.starts_with("ontology-")
+                || component.starts_with("offline-")
+                || component == "snapshot-activation")
+                && observed_stage.is_none())
         {
             return Err(OperatorError::SpecConflict("existing cloud compiler Job"));
         }
+        let succeeded = existing.status.as_ref().is_some_and(|status| {
+            status
+                .conditions
+                .as_ref()
+                .is_some_and(|conditions| conditions.iter().any(|condition| {
+                    condition.type_ == "Complete" && condition.status == "True"
+                }))
+        });
+        let failed = existing.status.as_ref().is_some_and(|status| {
+            status
+                .conditions
+                .as_ref()
+                .is_some_and(|conditions| conditions.iter().any(|condition| {
+                    condition.type_ == "Failed" && condition.status == "True"
+                }))
+        });
+        if succeeded || failed {
+            context
+                .catalog
+                .complete_orchestration_stage(
+                    import.spec.tenant_id,
+                    import.spec.operation_id,
+                    component,
+                    succeeded,
+                    &json!({
+                        "jobName": name,
+                        "jobUid": existing.metadata.uid,
+                        "stageSpecSha256": stage_spec_sha256,
+                        "succeeded": succeeded
+                    }),
+                )
+                .await?;
+            if succeeded {
+                return Ok(());
+            }
+            return Err(OperatorError::SpecConflict("cloud compiler Job failed"));
+        }
+        if let Some(uid) = existing.metadata.uid.as_deref() {
+            context
+                .catalog
+                .mark_orchestration_stage_running(
+                    import.spec.tenant_id,
+                    import.spec.operation_id,
+                    component,
+                    uid,
+                )
+                .await?;
+        }
         return Ok(());
     }
-    let responsibility = if component.starts_with("ontology-") || component.starts_with("offline-") {
+    let responsibility = if component.starts_with("ontology-") || component.starts_with("offline-")
+    {
         "reasoning"
     } else if component.starts_with("semantic-") || component == "snapshot-activation" {
         "semantic-projection"
@@ -1944,10 +2543,22 @@ async fn ensure_cloud_stage_job(
     };
     let mut labels = BTreeMap::from([
         ("app.kubernetes.io/name".to_owned(), "ngkg".to_owned()),
-        ("app.kubernetes.io/component".to_owned(), component.to_owned()),
-        ("ngkg.io/responsibility".to_owned(), responsibility.to_owned()),
-        ("ngkg.io/operation-id".to_owned(), import.spec.operation_id.to_string()),
-        ("kueue.x-k8s.io/queue-name".to_owned(), context.worker.queue_name.clone()),
+        (
+            "app.kubernetes.io/component".to_owned(),
+            component.to_owned(),
+        ),
+        (
+            "ngkg.io/responsibility".to_owned(),
+            responsibility.to_owned(),
+        ),
+        (
+            "ngkg.io/operation-id".to_owned(),
+            import.spec.operation_id.to_string(),
+        ),
+        (
+            "kueue.x-k8s.io/queue-name".to_owned(),
+            context.worker.queue_name.clone(),
+        ),
     ]);
     if import.spec.provider == CloudObjectProvider::AzureBlob {
         labels.insert("azure.workload.identity/use".to_owned(), "true".to_owned());
@@ -1975,11 +2586,31 @@ async fn ensure_cloud_stage_job(
         cpu_threads
     };
     let mut environment = vec![
-        EnvVar { name: "TOKIO_WORKER_THREADS".to_owned(), value: Some(tokio_threads.to_string()), ..EnvVar::default() },
-        EnvVar { name: "RAYON_NUM_THREADS".to_owned(), value: Some("1".to_owned()), ..EnvVar::default() },
-        EnvVar { name: "OMP_NUM_THREADS".to_owned(), value: Some("1".to_owned()), ..EnvVar::default() },
-        EnvVar { name: "OPENBLAS_NUM_THREADS".to_owned(), value: Some("1".to_owned()), ..EnvVar::default() },
-        EnvVar { name: "MKL_NUM_THREADS".to_owned(), value: Some("1".to_owned()), ..EnvVar::default() },
+        EnvVar {
+            name: "TOKIO_WORKER_THREADS".to_owned(),
+            value: Some(tokio_threads.to_string()),
+            ..EnvVar::default()
+        },
+        EnvVar {
+            name: "RAYON_NUM_THREADS".to_owned(),
+            value: Some("1".to_owned()),
+            ..EnvVar::default()
+        },
+        EnvVar {
+            name: "OMP_NUM_THREADS".to_owned(),
+            value: Some("1".to_owned()),
+            ..EnvVar::default()
+        },
+        EnvVar {
+            name: "OPENBLAS_NUM_THREADS".to_owned(),
+            value: Some("1".to_owned()),
+            ..EnvVar::default()
+        },
+        EnvVar {
+            name: "MKL_NUM_THREADS".to_owned(),
+            value: Some("1".to_owned()),
+            ..EnvVar::default()
+        },
     ];
     if component == "snapshot-activation" {
         environment.push(EnvVar {
@@ -2001,7 +2632,8 @@ async fn ensure_cloud_stage_job(
             value_from: Some(EnvVarSource {
                 field_ref: Some(ObjectFieldSelector {
                     api_version: Some("v1".to_owned()),
-                    field_path: "metadata.annotations['batch.kubernetes.io/job-completion-index']".to_owned(),
+                    field_path: "metadata.annotations['batch.kubernetes.io/job-completion-index']"
+                        .to_owned(),
                 }),
                 ..EnvVarSource::default()
             }),
@@ -2041,13 +2673,15 @@ async fn ensure_cloud_stage_job(
         .worker
         .object_store_credentials_secret
         .as_ref()
-        .map(|secret| vec![EnvFromSource {
-            secret_ref: Some(SecretEnvSource {
-                name: secret.clone(),
-                optional: Some(false),
-            }),
-            ..EnvFromSource::default()
-        }])
+        .map(|secret| {
+            vec![EnvFromSource {
+                secret_ref: Some(SecretEnvSource {
+                    name: secret.clone(),
+                    optional: Some(false),
+                }),
+                ..EnvFromSource::default()
+            }]
+        })
         .unwrap_or_default();
     let spec_hash = import_spec_hash(import);
     let mut stage_pod_annotations = source_pod_annotations(import, &spec_hash, mount_source);
@@ -2062,7 +2696,10 @@ async fn ensure_cloud_stage_job(
             labels: Some(labels.clone()),
             annotations: Some(BTreeMap::from([
                 ("ngkg.io/source-spec-sha256".to_owned(), spec_hash.clone()),
-                ("ngkg.io/stage-spec-sha256".to_owned(), stage_spec_sha256.clone()),
+                (
+                    "ngkg.io/stage-spec-sha256".to_owned(),
+                    stage_spec_sha256.clone(),
+                ),
             ])),
             owner_references: import.controller_owner_ref(&()).map(|owner| vec![owner]),
             ..ObjectMeta::default()
@@ -2072,9 +2709,15 @@ async fn ensure_cloud_stage_job(
             backoff_limit: (!indexed).then_some(3),
             backoff_limit_per_index: indexed.then_some(3),
             completion_mode: indexed.then(|| "Indexed".to_owned()),
-            completions: Some(i32::try_from(completions).map_err(|_| OperatorError::SpecConflict("cloud compiler completions"))?),
+            completions: Some(
+                i32::try_from(completions)
+                    .map_err(|_| OperatorError::SpecConflict("cloud compiler completions"))?,
+            ),
             max_failed_indexes: indexed.then_some(0),
-            parallelism: Some(i32::try_from(parallelism).map_err(|_| OperatorError::SpecConflict("cloud compiler parallelism"))?),
+            parallelism: Some(
+                i32::try_from(parallelism)
+                    .map_err(|_| OperatorError::SpecConflict("cloud compiler parallelism"))?,
+            ),
             ttl_seconds_after_finished: Some(context.worker.ttl_seconds_after_finished),
             template: PodTemplateSpec {
                 metadata: Some(ObjectMeta {
@@ -2093,7 +2736,10 @@ async fn ensure_cloud_stage_job(
                         resources: Some(resources),
                         security_context: Some(SecurityContext {
                             allow_privilege_escalation: Some(false),
-                            capabilities: Some(Capabilities { add: None, drop: Some(vec!["ALL".to_owned()]) }),
+                            capabilities: Some(Capabilities {
+                                add: None,
+                                drop: Some(vec!["ALL".to_owned()]),
+                            }),
                             read_only_root_filesystem: Some(true),
                             run_as_non_root: Some(true),
                             ..SecurityContext::default()
@@ -2108,7 +2754,10 @@ async fn ensure_cloud_stage_job(
                     restart_policy: Some("Never".to_owned()),
                     security_context: Some(PodSecurityContext {
                         run_as_non_root: Some(true),
-                        seccomp_profile: Some(SeccompProfile { localhost_profile: None, type_: "RuntimeDefault".to_owned() }),
+                        seccomp_profile: Some(SeccompProfile {
+                            localhost_profile: None,
+                            type_: "RuntimeDefault".to_owned(),
+                        }),
                         ..PodSecurityContext::default()
                     }),
                     service_account_name: Some(import.spec.identity_ref.clone()),
@@ -2128,7 +2777,20 @@ async fn ensure_cloud_stage_job(
         ..Job::default()
     };
     match jobs.create(&PostParams::default(), &job).await {
-        Ok(_) => Ok(()),
+        Ok(created) => {
+            if let Some(uid) = created.metadata.uid.as_deref() {
+                context
+                    .catalog
+                    .mark_orchestration_stage_running(
+                        import.spec.tenant_id,
+                        import.spec.operation_id,
+                        component,
+                        uid,
+                    )
+                    .await?;
+            }
+            Ok(())
+        }
         Err(kube::Error::Api(error)) if error.code == 409 => Ok(()),
         Err(error) => Err(error.into()),
     }
@@ -2155,11 +2817,25 @@ async fn patch_import_status(
 ) -> Result<(), OperatorError> {
     let imports: Api<NgkgSourceImport> =
         Api::namespaced(context.client.clone(), &context.namespace);
+    let name = import.name_any();
+    let document = source_import_status_apply_document(
+        &name,
+        &status,
+        &[
+            "observedGeneration", "jobName", "decodeJobName", "finalizeJobName",
+            "semanticMapJobName", "semanticDictionaryJobName",
+            "semanticPartitionJobName", "semanticFinalizeJobName",
+            "ontologyProjectionJobName", "ontologyAssemblyJobName",
+            "ontologyQualificationJobName", "offlineReasoningPlanJobName",
+            "offlineReasoningPartitionJobName", "offlineReasoningFinalizeJobName",
+            "snapshotActivationJobName", "condition",
+        ],
+    )?;
     imports
         .patch_status(
-            &import.name_any(),
-            &PatchParams::default(),
-            &Patch::Merge(json!({"status": status})),
+            &name,
+            &PatchParams::apply("ngkg-source-import-operator"),
+            &Patch::Apply(document),
         )
         .await?;
     Ok(())
@@ -2298,7 +2974,12 @@ fn reference_job(
         "--scratch-root".to_owned(),
         "/scratch".to_owned(),
     ];
-    for (option, value) in &context.worker.options {
+    for (option, value) in context
+        .worker
+        .options
+        .iter()
+        .filter(|(option, _)| REFERENCE_COMPILE_OPTION_NAMES.contains(&option.as_str()))
+    {
         arguments.push(format!("--{option}"));
         arguments.push(value.clone());
     }

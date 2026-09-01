@@ -180,11 +180,23 @@ pub fn validate_direct_bgp_legality_report(
         ("querySha256", report.query_sha256.as_str()),
         ("sparqlAlgebraSha256", report.sparql_algebra_sha256.as_str()),
         ("activeDatasetSha256", report.active_dataset_sha256.as_str()),
-        ("authorizedGraphSetSha256", report.authorized_graph_set_sha256.as_str()),
+        (
+            "authorizedGraphSetSha256",
+            report.authorized_graph_set_sha256.as_str(),
+        ),
         ("owlSignatureSha256", report.owl_signature_sha256.as_str()),
-        ("datatypePolicySha256", report.datatype_policy_sha256.as_str()),
-        ("owlProfileQualificationSha256", report.owl_profile_qualification_sha256.as_str()),
-        ("owlConsistencyQualificationSha256", report.owl_consistency_qualification_sha256.as_str()),
+        (
+            "datatypePolicySha256",
+            report.datatype_policy_sha256.as_str(),
+        ),
+        (
+            "owlProfileQualificationSha256",
+            report.owl_profile_qualification_sha256.as_str(),
+        ),
+        (
+            "owlConsistencyQualificationSha256",
+            report.owl_consistency_qualification_sha256.as_str(),
+        ),
     ] {
         if !is_lower_sha256(value) {
             return Err(DirectBgpLegalityValidationError::InvalidSha256(field));
@@ -193,13 +205,15 @@ pub fn validate_direct_bgp_legality_report(
     if report.classifier != DIRECT_BGP_CLASSIFIER_V1 {
         return Err(DirectBgpLegalityValidationError::Classifier);
     }
-    let expected_count = u64::try_from(report.bgps.len())
-        .map_err(|_| DirectBgpLegalityValidationError::BgpCount)?;
+    let expected_count =
+        u64::try_from(report.bgps.len()).map_err(|_| DirectBgpLegalityValidationError::BgpCount)?;
     if report.bgp_count != expected_count {
         return Err(DirectBgpLegalityValidationError::BgpCount);
     }
     for (index, bgp) in report.bgps.iter().enumerate() {
-        if bgp.ordinal != u64::try_from(index).map_err(|_| DirectBgpLegalityValidationError::BgpCount)? {
+        if bgp.ordinal
+            != u64::try_from(index).map_err(|_| DirectBgpLegalityValidationError::BgpCount)?
+        {
             return Err(DirectBgpLegalityValidationError::BgpCount);
         }
     }
@@ -220,7 +234,7 @@ fn validate_bgps_parallel(
     if bgps.is_empty() {
         return Ok(());
     }
-    let available = thread::available_parallelism().map_or(1, |count| count.get());
+    let available = thread::available_parallelism().map_or(1, std::num::NonZero::get);
     let lanes = available.min(MAX_VALIDATION_LANES).min(bgps.len()).max(1);
     let chunk_size = bgps.len().div_ceil(lanes);
     let mut first: Option<(u64, String)> = None;
@@ -241,7 +255,9 @@ fn validate_bgps_parallel(
                 .join()
                 .map_err(|_| DirectBgpLegalityValidationError::ValidationWorkerFailure)?;
             if let Some(candidate) = observed
-                && first.as_ref().is_none_or(|existing| candidate.0 < existing.0)
+                && first
+                    .as_ref()
+                    .is_none_or(|existing| candidate.0 < existing.0)
             {
                 first = Some(candidate);
             }
@@ -269,7 +285,9 @@ fn validate_bgp(bgp: &DirectBgpLegalityRecord) -> Result<(), String> {
     let mut variable_names = BTreeSet::new();
     let mut prior: Option<&str> = None;
     for typing in &bgp.variables {
-        if !valid_variable_name(&typing.variable) || !variable_names.insert(typing.variable.as_str()) {
+        if !valid_variable_name(&typing.variable)
+            || !variable_names.insert(typing.variable.as_str())
+        {
             return Err("variable typing names must be valid and unique".to_owned());
         }
         if prior.is_some_and(|p| p >= typing.variable.as_str()) {
@@ -283,15 +301,25 @@ fn validate_bgp(bgp: &DirectBgpLegalityRecord) -> Result<(), String> {
                 return Err("legal BGP cannot carry a failure".to_owned());
             }
             if !bgp.grounded_owl2dl_check_required {
-                return Err("legal Direct BGP must retain the Phase 40.8 grounded OWL 2 DL check".to_owned());
+                return Err(
+                    "legal Direct BGP must retain the Phase 40.8 grounded OWL 2 DL check"
+                        .to_owned(),
+                );
             }
         }
         DirectBgpLegalityStatus::Illegal => {
-            let failure = bgp.failure.as_ref().ok_or_else(|| "illegal BGP requires a failure".to_owned())?;
+            let failure = bgp
+                .failure
+                .as_ref()
+                .ok_or_else(|| "illegal BGP requires a failure".to_owned())?;
             if failure.detail.is_empty() || failure.detail.len() > 2048 {
                 return Err("failure detail must be bounded and non-empty".to_owned());
             }
-            if failure.variable.as_deref().is_some_and(|v| !valid_variable_name(v)) {
+            if failure
+                .variable
+                .as_deref()
+                .is_some_and(|v| !valid_variable_name(v))
+            {
                 return Err("failure variable is invalid".to_owned());
             }
         }
@@ -303,10 +331,18 @@ fn validate_scope(scope: &DirectBgpScope) -> Result<(), String> {
     match scope {
         DirectBgpScope::Default => Ok(()),
         DirectBgpScope::Named { graph_iri } => {
-            if absolute_iri(graph_iri) { Ok(()) } else { Err("named graph IRI is not absolute".to_owned()) }
+            if absolute_iri(graph_iri) {
+                Ok(())
+            } else {
+                Err("named graph IRI is not absolute".to_owned())
+            }
         }
         DirectBgpScope::NamedVariable { variable } => {
-            if valid_variable_name(variable) { Ok(()) } else { Err("graph variable is invalid".to_owned()) }
+            if valid_variable_name(variable) {
+                Ok(())
+            } else {
+                Err("graph variable is invalid".to_owned())
+            }
         }
     }
 }
@@ -327,14 +363,19 @@ fn absolute_iri(value: &str) -> bool {
 }
 
 fn is_lower_sha256(value: &str) -> bool {
-    value.len() == 64 && value.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn hash() -> String { "11".repeat(32) }
+    fn hash() -> String {
+        "11".repeat(32)
+    }
 
     #[test]
     fn complete_legal_report_validates() {

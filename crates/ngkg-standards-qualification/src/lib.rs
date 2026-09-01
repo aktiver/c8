@@ -218,9 +218,7 @@ pub fn build_plan(
 }
 
 /// Validate a plan before any work is admitted.
-pub fn validate_plan(
-    plan: &StandardsQualificationPlan,
-) -> Result<(), StandardsQualificationError> {
+pub fn validate_plan(plan: &StandardsQualificationPlan) -> Result<(), StandardsQualificationError> {
     if plan.format_version != STANDARDS_QUALIFICATION_FORMAT_VERSION
         || !is_sha256(&plan.suite_inventory_sha256)
         || plan.partition_count == 0
@@ -439,8 +437,7 @@ fn stable_partition(
     let prefix: [u8; 8] = digest[..8].try_into().map_err(|_| {
         StandardsQualificationError::InvalidContract("partition digest is truncated".to_owned())
     })?;
-    Ok(u32::try_from(u64::from_be_bytes(prefix) % u64::from(partition_count))
-        .unwrap_or(u32::MAX))
+    Ok(u32::try_from(u64::from_be_bytes(prefix) % u64::from(partition_count)).unwrap_or(u32::MAX))
 }
 
 fn canonical_sha256<T: Serialize>(value: &T) -> Result<String, StandardsQualificationError> {
@@ -486,8 +483,8 @@ mod tests {
     }
 
     #[test]
-    fn stable_partition_is_topology_bound_but_order_independent(
-    ) -> Result<(), StandardsQualificationError> {
+    fn stable_partition_is_topology_bound_but_order_independent()
+    -> Result<(), StandardsQualificationError> {
         let mut reversed = cases();
         reversed.reverse();
         let left = build_plan("a".repeat(64), 2, cases())?;

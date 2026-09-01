@@ -1,0 +1,35 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-prompt-compiler-default-deny}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: prompt-compiler}}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-prompt-compiler-allow}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: prompt-compiler}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+{{ toYaml .Values.networkPolicy.dnsNamespaceSelector | nindent 12 }}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    - to:
+        - podSelector:
+            matchLabels:
+{{ toYaml .Values.database.podSelector | nindent 14 }}
+        {{- range .Values.database.ipBlocks }}
+        - ipBlock: {cidr: {{ . | quote }}}
+        {{- end }}
+      ports: [{protocol: TCP, port: {{ .Values.database.port }}}]
+    {{- if .Values.inputStorage.egressIpBlocks }}
+    - to:
+        {{- range .Values.inputStorage.egressIpBlocks }}
+        - ipBlock: {cidr: {{ . | quote }}}
+        {{- end }}
+      ports: [{protocol: TCP, port: 443}]
+    {{- end }}
+{{- end }}

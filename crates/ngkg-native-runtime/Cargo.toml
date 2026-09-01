@@ -1,0 +1,20 @@
+[package]
+name = "ngkg-native-runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+arrow-array.workspace = true
+arrow-schema.workspace = true
+hex.workspace = true
+ngkg-query-planner = { path = "../ngkg-query-planner" }
+parquet.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

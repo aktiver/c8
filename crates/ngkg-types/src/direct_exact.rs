@@ -168,30 +168,59 @@ pub enum DirectExactValidationError {
     Entailed,
 }
 
-pub fn validate_direct_exact_request(request: &DirectExactRequest) -> Result<(), DirectExactValidationError> {
-    if request.format_version != DIRECT_EXACT_FORMAT_VERSION || request.engine != DIRECT_EXACT_ENGINE_V1 {
+pub fn validate_direct_exact_request(
+    request: &DirectExactRequest,
+) -> Result<(), DirectExactValidationError> {
+    if request.format_version != DIRECT_EXACT_FORMAT_VERSION
+        || request.engine != DIRECT_EXACT_ENGINE_V1
+    {
         return Err(DirectExactValidationError::Version);
     }
     for (name, value) in [
         ("querySha256", request.query_sha256.as_str()),
-        ("sparqlAlgebraSha256", request.sparql_algebra_sha256.as_str()),
+        (
+            "sparqlAlgebraSha256",
+            request.sparql_algebra_sha256.as_str(),
+        ),
         ("bgpSha256", request.bgp_sha256.as_str()),
-        ("activeDatasetSha256", request.active_dataset_sha256.as_str()),
-        ("authorizedGraphSetSha256", request.authorized_graph_set_sha256.as_str()),
+        (
+            "activeDatasetSha256",
+            request.active_dataset_sha256.as_str(),
+        ),
+        (
+            "authorizedGraphSetSha256",
+            request.authorized_graph_set_sha256.as_str(),
+        ),
         ("owlSignatureSha256", request.owl_signature_sha256.as_str()),
-        ("datatypePolicySha256", request.datatype_policy_sha256.as_str()),
-        ("owlProfileQualificationSha256", request.owl_profile_qualification_sha256.as_str()),
-        ("owlConsistencyQualificationSha256", request.owl_consistency_qualification_sha256.as_str()),
-        ("aggregateInputSha256", request.aggregate_input_sha256.as_str()),
+        (
+            "datatypePolicySha256",
+            request.datatype_policy_sha256.as_str(),
+        ),
+        (
+            "owlProfileQualificationSha256",
+            request.owl_profile_qualification_sha256.as_str(),
+        ),
+        (
+            "owlConsistencyQualificationSha256",
+            request.owl_consistency_qualification_sha256.as_str(),
+        ),
+        (
+            "aggregateInputSha256",
+            request.aggregate_input_sha256.as_str(),
+        ),
     ] {
-        if !is_lower_sha256(value) { return Err(DirectExactValidationError::Hash(name)); }
+        if !is_lower_sha256(value) {
+            return Err(DirectExactValidationError::Hash(name));
+        }
     }
     if request.partition.count == 0 || request.partition.index >= request.partition.count {
         return Err(DirectExactValidationError::Partition);
     }
-    if request.max_candidate_bindings == 0 || request.max_partition_candidates == 0
+    if request.max_candidate_bindings == 0
+        || request.max_partition_candidates == 0
         || request.max_grounded_axioms_per_candidate == 0
-        || request.max_grounded_rdf_bytes_per_candidate == 0 {
+        || request.max_grounded_rdf_bytes_per_candidate == 0
+    {
         return Err(DirectExactValidationError::Ceiling);
     }
     if request.template.bgp_sha256 != request.bgp_sha256 || request.template.triples.is_empty() {
@@ -200,24 +229,52 @@ pub fn validate_direct_exact_request(request: &DirectExactRequest) -> Result<(),
     Ok(())
 }
 
-pub fn validate_direct_exact_partition_result(result: &DirectExactPartitionResult) -> Result<(), DirectExactValidationError> {
-    if result.format_version != DIRECT_EXACT_FORMAT_VERSION || result.engine != DIRECT_EXACT_ENGINE_V1 {
+pub fn validate_direct_exact_partition_result(
+    result: &DirectExactPartitionResult,
+) -> Result<(), DirectExactValidationError> {
+    if result.format_version != DIRECT_EXACT_FORMAT_VERSION
+        || result.engine != DIRECT_EXACT_ENGINE_V1
+    {
         return Err(DirectExactValidationError::Version);
     }
-    for (name, value) in [("requestSha256", result.request_sha256.as_str()), ("aggregateInputSha256", result.aggregate_input_sha256.as_str()), ("candidateSpaceSha256", result.candidate_space_sha256.as_str())] {
-        if !is_lower_sha256(value) { return Err(DirectExactValidationError::Hash(name)); }
+    for (name, value) in [
+        ("requestSha256", result.request_sha256.as_str()),
+        (
+            "aggregateInputSha256",
+            result.aggregate_input_sha256.as_str(),
+        ),
+        (
+            "candidateSpaceSha256",
+            result.candidate_space_sha256.as_str(),
+        ),
+    ] {
+        if !is_lower_sha256(value) {
+            return Err(DirectExactValidationError::Hash(name));
+        }
     }
-    if result.reasoner_name != "HermiT" || result.reasoner_version.is_empty() || result.adapter_version.is_empty() { return Err(DirectExactValidationError::Version); }
-    if result.partition.count == 0 || result.partition.index >= result.partition.count
-        || result.partition_start_ordinal > result.partition_end_ordinal_exclusive {
+    if result.reasoner_name != "HermiT"
+        || result.reasoner_version.is_empty()
+        || result.adapter_version.is_empty()
+    {
+        return Err(DirectExactValidationError::Version);
+    }
+    if result.partition.count == 0
+        || result.partition.index >= result.partition.count
+        || result.partition_start_ordinal > result.partition_end_ordinal_exclusive
+    {
         return Err(DirectExactValidationError::Partition);
     }
-    let expected = result.partition_end_ordinal_exclusive.saturating_sub(result.partition_start_ordinal);
-    if !result.complete || result.checked_candidate_count != expected
+    let expected = result
+        .partition_end_ordinal_exclusive
+        .saturating_sub(result.partition_start_ordinal);
+    if !result.complete
+        || result.checked_candidate_count != expected
         || result.grounded_owl2dl_candidate_count > result.checked_candidate_count
         || result.entailed_candidate_count > result.grounded_owl2dl_candidate_count
-        || result.entailed_candidate_count != u64::try_from(result.entailed.len()).unwrap_or(u64::MAX)
-        || result.reasoner_request_count != result.grounded_owl2dl_candidate_count {
+        || result.entailed_candidate_count
+            != u64::try_from(result.entailed.len()).unwrap_or(u64::MAX)
+        || result.reasoner_request_count != result.grounded_owl2dl_candidate_count
+    {
         return Err(DirectExactValidationError::Counters);
     }
     let mut previous = None;
@@ -225,7 +282,10 @@ pub fn validate_direct_exact_partition_result(result: &DirectExactPartitionResul
         if entailed.candidate_ordinal < result.partition_start_ordinal
             || entailed.candidate_ordinal >= result.partition_end_ordinal_exclusive
             || previous.is_some_and(|value| entailed.candidate_ordinal <= value)
-            || entailed.bindings.keys().any(|name| name.is_empty() || name.starts_with('?') || name.starts_with('$'))
+            || entailed
+                .bindings
+                .keys()
+                .any(|name| name.is_empty() || name.starts_with('?') || name.starts_with('$'))
             || !is_lower_sha256(&entailed.grounded_rdf_sha256)
             || !is_lower_sha256(&entailed.logical_axioms_sha256)
         {
@@ -237,5 +297,8 @@ pub fn validate_direct_exact_partition_result(result: &DirectExactPartitionResul
 }
 
 fn is_lower_sha256(value: &str) -> bool {
-    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }

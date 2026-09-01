@@ -1,0 +1,19 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://c8-next-generation.io/contracts/phase3-certificate.schema.json",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["formatVersion","sourceRevision","imageLockSha256","imageEvidenceRootSha256","postgresEvidenceSha256","clusterEvidenceRootSha256","providers","issuedEpochMs","certificateSha256","complete"],
+  "properties":{
+    "formatVersion":{"const":1},
+    "sourceRevision":{"type":"string","pattern":"^[0-9a-f]{40,64}$"},
+    "imageLockSha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "imageEvidenceRootSha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "postgresEvidenceSha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "clusterEvidenceRootSha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "providers":{"type":"array","minItems":4,"maxItems":4,"uniqueItems":true,"items":{"enum":["rke2","eks","aks","gke"]}},
+    "issuedEpochMs":{"type":"integer","minimum":1},
+    "certificateSha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "complete":{"const":true}
+  }
+}

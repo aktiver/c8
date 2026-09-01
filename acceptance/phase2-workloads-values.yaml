@@ -1,0 +1,22 @@
+# Non-deployable schema-complete values used only by the Phase 2 native Helm gate.
+images:
+  query: {repository: example.invalid/ngkg/online-serving, digest: "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+  fragment: {repository: example.invalid/ngkg/online-serving, digest: "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+  locator: {repository: example.invalid/ngkg/online-serving, digest: "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+  hydration: {repository: example.invalid/ngkg/online-serving, digest: "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+  reasoner: {repository: example.invalid/ngkg/direct-reasoner-worker, digest: "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+tls:
+  existingSecret: ngkg-internal-tls
+onlineServing:
+  databaseSecret: ngkg-database
+  authTokensSecret: ngkg-auth
+  authTokensFileSha256: "2222222222222222222222222222222222222222222222222222222222222222"
+  tenantAdmissionSecret: ngkg-tenant-admission
+  tenantAdmissionPolicySha256: "3333333333333333333333333333333333333333333333333333333333333333"
+  artifactStoreBaseUrl: s3://phase2-lint-only/ngkg
+onlineReasoning:
+  sharedWorkspaceClaim: ngkg-reasoner-workspace
+  sharedTokenSecret: ngkg-reasoner-token
+  adapterSha256: "4444444444444444444444444444444444444444444444444444444444444444"
+networking:
+  dependencyCidrs: [192.0.2.0/24]

@@ -126,10 +126,11 @@ paths:
     get:
       summary: Execute a SPARQL 1.1 query through a SPARQL Protocol GET encoding
       description: Executes a supported exact query over the authenticated immutable active dataset. SERVICE operators use
-        the checksum-bound tenant endpoint registry and are always uncached. A matching snapshot-bound
-        certificate may select an optimized path; otherwise the query uses the bounded exact RDF scalar path. Protocol dataset
-        parameters override query FROM/FROM NAMED clauses. Unsupported, exhausted or timed-out execution fails without a
-        partial success document.
+        the checksum-bound tenant endpoint registry and are always uncached. In shadow mode, the scalar evaluator is retained
+        only for differential qualification. In required native-cutover mode, every algebra stage must have an executable
+        native plan or an explicitly bounded exact-reasoner route; otherwise the request returns
+        NATIVE_CUTOVER_UNAVAILABLE without scalar fallback. Protocol dataset parameters override query FROM/FROM NAMED clauses.
+        Unsupported, exhausted or timed-out execution fails without a partial success document.
       parameters:
       - $ref: '#/components/parameters/DatasetId'
       - $ref: '#/components/parameters/SparqlQuery'
@@ -319,6 +320,7 @@ paths:
   /v1/datasets/{datasetId}/query:
     post:
       summary: Execute an exact SPARQL query through the NGKG JSON API
+      description: Uses the same authenticated snapshot, native-cutover admission, exact-reasoning, complete-partition, and fail-closed result contract as the SPARQL Protocol route. The enterprise profile never silently selects the ordinary scalar runtime.
       parameters:
       - $ref: '#/components/parameters/DatasetId'
       requestBody:
@@ -669,6 +671,39 @@ paths:
         '429': {$ref: '#/components/responses/TooManyRequests'}
         '503': {$ref: '#/components/responses/Error'}
         '504': {$ref: '#/components/responses/Error'}
+  /v1/datasets/{datasetId}/native/leaves/{querySha256}/{partition}/scan:
+    post:
+      summary: Scan one checksum-verified semantic Parquet partition
+      description: Internal fragment-worker operation used by the native query runtime. The worker derives graph IDs from the authenticated active dataset, verifies the semantic root, partition manifest, file size and SHA-256, and applies dictionary-ID predicates in bounded Arrow batches. No partial scan is returned.
+      parameters:
+      - $ref: '#/components/parameters/DatasetId'
+      - name: querySha256
+        in: path
+        required: true
+        schema: {type: string, pattern: '^[0-9a-f]{64}$'}
+      - name: partition
+        in: path
+        required: true
+        schema: {type: integer, minimum: 0, maximum: 4294967295}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/NativeLeafScanRequest'}
+      responses:
+        '200':
+          description: Complete bounded leaf result and checksum evidence for exactly one partition.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NativeLeafScanResponse'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '413': {description: Request exceeds the configured body limit}
+        '422': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '503': {$ref: '#/components/responses/Error'}
+        '504': {$ref: '#/components/responses/Error'}
 components:
   securitySchemes:
     bearerAuth:
@@ -765,6 +800,17 @@ components:
           schema:
             type: string
             pattern: ^[0-9a-f]{64}$
+        x-ngkg-semantic-result-sha256:
+          description: Format-independent canonical hash of the complete SPARQL result under the query's ordering semantics.
+          required: true
+          schema:
+            type: string
+            pattern: ^[0-9a-f]{64}$
+        x-ngkg-native-cutover-mode:
+          description: Serving policy used for this request; production qualification requires `required`.
+          required: true
+          schema:
+            enum: [disabled, shadow, required]
         x-ngkg-complete:
           required: true
           schema:
@@ -842,13 +888,20 @@ components:
     QueryLogResources:
       type: object
       additionalProperties: false
-      required: [nodesActivated, coresActivated, cpuMillicores, ramBytes, ramGiB]
+      required: [participatingPods, participatingNodes, requestedCpuMillicores, requestedRamBytes, allocatedCpuMillicores, allocatedRamBytes, measuredCpuTimeMs, measuredPeakRssBytes, measuredGpuTimeMs, measuredGpuPeakMemoryBytes, measurementScope, autoscalingEvents]
       properties:
-        nodesActivated: {type: [integer, 'null'], minimum: 1}
-        coresActivated: {type: [integer, 'null'], minimum: 1}
-        cpuMillicores: {type: [integer, 'null'], minimum: 1}
-        ramBytes: {type: [integer, 'null'], minimum: 1}
-        ramGiB: {type: [integer, 'null'], minimum: 1}
+        participatingPods: {type: array, uniqueItems: true, items: {type: string}, description: Kubernetes pod UIDs contributing measurement evidence.}
+        participatingNodes: {type: array, uniqueItems: true, items: {type: string}, description: Kubernetes node UIDs contributing measurement evidence.}
+        requestedCpuMillicores: {type: [integer, 'null'], minimum: 1}
+        requestedRamBytes: {type: [integer, 'null'], minimum: 1}
+        allocatedCpuMillicores: {type: [integer, 'null'], minimum: 1}
+        allocatedRamBytes: {type: [integer, 'null'], minimum: 1}
+        measuredCpuTimeMs: {type: [integer, 'null'], minimum: 0, description: Actual cgroup CPU usage delta over the execution interval; scope identifies coverage.}
+        measuredPeakRssBytes: {type: [integer, 'null'], minimum: 0}
+        measuredGpuTimeMs: {type: [integer, 'null'], minimum: 0}
+        measuredGpuPeakMemoryBytes: {type: [integer, 'null'], minimum: 0}
+        measurementScope: {enum: [COORDINATOR_CGROUP_INTERVAL, ALL_PARTICIPANTS, UNAVAILABLE]}
+        autoscalingEvents: {type: array, items: {type: object}}
     QueryLogTiming:
       type: object
       additionalProperties: false
@@ -1574,6 +1627,75 @@ components:
         authorizedGraphIds: {type: array, uniqueItems: true, items: {type: integer, minimum: 0}}
         authorizedGraphSetSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
         activeDatasetSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+    NativeLeafPredicate:
+      type: object
+      additionalProperties: false
+      properties:
+        subjectId: {type: [integer, 'null'], minimum: 0}
+        predicateId: {type: [integer, 'null'], minimum: 0}
+        objectId: {type: [integer, 'null'], minimum: 0}
+        graphId: {type: [integer, 'null'], minimum: 0}
+        allowedGraphIds:
+          type: array
+          readOnly: true
+          description: Ignored on input and replaced with worker-derived authorized graph IDs.
+          uniqueItems: true
+          items: {type: integer, minimum: 0}
+        requireQueryable: {type: boolean, default: true}
+    NativeLeafScanLimits:
+      type: object
+      additionalProperties: false
+      required: [maxRows, maxDecodedBytes, batchRows]
+      properties:
+        maxRows: {type: integer, minimum: 1}
+        maxDecodedBytes: {type: integer, minimum: 1}
+        batchRows: {type: integer, minimum: 1}
+    NativeLeafScanRequest:
+      type: object
+      additionalProperties: false
+      required: [snapshotId, manifestSha256, semanticRootSha256, activeDataset, predicate, limits]
+      properties:
+        snapshotId: {type: string, format: uuid}
+        manifestSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+        semanticRootSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+        activeDataset: {$ref: '#/components/schemas/ResolvedDataset'}
+        predicate: {$ref: '#/components/schemas/NativeLeafPredicate'}
+        limits: {$ref: '#/components/schemas/NativeLeafScanLimits'}
+    NativeEncodedFact:
+      type: object
+      additionalProperties: false
+      required: [subjectId, predicateId, objectKind, objectId, graphId, partitionId]
+      properties:
+        subjectId: {type: integer, minimum: 0}
+        predicateId: {type: integer, minimum: 0}
+        objectKind: {type: integer, minimum: 0, maximum: 255}
+        objectId: {type: integer, minimum: 0}
+        graphId: {type: integer, minimum: 0}
+        partitionId: {type: integer, minimum: 0}
+        canonicalNquad: {type: [string, 'null']}
+    NativeLeafScanResponse:
+      type: object
+      additionalProperties: false
+      required: [datasetId, snapshotId, querySha256, partition, partitionManifestSha256, workerId, result]
+      properties:
+        datasetId: {type: string, format: uuid}
+        snapshotId: {type: string, format: uuid}
+        querySha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+        partition: {type: integer, minimum: 0, maximum: 4294967295}
+        partitionManifestSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+        workerId: {type: string, minLength: 1}
+        result:
+          type: object
+          additionalProperties: false
+          required: [inputSha256, outputSha256, scannedRows, matchedRows, decodedBytes, rows, complete]
+          properties:
+            inputSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+            outputSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+            scannedRows: {type: integer, minimum: 0}
+            matchedRows: {type: integer, minimum: 0}
+            decodedBytes: {type: integer, minimum: 0}
+            rows: {type: array, items: {$ref: '#/components/schemas/NativeEncodedFact'}}
+            complete: {const: true}
     DistributedAlgebraExecutionRequest:
       type: object
       additionalProperties: false

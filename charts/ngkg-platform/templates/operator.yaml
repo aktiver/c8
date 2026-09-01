@@ -23,7 +23,7 @@ spec:
           image: '{{ required "images.operator.repository is required" .Values.images.operator.repository }}@{{ required "images.operator.digest is required" .Values.images.operator.digest }}'
           envFrom:
             - configMapRef:
-                name: '{{ .Release.Name }}-phase40-reference-ceilings'
+                name: '{{ .Release.Name }}-phase40-reference-ceilings-{{ toJson .Values.phase40.direct | sha256sum | trunc 12 }}'
                 optional: false
           env:
             - {name: NGKG_NAMESPACE, valueFrom: {fieldRef: {fieldPath: metadata.namespace}}}

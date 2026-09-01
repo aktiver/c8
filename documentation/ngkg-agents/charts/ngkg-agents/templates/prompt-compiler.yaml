@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ngkg-prompt-compiler
+  labels:
+    app.kubernetes.io/name: ngkg-agents
+    app.kubernetes.io/component: prompt-compiler
+  annotations: {{- toYaml .Values.inputStorage.serviceAccountAnnotations | nindent 4 }}
+automountServiceAccountToken: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ngkg-prompt-compiler
+  labels:
+    app.kubernetes.io/name: ngkg-agents
+    app.kubernetes.io/component: prompt-compiler
+spec:
+  replicas: {{ .Values.promptCompiler.replicaCount }}
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: prompt-compiler}
+  strategy: {type: RollingUpdate, rollingUpdate: {maxUnavailable: 0, maxSurge: 1}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: prompt-compiler}
+    spec:
+      serviceAccountName: ngkg-prompt-compiler
+      terminationGracePeriodSeconds: 330
+      securityContext: {runAsNonRoot: true, runAsUser: 65532, runAsGroup: 65532, seccompProfile: {type: RuntimeDefault}}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: {{ .Values.scheduling.topologyKey | quote }}
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: prompt-compiler}}
+      nodeSelector: {{- toYaml .Values.promptCompiler.scheduling.nodeSelector | nindent 8 }}
+      tolerations: {{- toYaml .Values.promptCompiler.scheduling.tolerations | nindent 8 }}
+      containers:
+        - name: compiler
+          image: '{{ required "image.repository is required" .Values.image.repository }}@{{ required "image.digest is required" .Values.image.digest }}'
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: [/usr/local/bin/ngkg-prompt-compiler]
+          env:
+            - name: NGKG_AGENT_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: {{ .Values.database.runtimeSecret | quote }}, key: {{ .Values.database.runtimeSecretKey | quote }}}}
+            - {name: NGKG_AGENT_DATABASE_MAX_CONNECTIONS, value: {{ .Values.database.maximumConnections | quote }}}
+            - {name: NGKG_AGENT_DATABASE_ACQUIRE_TIMEOUT_MS, value: {{ .Values.database.acquireTimeoutMilliseconds | quote }}}
+            - {name: NGKG_PROMPT_WORKER_ID, valueFrom: {fieldRef: {fieldPath: metadata.uid}}}
+            - {name: NGKG_PROMPT_LEASE_MS, value: {{ .Values.promptCompiler.leaseMilliseconds | quote }}}
+            - {name: NGKG_PROMPT_IDLE_POLL_MS, value: {{ .Values.promptCompiler.idlePollMilliseconds | quote }}}
+            - {name: NGKG_PROMPT_TARGET_CHUNK_BYTES, value: {{ .Values.promptCompiler.targetChunkBytes | quote }}}
+            - {name: NGKG_PROMPT_MAX_CHUNK_BYTES, value: {{ .Values.promptCompiler.maximumChunkBytes | quote }}}
+            - {name: NGKG_PROMPT_MAX_CHUNKS_PER_PART, value: {{ .Values.promptCompiler.maximumChunksPerPart | quote }}}
+            - {name: NGKG_PROMPT_MAX_REQUIREMENTS_PER_PART, value: {{ .Values.promptCompiler.maximumRequirementsPerPart | quote }}}
+            - {name: NGKG_PROMPT_MAX_PART_BYTES, value: {{ .Values.promptCompiler.maximumPartBytes | quote }}}
+            {{- if gt (int .Values.promptCompiler.threads) 0 }}
+            - {name: NGKG_PROMPT_COMPILER_THREADS, value: {{ .Values.promptCompiler.threads | quote }}}
+            {{- end }}
+            - {name: NGKG_INPUT_OBJECT_STORE, value: {{ .Values.inputStorage.provider | quote }}}
+            {{- if eq .Values.inputStorage.provider "s3" }}
+            - {name: NGKG_INPUT_S3_BUCKET, value: {{ required "inputStorage.s3.bucket is required" .Values.inputStorage.s3.bucket | quote }}}
+            - {name: AWS_DEFAULT_REGION, value: {{ required "inputStorage.s3.region is required" .Values.inputStorage.s3.region | quote }}}
+            {{- if .Values.inputStorage.s3.endpoint }}
+            - {name: AWS_ENDPOINT, value: {{ .Values.inputStorage.s3.endpoint | quote }}}
+            {{- end }}
+            {{- else if eq .Values.inputStorage.provider "azure" }}
+            - {name: NGKG_INPUT_AZURE_CONTAINER, value: {{ required "inputStorage.azure.container is required" .Values.inputStorage.azure.container | quote }}}
+            - {name: AZURE_STORAGE_ACCOUNT_NAME, value: {{ required "inputStorage.azure.account is required" .Values.inputStorage.azure.account | quote }}}
+            {{- if .Values.inputStorage.azure.endpoint }}
+            - {name: AZURE_STORAGE_ENDPOINT, value: {{ .Values.inputStorage.azure.endpoint | quote }}}
+            {{- end }}
+            {{- else if eq .Values.inputStorage.provider "gcs" }}
+            - {name: NGKG_INPUT_GCS_BUCKET, value: {{ required "inputStorage.gcs.bucket is required" .Values.inputStorage.gcs.bucket | quote }}}
+            {{- if .Values.inputStorage.gcs.endpoint }}
+            - {name: GOOGLE_SERVICE_ENDPOINT, value: {{ .Values.inputStorage.gcs.endpoint | quote }}}
+            {{- end }}
+            {{- else }}
+            - {name: NGKG_INPUT_LOCAL_ROOT, value: {{ .Values.inputStorage.localTest.root | quote }}}
+            {{- end }}
+          resources: {{- toYaml .Values.promptCompiler.resources | nindent 12 }}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, runAsNonRoot: true, capabilities: {drop: [ALL]}}
+          volumeMounts: [{name: tmp, mountPath: /tmp}]
+      volumes: [{name: tmp, emptyDir: {sizeLimit: 256Mi}}]

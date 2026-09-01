@@ -15,11 +15,11 @@ use std::{
     sync::Arc,
 };
 
-use arrow_array::{ArrayRef, RecordBatch, StringArray, UInt64Array, UInt8Array};
+use arrow_array::{ArrayRef, RecordBatch, StringArray, UInt8Array, UInt64Array};
 use arrow_schema::{DataType, Field, Schema};
 use oxigraph::{
     io::{RdfFormat, RdfParser},
-    model::{BlankNode, GraphName, Quad, Subject, Term},
+    model::{BlankNode, GraphName, NamedOrBlankNode, Quad, Term},
 };
 use parquet::{arrow::ArrowWriter, file::properties::WriterProperties};
 use serde::{Deserialize, Serialize};
@@ -243,9 +243,7 @@ pub enum SemanticCompilerError {
 }
 
 /// Validate the complete Phase 40.13.11 handoff before scheduling any work.
-pub fn validate_handoff(
-    handoff: &CompilerHandoffManifest,
-) -> Result<(), SemanticCompilerError> {
+pub fn validate_handoff(handoff: &CompilerHandoffManifest) -> Result<(), SemanticCompilerError> {
     if handoff.format_version != 1
         || handoff.decoded_format != "application/n-quads"
         || handoff.blank_node_policy != "object-scoped-label-v1"
@@ -320,15 +318,17 @@ pub fn map_fragment(
             "map resource limits must be positive".to_owned(),
         ));
     }
-    let fragment = handoff
-        .fragments
-        .get(usize::try_from(fragment_ordinal).map_err(|_| {
-            SemanticCompilerError::Contract("fragment ordinal overflow".to_owned())
-        })?)
-        .filter(|value| value.ordinal == fragment_ordinal)
-        .ok_or_else(|| SemanticCompilerError::Contract("fragment is absent".to_owned()))?;
+    let fragment =
+        handoff
+            .fragments
+            .get(usize::try_from(fragment_ordinal).map_err(|_| {
+                SemanticCompilerError::Contract("fragment ordinal overflow".to_owned())
+            })?)
+            .filter(|value| value.ordinal == fragment_ordinal)
+            .ok_or_else(|| SemanticCompilerError::Contract("fragment is absent".to_owned()))?;
     verify_file(fragment_path, &fragment.sha256, Some(fragment.bytes))?;
-    if fragment.bytes > limits.max_fragment_bytes || fragment.quad_count > limits.max_fragment_quads {
+    if fragment.bytes > limits.max_fragment_bytes || fragment.quad_count > limits.max_fragment_quads
+    {
         return Err(SemanticCompilerError::Contract(
             "fragment exceeds configured map ceiling".to_owned(),
         ));
@@ -398,12 +398,7 @@ pub fn map_fragment(
             "mapped quad",
         )?;
     }
-    flush_fact_buffers(
-        output_root,
-        &mut buffers,
-        &mut fact_runs,
-        &mut run_ordinal,
-    )?;
+    flush_fact_buffers(output_root, &mut buffers, &mut fact_runs, &mut run_ordinal)?;
     flush_term_buffer(
         output_root,
         &mut term_buffer,
@@ -468,21 +463,14 @@ fn process_map_batch(
                 scope.spawn(move || {
                     let mut output = Vec::with_capacity(chunk.len());
                     for line in chunk {
-                        let mut parser = RdfParser::from_format(RdfFormat::NQuads)
-                            .for_slice(line.as_bytes());
-                        let quad = parser
-                            .next()
-                            .ok_or_else(|| {
-                                SemanticCompilerError::Rdf("empty N-Quads statement".to_owned())
-                            })?
+                        // The decoder contract is exactly one complete N-Quads statement per
+                        // line. `Quad::from_str` enforces that single-record boundary directly;
+                        // a streaming parser can otherwise emit a quad before consuming its dot.
+                        let quad = line
+                            .parse::<Quad>()
                             .map_err(|error| SemanticCompilerError::Rdf(error.to_string()))?;
-                        if parser.next().is_some() {
-                            return Err(SemanticCompilerError::Rdf(
-                                "decoded line contains multiple N-Quads statements".to_owned(),
-                            ));
-                        }
                         let scoped = scope_quad(quad, blank_node_scope)?;
-                        let canonical = format!("{scoped}\n");
+                        let canonical = format!("{scoped} .\n");
                         let partition = partition_for(canonical.as_bytes(), logical_partitions)?;
                         let mut dictionary_terms = Vec::with_capacity(4);
                         collect_dictionary_terms(&scoped, &mut dictionary_terms);
@@ -502,9 +490,8 @@ fn process_map_batch(
             .collect::<Result<Vec<_>, SemanticCompilerError>>()
     })?;
     for (partition, line, dictionary_terms) in results.into_iter().flatten() {
-        let index = usize::try_from(partition).map_err(|_| {
-            SemanticCompilerError::Contract("partition index overflow".to_owned())
-        })?;
+        let index = usize::try_from(partition)
+            .map_err(|_| SemanticCompilerError::Contract("partition index overflow".to_owned()))?;
         buffers[index].push(line);
         terms.extend(dictionary_terms);
     }
@@ -541,11 +528,8 @@ pub fn finalize_dictionary(
     let term_count = merge_terms_to_dictionary(&term_paths, &dictionary_path)?;
     let dictionary_sha256 = sha256_path(&dictionary_path)?;
     let guid_dictionary_path = output_root.join("guid-dictionary.tsv");
-    let entity_count = write_guid_dictionary(
-        &dictionary_path,
-        &guid_dictionary_path,
-        handoff.dataset_id,
-    )?;
+    let entity_count =
+        write_guid_dictionary(&dictionary_path, &guid_dictionary_path, handoff.dataset_id)?;
     let manifest = DictionaryManifest {
         format_version: SEMANTIC_COMPILER_FORMAT_VERSION,
         dataset_id: handoff.dataset_id,
@@ -691,9 +675,8 @@ pub fn reduce_partition(
         dictionary_sha256: dictionary_manifest.dictionary_sha256,
         partition_index,
         partition_id,
-        input_run_count: u32::try_from(fact_paths.len()).map_err(|_| {
-            SemanticCompilerError::Contract("input run count overflow".to_owned())
-        })?,
+        input_run_count: u32::try_from(fact_paths.len())
+            .map_err(|_| SemanticCompilerError::Contract("input run count overflow".to_owned()))?,
         fact_count,
         duplicate_fact_count,
         edge_count: output.edge_count,
@@ -949,9 +932,13 @@ fn build_partition_artifacts(
         Field::new("canonical_nquad", DataType::Utf8, false),
     ]));
     let properties = WriterProperties::builder()
-        .set_max_row_group_size(row_group_rows)
+        .set_max_row_group_row_count(Some(row_group_rows))
         .build();
-    let mut parquet = ArrowWriter::try_new(create_new(parquet_path)?, Arc::clone(&schema), Some(properties))?;
+    let mut parquet = ArrowWriter::try_new(
+        create_new(parquet_path)?,
+        Arc::clone(&schema),
+        Some(properties),
+    )?;
     let run_root = forward_path
         .parent()
         .ok_or_else(|| SemanticCompilerError::Contract("adjacency path has no parent".to_owned()))?
@@ -993,14 +980,9 @@ fn build_partition_artifacts(
             "predicate\t{predicate:020}\t{subject:020}\t{object_kind}\t{object:020}\t{graph:020}"
         ));
         if quad.predicate.as_str() == rdf_type {
-            index_buffer.push(format!(
-                "class\t{object:020}\t{subject:020}\t{graph:020}"
-            ));
-            output.class_assertion_count = checked_add(
-                output.class_assertion_count,
-                1,
-                "class assertion",
-            )?;
+            index_buffer.push(format!("class\t{object:020}\t{subject:020}\t{graph:020}"));
+            output.class_assertion_count =
+                checked_add(output.class_assertion_count, 1, "class assertion")?;
         }
         if index_buffer.len() >= row_group_rows {
             flush_index_run(
@@ -1310,8 +1292,10 @@ fn load_complete_maps(
 
 fn scope_quad(quad: Quad, scope: &str) -> Result<Quad, SemanticCompilerError> {
     let subject = match quad.subject {
-        Subject::NamedNode(node) => Subject::NamedNode(node),
-        Subject::BlankNode(node) => Subject::BlankNode(scoped_blank_node(scope, &node)?),
+        NamedOrBlankNode::NamedNode(node) => NamedOrBlankNode::NamedNode(node),
+        NamedOrBlankNode::BlankNode(node) => {
+            NamedOrBlankNode::BlankNode(scoped_blank_node(scope, &node)?)
+        }
     };
     let object = match quad.object {
         Term::NamedNode(node) => Term::NamedNode(node),
@@ -1347,10 +1331,10 @@ fn collect_dictionary_terms(quad: &Quad, output: &mut Vec<String>) {
     output.push(graph_key(&quad.graph_name));
 }
 
-fn subject_key(subject: &Subject) -> String {
+fn subject_key(subject: &NamedOrBlankNode) -> String {
     match subject {
-        Subject::NamedNode(node) => format!("N\t{}", node.as_str()),
-        Subject::BlankNode(node) => format!("B\t{}", node.as_str()),
+        NamedOrBlankNode::NamedNode(node) => format!("N\t{}", node.as_str()),
+        NamedOrBlankNode::BlankNode(node) => format!("B\t{}", node.as_str()),
     }
 }
 
@@ -1379,7 +1363,10 @@ fn flush_fact_buffers(
         let relative = format!("fact-runs/part-{index:05}/run-{:08}.nq", *run_ordinal);
         let path = safe_join(root, &relative)?;
         write_lines(&path, buffer.iter().map(String::as_str))?;
-        manifests.entry(index).or_default().push(artifact(root, &relative)?);
+        manifests
+            .entry(index)
+            .or_default()
+            .push(artifact(root, &relative)?);
         *run_ordinal = run_ordinal.checked_add(1).ok_or_else(|| {
             SemanticCompilerError::Contract("fact run ordinal overflow".to_owned())
         })?;
@@ -1403,9 +1390,9 @@ fn flush_term_buffer(
     let path = safe_join(root, &relative)?;
     write_lines(&path, buffer.iter().map(String::as_str))?;
     manifests.push(artifact(root, &relative)?);
-    *ordinal = ordinal.checked_add(1).ok_or_else(|| {
-        SemanticCompilerError::Contract("term run ordinal overflow".to_owned())
-    })?;
+    *ordinal = ordinal
+        .checked_add(1)
+        .ok_or_else(|| SemanticCompilerError::Contract("term run ordinal overflow".to_owned()))?;
     buffer.clear();
     Ok(())
 }
@@ -1424,9 +1411,9 @@ fn merge_terms_to_dictionary(
     let mut id = 0_u64;
     for line in BufReader::new(File::open(&terms_path)?).lines() {
         writeln!(writer, "{id}\t{}", line?)?;
-        id = id.checked_add(1).ok_or_else(|| {
-            SemanticCompilerError::Contract("dictionary ID overflow".to_owned())
-        })?;
+        id = id
+            .checked_add(1)
+            .ok_or_else(|| SemanticCompilerError::Contract("dictionary ID overflow".to_owned()))?;
     }
     writer.flush()?;
     writer.get_ref().sync_all()?;
@@ -1521,9 +1508,9 @@ fn hierarchical_merge_unique(
             next.push(path);
         }
         current = next;
-        pass = pass.checked_add(1).ok_or_else(|| {
-            SemanticCompilerError::Contract("merge pass overflow".to_owned())
-        })?;
+        pass = pass
+            .checked_add(1)
+            .ok_or_else(|| SemanticCompilerError::Contract("merge pass overflow".to_owned()))?;
     }
     let (rows, removed) = merge_facts_unique(&current, output, maximum)?;
     duplicates = checked_add(duplicates, removed, "duplicate")?;
@@ -1565,18 +1552,18 @@ fn build_partition_dictionary(
     let mut expected_global_id = 0_u64;
     for line in BufReader::new(File::open(global_dictionary_path)?).lines() {
         let line = line?;
-        let (id, term) = line.split_once('\t').ok_or_else(|| {
-            SemanticCompilerError::Contract("dictionary row lacks ID".to_owned())
-        })?;
+        let (id, term) = line
+            .split_once('\t')
+            .ok_or_else(|| SemanticCompilerError::Contract("dictionary row lacks ID".to_owned()))?;
         if id.parse::<u64>().ok() != Some(expected_global_id) {
             return Err(SemanticCompilerError::Contract(
                 "global dictionary is not dense".to_owned(),
             ));
         }
-        expected_global_id = expected_global_id.checked_add(1).ok_or_else(|| {
-            SemanticCompilerError::Contract("dictionary ID overflow".to_owned())
-        })?;
-        while target.as_deref().is_some_and(|value| value < term) {
+        expected_global_id = expected_global_id
+            .checked_add(1)
+            .ok_or_else(|| SemanticCompilerError::Contract("dictionary ID overflow".to_owned()))?;
+        if target.as_deref().is_some_and(|value| value < term) {
             return Err(SemanticCompilerError::Contract(
                 "global dictionary is missing a partition term".to_owned(),
             ));
@@ -1612,9 +1599,9 @@ fn flush_partition_term_run(
     write_lines(&path, buffer.iter().map(String::as_str))?;
     runs.push(path);
     buffer.clear();
-    *ordinal = ordinal.checked_add(1).ok_or_else(|| {
-        SemanticCompilerError::Contract("partition term run overflow".to_owned())
-    })?;
+    *ordinal = ordinal
+        .checked_add(1)
+        .ok_or_else(|| SemanticCompilerError::Contract("partition term run overflow".to_owned()))?;
     Ok(())
 }
 
@@ -1622,9 +1609,10 @@ fn dictionary_id(
     dictionary: &BTreeMap<String, u64>,
     key: &str,
 ) -> Result<u64, SemanticCompilerError> {
-    dictionary.get(key).copied().ok_or_else(|| {
-        SemanticCompilerError::Contract(format!("dictionary is missing term {key}"))
-    })
+    dictionary
+        .get(key)
+        .copied()
+        .ok_or_else(|| SemanticCompilerError::Contract(format!("dictionary is missing term {key}")))
 }
 
 fn partition_for(bytes: &[u8], count: u32) -> Result<u32, SemanticCompilerError> {
@@ -1648,23 +1636,36 @@ fn partition_identity(
     hasher.update(snapshot_id.as_bytes());
     hasher.update(source_sha256.as_bytes());
     hasher.update(partition_index.to_be_bytes());
-    format!("semantic-{partition_index:05}-{}", &hex::encode(hasher.finalize())[..24])
+    format!(
+        "semantic-{partition_index:05}-{}",
+        &hex::encode(hasher.finalize())[..24]
+    )
 }
 
 fn valid_blank_scope(value: &str, ordinal: u32) -> bool {
     let prefix = format!("object-{ordinal:08}-");
-    value
-        .strip_prefix(&prefix)
-        .is_some_and(|suffix| suffix.len() == 64 && suffix.bytes().all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase()))
+    value.strip_prefix(&prefix).is_some_and(|suffix| {
+        suffix.len() == 64
+            && suffix
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    })
 }
 
 fn artifact(root: &Path, relative: &str) -> Result<RunArtifact, SemanticCompilerError> {
     let path = safe_join(root, relative)?;
-    let row_count = if matches!(path.extension().and_then(|value| value.to_str()), Some("nq" | "txt" | "tsv")) {
-        BufReader::new(File::open(&path)?).lines().try_fold(0_u64, |count, line| {
-            line?;
-            count.checked_add(1).ok_or_else(|| std::io::Error::other("row count overflow"))
-        })?
+    let row_count = if matches!(
+        path.extension().and_then(|value| value.to_str()),
+        Some("nq" | "txt" | "tsv")
+    ) {
+        BufReader::new(File::open(&path)?)
+            .lines()
+            .try_fold(0_u64, |count, line| {
+                line?;
+                count
+                    .checked_add(1)
+                    .ok_or_else(|| std::io::Error::other("row count overflow"))
+            })?
     } else {
         0
     };
@@ -1688,9 +1689,9 @@ fn safe_join(root: &Path, relative: &str) -> Result<PathBuf, SemanticCompilerErr
     let candidate = Path::new(relative);
     if relative.is_empty()
         || candidate.is_absolute()
-        || candidate.components().any(|component| {
-            !matches!(component, std::path::Component::Normal(_))
-        })
+        || candidate
+            .components()
+            .any(|component| !matches!(component, std::path::Component::Normal(_)))
     {
         return Err(SemanticCompilerError::Contract(
             "artifact path is not a normalized relative path".to_owned(),
@@ -1792,9 +1793,8 @@ fn decode_sha256(value: &str) -> Result<[u8; 32], SemanticCompilerError> {
 }
 
 fn checked_add(left: u64, right: u64, label: &str) -> Result<u64, SemanticCompilerError> {
-    left.checked_add(right).ok_or_else(|| {
-        SemanticCompilerError::Contract(format!("{label} count overflow"))
-    })
+    left.checked_add(right)
+        .ok_or_else(|| SemanticCompilerError::Contract(format!("{label} count overflow")))
 }
 
 fn sync_directory(path: &Path) -> Result<(), SemanticCompilerError> {
@@ -1810,9 +1810,8 @@ mod tests {
     use uuid::Uuid;
 
     use super::{
-        CompilerHandoffManifest, DecodedFragment, MapLimits, ReduceLimits,
-        finalize_dictionary, finalize_semantic_root, map_fragment, reduce_partition,
-        sha256_path,
+        CompilerHandoffManifest, DecodedFragment, MapLimits, ReduceLimits, finalize_dictionary,
+        finalize_semantic_root, map_fragment, reduce_partition, sha256_path,
     };
 
     fn handoff(fragment: &Path, sha256: String, bytes: u64) -> CompilerHandoffManifest {
@@ -1850,7 +1849,8 @@ mod tests {
     }
 
     #[test]
-    fn complete_pipeline_is_topology_stable_and_inactive() -> Result<(), Box<dyn std::error::Error>> {
+    fn complete_pipeline_is_topology_stable_and_inactive() -> Result<(), Box<dyn std::error::Error>>
+    {
         let nonce = hex::encode(Sha256::digest(format!("{}", std::process::id()).as_bytes()));
         let root = std::env::temp_dir().join(format!("ngkg-semantic-compiler-{}", &nonce[..12]));
         if root.exists() {

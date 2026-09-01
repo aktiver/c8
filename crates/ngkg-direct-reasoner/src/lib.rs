@@ -158,8 +158,7 @@ pub fn execute_exact_direct_bgp(
     let available = thread::available_parallelism().map_or(1, |count| count.get());
     let concurrent_lanes = available
         .min(limits.max_local_reasoner_lanes.max(1))
-        .min(MAX_LOCAL_REASONER_LANES)
-        .max(1);
+        .clamp(1, MAX_LOCAL_REASONER_LANES);
     let request_root = work_dir.join("direct-exact");
     if request_root.exists() {
         fs::remove_dir_all(&request_root)?;
@@ -262,7 +261,8 @@ pub fn prepare_exact_direct_bgp_requests(
             ngkg_types::DirectBgpScope::Named { graph_iri },
             DirectBgpGraphContext::Named { graph_iri: active },
         ) if graph_iri == active => {}
-        (ngkg_types::DirectBgpScope::NamedVariable { .. }, DirectBgpGraphContext::Named { .. }) => {}
+        (ngkg_types::DirectBgpScope::NamedVariable { .. }, DirectBgpGraphContext::Named { .. }) => {
+        }
         _ => {
             return Err(DirectExactError::Template(
                 "active graph context does not satisfy Phase 40.7 BGP scope".to_owned(),
@@ -747,7 +747,7 @@ fn sha256_file(path: &Path) -> Result<[u8; 32], std::io::Error> {
     use std::io::Read;
     let mut file = fs::File::open(path)?;
     let mut hash = Sha256::new();
-    let mut buf = [0_u8; 1024 * 1024];
+    let mut buf = vec![0_u8; 1024 * 1024].into_boxed_slice();
     loop {
         let read = file.read(&mut buf)?;
         if read == 0 {

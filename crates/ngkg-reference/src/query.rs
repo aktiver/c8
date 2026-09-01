@@ -292,7 +292,7 @@ pub fn execute_compiled_query_with_default_policy_cancellable(
     store: &Store,
     compiled: &CompiledSparqlQuery,
     limits: QueryExecutionLimits,
-    default_dataset_policy: DefaultDatasetPolicy,
+    _default_dataset_policy: DefaultDatasetPolicy,
     cancellation_token: Option<CancellationToken>,
 ) -> Result<ExecutedQueryResult, ReferenceQueryError> {
     let limits = limits.validate()?;
@@ -301,7 +301,7 @@ pub fn execute_compiled_query_with_default_policy_cancellable(
     } else {
         SparqlEvaluator::new()
     };
-    let mut prepared = evaluator.for_query(compiled.query_clone());
+    let prepared = evaluator.for_query(compiled.query_clone());
     // `UnionDefault` is materialized as an RDF set in the physical default
     // graph at load time. Oxigraph's dynamic union view preserves one match per
     // source graph, which would incorrectly turn duplicate cross-graph triples

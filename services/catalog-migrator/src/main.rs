@@ -7,7 +7,10 @@ use sqlx::{PgPool, migrate::Migrator};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt().json().with_env_filter("info").init();
+    tracing_subscriber::fmt()
+        .json()
+        .with_env_filter("info")
+        .init();
     let database_url = env::var("NGKG_DATABASE_URL").context("NGKG_DATABASE_URL is required")?;
     let migration_directory =
         env::var("NGKG_MIGRATION_DIRECTORY").context("NGKG_MIGRATION_DIRECTORY is required")?;

@@ -305,70 +305,124 @@ pub enum Rc1Error {
 }
 
 fn valid_sha(value: &str) -> bool {
-    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
 }
 
 fn all_prerequisites() -> BTreeSet<PrerequisiteKind> {
-    [PrerequisiteKind::Sparql11, PrerequisiteKind::AuthorizedRdfDataset,
-     PrerequisiteKind::Owl2Dl, PrerequisiteKind::DistributedReasoning,
-     PrerequisiteKind::DistributedQueryRuntime, PrerequisiteKind::AtomicPublication,
-     PrerequisiteKind::Federation, PrerequisiteKind::StorageRecovery,
-     PrerequisiteKind::Autoscaling, PrerequisiteKind::EnterpriseSecurity,
-     PrerequisiteKind::Standards, PrerequisiteKind::PerformanceCapacity,
-     PrerequisiteKind::KubernetesRelease, PrerequisiteKind::SemanticContextGraph]
-        .into_iter().collect()
+    [
+        PrerequisiteKind::Sparql11,
+        PrerequisiteKind::AuthorizedRdfDataset,
+        PrerequisiteKind::Owl2Dl,
+        PrerequisiteKind::DistributedReasoning,
+        PrerequisiteKind::DistributedQueryRuntime,
+        PrerequisiteKind::AtomicPublication,
+        PrerequisiteKind::Federation,
+        PrerequisiteKind::StorageRecovery,
+        PrerequisiteKind::Autoscaling,
+        PrerequisiteKind::EnterpriseSecurity,
+        PrerequisiteKind::Standards,
+        PrerequisiteKind::PerformanceCapacity,
+        PrerequisiteKind::KubernetesRelease,
+        PrerequisiteKind::SemanticContextGraph,
+    ]
+    .into_iter()
+    .collect()
 }
 
 fn all_surfaces() -> BTreeSet<FreezeSurface> {
-    [FreezeSurface::OpenApi, FreezeSurface::JsonSchema, FreezeSurface::Crd,
-     FreezeSurface::Helm, FreezeSurface::Environment, FreezeSurface::DatabaseMigration,
-     FreezeSurface::ObjectLayout, FreezeSurface::SemanticArtifact]
-        .into_iter().collect()
+    [
+        FreezeSurface::OpenApi,
+        FreezeSurface::JsonSchema,
+        FreezeSurface::Crd,
+        FreezeSurface::Helm,
+        FreezeSurface::Environment,
+        FreezeSurface::DatabaseMigration,
+        FreezeSurface::ObjectLayout,
+        FreezeSurface::SemanticArtifact,
+    ]
+    .into_iter()
+    .collect()
 }
 
 fn all_artifacts() -> BTreeSet<ArtifactClass> {
-    [ArtifactClass::SourceArchive, ArtifactClass::ImageIndex, ArtifactClass::HelmCharts,
-     ArtifactClass::KubernetesBundle, ArtifactClass::Crds, ArtifactClass::Migrations,
-     ArtifactClass::Utilities, ArtifactClass::ApiSchemas, ArtifactClass::SbomSpdx,
-     ArtifactClass::SbomCycloneDx, ArtifactClass::Provenance,
-     ArtifactClass::QualificationEvidence, ArtifactClass::Documentation,
-     ArtifactClass::Checksums].into_iter().collect()
+    [
+        ArtifactClass::SourceArchive,
+        ArtifactClass::ImageIndex,
+        ArtifactClass::HelmCharts,
+        ArtifactClass::KubernetesBundle,
+        ArtifactClass::Crds,
+        ArtifactClass::Migrations,
+        ArtifactClass::Utilities,
+        ArtifactClass::ApiSchemas,
+        ArtifactClass::SbomSpdx,
+        ArtifactClass::SbomCycloneDx,
+        ArtifactClass::Provenance,
+        ArtifactClass::QualificationEvidence,
+        ArtifactClass::Documentation,
+        ArtifactClass::Checksums,
+    ]
+    .into_iter()
+    .collect()
 }
 
 /// Verify that only real, complete, same-subject prerequisite evidence is admitted.
 pub fn validate_prerequisites(ledger: &PrerequisiteLedger) -> Result<(), Rc1Error> {
-    if ledger.format_version != RC1_FORMAT_VERSION || ledger.release_version != RC1_VERSION
-        || !valid_sha(&ledger.release_sha256) || !ledger.complete {
+    if ledger.format_version != RC1_FORMAT_VERSION
+        || ledger.release_version != RC1_VERSION
+        || !valid_sha(&ledger.release_sha256)
+        || !ledger.complete
+    {
         return Err(Rc1Error::Prerequisites);
     }
     let mut kinds = BTreeSet::new();
     for evidence in &ledger.prerequisites {
-        if !kinds.insert(evidence.kind) || evidence.evidence_class != EvidenceClass::LiveProductionQualification
-            || !valid_sha(&evidence.certificate_sha256) || evidence.subject_sha256 != ledger.release_sha256
-            || !evidence.complete || evidence.failure_count != 0 || evidence.synthetic {
+        if !kinds.insert(evidence.kind)
+            || evidence.evidence_class != EvidenceClass::LiveProductionQualification
+            || !valid_sha(&evidence.certificate_sha256)
+            || evidence.subject_sha256 != ledger.release_sha256
+            || !evidence.complete
+            || evidence.failure_count != 0
+            || evidence.synthetic
+        {
             return Err(Rc1Error::Prerequisites);
         }
     }
-    if kinds != all_prerequisites() { return Err(Rc1Error::Prerequisites); }
+    if kinds != all_prerequisites() {
+        return Err(Rc1Error::Prerequisites);
+    }
     Ok(())
 }
 
 /// Verify complete, canonical interface-freeze coverage.
 pub fn validate_freeze(freeze: &FreezeManifest) -> Result<(), Rc1Error> {
-    if freeze.format_version != RC1_FORMAT_VERSION || freeze.release_version != RC1_VERSION
-        || !valid_sha(&freeze.source_manifest_sha256) || !freeze.changes_require_rc_defect
-        || !freeze.complete { return Err(Rc1Error::Freeze); }
+    if freeze.format_version != RC1_FORMAT_VERSION
+        || freeze.release_version != RC1_VERSION
+        || !valid_sha(&freeze.source_manifest_sha256)
+        || !freeze.changes_require_rc_defect
+        || !freeze.complete
+    {
+        return Err(Rc1Error::Freeze);
+    }
     let mut identities = BTreeSet::new();
     let mut surfaces = BTreeSet::new();
     for entry in &freeze.entries {
-        if entry.path.is_empty() || entry.path.starts_with('/') || entry.path.contains("..")
-            || !valid_sha(&entry.sha256) || entry.item_count == 0
-            || !identities.insert((entry.surface, entry.path.as_str())) {
+        if entry.path.is_empty()
+            || entry.path.starts_with('/')
+            || entry.path.contains("..")
+            || !valid_sha(&entry.sha256)
+            || entry.item_count == 0
+            || !identities.insert((entry.surface, entry.path.as_str()))
+        {
             return Err(Rc1Error::Freeze);
         }
         surfaces.insert(entry.surface);
     }
-    if surfaces != all_surfaces() { return Err(Rc1Error::Freeze); }
+    if surfaces != all_surfaces() {
+        return Err(Rc1Error::Freeze);
+    }
     Ok(())
 }
 
@@ -385,45 +439,83 @@ pub fn certify_rc1(
 ) -> Result<Rc1Certificate, Rc1Error> {
     validate_prerequisites(ledger)?;
     validate_freeze(freeze)?;
-    if ![support_matrix_sha256, known_issues_sha256, acceptance_plan_sha256]
-        .iter().all(|value| valid_sha(value)) { return Err(Rc1Error::InvalidIdentity); }
+    if ![
+        support_matrix_sha256,
+        known_issues_sha256,
+        acceptance_plan_sha256,
+    ]
+    .iter()
+    .all(|value| valid_sha(value))
+    {
+        return Err(Rc1Error::InvalidIdentity);
+    }
     let mut classes = BTreeSet::new();
     let mut paths = BTreeSet::new();
     let mut root = Sha256::new();
     for artifact in artifacts {
-        if artifact.path.is_empty() || artifact.path.contains("..") || !classes.insert(artifact.class)
-            || !paths.insert(artifact.path.as_str()) || !valid_sha(&artifact.sha256)
-            || !valid_sha(&artifact.signature_sha256) || artifact.media_type.is_empty() {
+        if artifact.path.is_empty()
+            || artifact.path.contains("..")
+            || !classes.insert(artifact.class)
+            || !paths.insert(artifact.path.as_str())
+            || !valid_sha(&artifact.sha256)
+            || !valid_sha(&artifact.signature_sha256)
+            || artifact.media_type.is_empty()
+        {
             return Err(Rc1Error::Artifacts);
         }
-        root.update(artifact.path.as_bytes()); root.update([0]);
-        root.update(artifact.sha256.as_bytes()); root.update([0]);
-        root.update(artifact.signature_sha256.as_bytes()); root.update([0]);
+        root.update(artifact.path.as_bytes());
+        root.update([0]);
+        root.update(artifact.sha256.as_bytes());
+        root.update([0]);
+        root.update(artifact.signature_sha256.as_bytes());
+        root.update([0]);
     }
-    if classes != all_artifacts() { return Err(Rc1Error::Artifacts); }
-    let supply_hashes = [&supply_chain.signature_report_sha256, &supply_chain.provenance_report_sha256,
-        &supply_chain.secret_scan_sha256, &supply_chain.license_report_sha256,
-        &supply_chain.vulnerability_report_sha256];
-    if supply_hashes.iter().any(|value| !valid_sha(value)) || supply_chain.unapproved_critical_cves != 0
-        || supply_chain.unapproved_high_cves != 0 || supply_chain.embedded_credentials != 0
-        || !supply_chain.license_policy_complete || !supply_chain.runtime_hardening_complete
-        || !supply_chain.workload_identity_complete || !supply_chain.network_policy_complete
-        || !supply_chain.complete || !valid_sha(&reproducible.builder_a_manifest_sha256)
+    if classes != all_artifacts() {
+        return Err(Rc1Error::Artifacts);
+    }
+    let supply_hashes = [
+        &supply_chain.signature_report_sha256,
+        &supply_chain.provenance_report_sha256,
+        &supply_chain.secret_scan_sha256,
+        &supply_chain.license_report_sha256,
+        &supply_chain.vulnerability_report_sha256,
+    ];
+    if supply_hashes.iter().any(|value| !valid_sha(value))
+        || supply_chain.unapproved_critical_cves != 0
+        || supply_chain.unapproved_high_cves != 0
+        || supply_chain.embedded_credentials != 0
+        || !supply_chain.license_policy_complete
+        || !supply_chain.runtime_hardening_complete
+        || !supply_chain.workload_identity_complete
+        || !supply_chain.network_policy_complete
+        || !supply_chain.complete
+        || !valid_sha(&reproducible.builder_a_manifest_sha256)
         || reproducible.builder_a_manifest_sha256 != reproducible.builder_b_manifest_sha256
-        || !valid_sha(&reproducible.source_sha256) || !reproducible.network_controlled
-        || !reproducible.dependencies_locked || !reproducible.timestamps_normalized
-        || !reproducible.complete { return Err(Rc1Error::SupplyChain); }
+        || !valid_sha(&reproducible.source_sha256)
+        || !reproducible.network_controlled
+        || !reproducible.dependencies_locked
+        || !reproducible.timestamps_normalized
+        || !reproducible.complete
+    {
+        return Err(Rc1Error::SupplyChain);
+    }
     let ledger_sha256 = canonical_sha256(ledger)?;
     let freeze_sha256 = canonical_sha256(freeze)?;
     let artifact_manifest_sha256 = canonical_sha256(&artifacts)?;
     Ok(Rc1Certificate {
-        format_version: RC1_FORMAT_VERSION, release_version: RC1_VERSION.to_owned(),
-        release_sha256: ledger.release_sha256.clone(), prerequisite_ledger_sha256: ledger_sha256,
-        freeze_manifest_sha256: freeze_sha256, artifact_manifest_sha256,
+        format_version: RC1_FORMAT_VERSION,
+        release_version: RC1_VERSION.to_owned(),
+        release_sha256: ledger.release_sha256.clone(),
+        prerequisite_ledger_sha256: ledger_sha256,
+        freeze_manifest_sha256: freeze_sha256,
+        artifact_manifest_sha256,
         artifact_root_sha256: format!("{:x}", root.finalize()),
-        support_matrix_sha256: support_matrix_sha256.to_owned(), known_issues_sha256: known_issues_sha256.to_owned(),
-        acceptance_plan_sha256: acceptance_plan_sha256.to_owned(), failure_count: 0,
-        publishable: true, complete: true,
+        support_matrix_sha256: support_matrix_sha256.to_owned(),
+        known_issues_sha256: known_issues_sha256.to_owned(),
+        acceptance_plan_sha256: acceptance_plan_sha256.to_owned(),
+        failure_count: 0,
+        publishable: true,
+        complete: true,
     })
 }
 
@@ -439,12 +531,24 @@ mod tests {
 
     #[test]
     fn synthetic_prerequisite_is_rejected() {
-        let ledger = PrerequisiteLedger { format_version: 1, release_version: RC1_VERSION.into(),
-            release_sha256: "1".repeat(64), prerequisites: vec![PrerequisiteEvidence {
-                kind: PrerequisiteKind::Sparql11, evidence_class: EvidenceClass::SyntheticOnly,
-                certificate_sha256: "2".repeat(64), subject_sha256: "1".repeat(64),
-                complete: true, failure_count: 0, synthetic: true,
-            }], complete: true };
-        assert_eq!(validate_prerequisites(&ledger), Err(Rc1Error::Prerequisites));
+        let ledger = PrerequisiteLedger {
+            format_version: 1,
+            release_version: RC1_VERSION.into(),
+            release_sha256: "1".repeat(64),
+            prerequisites: vec![PrerequisiteEvidence {
+                kind: PrerequisiteKind::Sparql11,
+                evidence_class: EvidenceClass::SyntheticOnly,
+                certificate_sha256: "2".repeat(64),
+                subject_sha256: "1".repeat(64),
+                complete: true,
+                failure_count: 0,
+                synthetic: true,
+            }],
+            complete: true,
+        };
+        assert_eq!(
+            validate_prerequisites(&ledger),
+            Err(Rc1Error::Prerequisites)
+        );
     }
 }

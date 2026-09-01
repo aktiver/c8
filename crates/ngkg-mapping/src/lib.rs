@@ -23,10 +23,20 @@ pub enum Treatment {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum ObjectMap {
-    EntityGuidColumn { column: String },
-    ConstantIri { iri: String },
-    TypedValueColumn { column: String, datatype_iri: String },
-    LanguageValueColumns { value_column: String, language_column: String },
+    EntityGuidColumn {
+        column: String,
+    },
+    ConstantIri {
+        iri: String,
+    },
+    TypedValueColumn {
+        column: String,
+        datatype_iri: String,
+    },
+    LanguageValueColumns {
+        value_column: String,
+        language_column: String,
+    },
 }
 
 /// One governed predicate projection.
@@ -105,7 +115,10 @@ pub enum MappingError {
 pub fn compile(mapping: &SemanticProjection) -> Result<CompiledMapping, MappingError> {
     require_iri("mapping_id", &mapping.mapping_id)?;
     if mapping.source_schema_hash.len() != 64
-        || !mapping.source_schema_hash.bytes().all(|value| value.is_ascii_hexdigit() && !value.is_ascii_uppercase())
+        || !mapping
+            .source_schema_hash
+            .bytes()
+            .all(|value| value.is_ascii_hexdigit() && !value.is_ascii_uppercase())
     {
         return Err(MappingError::InvalidSchemaHash);
     }
@@ -129,24 +142,34 @@ pub fn compile(mapping: &SemanticProjection) -> Result<CompiledMapping, MappingE
             return Err(MappingError::DuplicatePredicate(predicate.iri.clone()));
         }
         if predicate.participates_in_reasoning && predicate.treatment != Treatment::Core {
-            return Err(MappingError::ReasoningPredicateNotCore(predicate.iri.clone()));
+            return Err(MappingError::ReasoningPredicateNotCore(
+                predicate.iri.clone(),
+            ));
         }
         if predicate.treatment == Treatment::Payload && predicate.queryable_as_rdf {
             return Err(MappingError::PayloadMarkedQueryable(predicate.iri.clone()));
         }
         if predicate.treatment != Treatment::Payload && !predicate.queryable_as_rdf {
-            return Err(MappingError::SemanticPredicateNotQueryable(predicate.iri.clone()));
+            return Err(MappingError::SemanticPredicateNotQueryable(
+                predicate.iri.clone(),
+            ));
         }
         match &predicate.object {
             ObjectMap::EntityGuidColumn { column } => {
                 require_column(column, &mut required)?;
             }
             ObjectMap::ConstantIri { iri } => require_iri("constant_object", iri)?,
-            ObjectMap::TypedValueColumn { column, datatype_iri } => {
+            ObjectMap::TypedValueColumn {
+                column,
+                datatype_iri,
+            } => {
                 require_column(column, &mut required)?;
                 require_iri("datatype", datatype_iri)?;
             }
-            ObjectMap::LanguageValueColumns { value_column, language_column } => {
+            ObjectMap::LanguageValueColumns {
+                value_column,
+                language_column,
+            } => {
                 require_column(value_column, &mut required)?;
                 require_column(language_column, &mut required)?;
             }
@@ -162,7 +185,8 @@ pub fn compile(mapping: &SemanticProjection) -> Result<CompiledMapping, MappingE
             return Err(MappingError::MissingFieldCoverage(column.clone()));
         }
     }
-    let canonical = serde_json::to_vec(mapping).map_err(|error| MappingError::Serialization(error.to_string()))?;
+    let canonical = serde_json::to_vec(mapping)
+        .map_err(|error| MappingError::Serialization(error.to_string()))?;
     Ok(CompiledMapping {
         mapping_id: mapping.mapping_id.clone(),
         contract_hash: format!("blake3:{}", blake3::hash(&canonical).to_hex()),
@@ -184,14 +208,19 @@ fn require_column(column: &str, required: &mut BTreeSet<String>) -> Result<(), M
 fn require_iri(field: &'static str, value: &str) -> Result<(), MappingError> {
     Iri::parse(value.to_owned())
         .map(|_| ())
-        .map_err(|_| MappingError::InvalidIri { field, value: value.to_owned() })
+        .map_err(|_| MappingError::InvalidIri {
+            field,
+            value: value.to_owned(),
+        })
 }
 
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
 
-    use super::{FieldDisposition, ObjectMap, PredicateMap, SemanticProjection, Treatment, compile};
+    use super::{
+        FieldDisposition, ObjectMap, PredicateMap, SemanticProjection, Treatment, compile,
+    };
     use uuid::Uuid;
 
     fn valid_mapping() -> SemanticProjection {
@@ -207,12 +236,17 @@ mod tests {
             record_guid_column: "record".to_owned(),
             predicates: vec![PredicateMap {
                 iri: "urn:ngkg:observedOn".to_owned(),
-                object: ObjectMap::EntityGuidColumn { column: "entity".to_owned() },
+                object: ObjectMap::EntityGuidColumn {
+                    column: "entity".to_owned(),
+                },
                 treatment: Treatment::Core,
                 participates_in_reasoning: true,
                 queryable_as_rdf: true,
             }],
-            field_coverage: columns.into_iter().map(|name| (name.to_owned(), FieldDisposition::Mapped)).collect::<BTreeMap<_, _>>(),
+            field_coverage: columns
+                .into_iter()
+                .map(|name| (name.to_owned(), FieldDisposition::Mapped))
+                .collect::<BTreeMap<_, _>>(),
             authorization_label_columns: Vec::new(),
         }
     }
@@ -230,4 +264,3 @@ mod tests {
         assert!(compile(&mapping).is_err());
     }
 }
-

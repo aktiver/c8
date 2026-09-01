@@ -14,10 +14,12 @@ const TOKEN_FILE_FORMAT_VERSION: u32 = 1;
 const MAX_TOKEN_FILE_BYTES: u64 = 1_048_576;
 const MAX_PRINCIPAL_ID_BYTES: usize = 256;
 const QUERY_EXECUTE_SCOPE: &str = "queries:execute";
-const VALID_SCOPES: [&str; 13] = [
+const VALID_SCOPES: [&str; 15] = [
     "datasets:write",
     "sources:write",
     "ingestions:create",
+    "imports:create",
+    "imports:read",
     "jobs:read",
     "jobs:cancel",
     "snapshots:read",
@@ -35,7 +37,6 @@ pub(crate) struct Identity {
     pub(crate) tenant_id: Uuid,
     pub(crate) principal_id: String,
     scopes: BTreeSet<String>,
-    pub(crate) graph_authorization_labels: BTreeSet<String>,
 }
 
 #[derive(Clone)]
@@ -77,11 +78,15 @@ impl TokenAuthorizer {
         }
         let bytes = fs::read(path)
             .map_err(|error| format!("cannot read authentication token file: {error}"))?;
-        let expected = decode_sha256(expected_sha256)
-            .map_err(|_| "authentication token file SHA-256 must be 64 lowercase hexadecimal characters".to_owned())?;
+        let expected = decode_sha256(expected_sha256).map_err(|_| {
+            "authentication token file SHA-256 must be 64 lowercase hexadecimal characters"
+                .to_owned()
+        })?;
         let observed: [u8; 32] = Sha256::digest(&bytes).into();
         if observed != expected {
-            return Err("authentication token file checksum does not match its deployment".to_owned());
+            return Err(
+                "authentication token file checksum does not match its deployment".to_owned(),
+            );
         }
         let config: TokenFile = serde_json::from_slice(&bytes)
             .map_err(|error| format!("authentication token file is invalid: {error}"))?;
@@ -96,7 +101,6 @@ impl TokenAuthorizer {
                 tenant_id: token.tenant_id,
                 principal_id: token.principal_id,
                 scopes: token.scopes,
-                graph_authorization_labels: token.graph_authorization_labels,
             };
             if identities.insert(hash, identity).is_some() {
                 return Err("authentication token hashes must be unique".to_owned());
@@ -157,9 +161,7 @@ fn validate_entry(token: &TokenEntry) -> Result<(), String> {
     {
         return Err("authentication identity contains an invalid graph label".to_owned());
     }
-    if token.scopes.contains(QUERY_EXECUTE_SCOPE)
-        && token.graph_authorization_labels.is_empty()
-    {
+    if token.scopes.contains(QUERY_EXECUTE_SCOPE) && token.graph_authorization_labels.is_empty() {
         return Err(
             "queries:execute identities require at least one graphAuthorizationLabel".to_owned(),
         );

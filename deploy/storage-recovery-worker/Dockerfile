@@ -1,4 +1,12 @@
-FROM gcr.io/distroless/cc-debian12:nonroot
-COPY ngkg-storage-recovery-worker /usr/local/bin/ngkg-storage-recovery-worker
+ARG RUST_BUILDER_IMAGE
+ARG RUNTIME_IMAGE
+
+FROM ${RUST_BUILDER_IMAGE} AS builder
+WORKDIR /source
+COPY . .
+RUN cargo build --locked --offline --release --package ngkg-storage-recovery-worker
+
+FROM ${RUNTIME_IMAGE}
+COPY --from=builder /source/target/release/ngkg-storage-recovery-worker /usr/local/bin/ngkg-storage-recovery-worker
 USER 65532:65532
 ENTRYPOINT ["/usr/local/bin/ngkg-storage-recovery-worker"]

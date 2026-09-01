@@ -4,6 +4,7 @@ use kube::CustomResource;
 pub use ngkg_types::PublicationPolicy;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value, json};
 use uuid::Uuid;
 
 /// Desired state for one immutable reference compilation.
@@ -224,6 +225,34 @@ pub struct NgkgSourceImportStatus {
     pub parsed_quad_count: Option<u64>,
     /// Non-sensitive fail-closed state.
     pub condition: Option<String>,
+}
+
+/// Build a server-side-apply status document containing only fields owned by one writer.
+///
+/// Kubernetes status is shared by the control-plane operator and several stage workers.
+/// Serializing a complete stale status as a JSON merge patch can delete or overwrite a
+/// concurrently published checksum. This helper deliberately emits only non-null fields
+/// from the caller's explicit ownership set. Separate field-manager names then make the
+/// API server reject accidental cross-writer ownership instead of silently losing data.
+pub fn source_import_status_apply_document(
+    name: &str,
+    status: &NgkgSourceImportStatus,
+    owned_camel_case_fields: &[&str],
+) -> Result<Value, serde_json::Error> {
+    let serialized = serde_json::to_value(status)?;
+    let source = serialized.as_object().cloned().unwrap_or_default();
+    let mut owned = Map::new();
+    for field in owned_camel_case_fields {
+        if let Some(value) = source.get(*field).filter(|value| !value.is_null()) {
+            owned.insert((*field).to_owned(), value.clone());
+        }
+    }
+    Ok(json!({
+        "apiVersion": "ngkg.io/v1alpha1",
+        "kind": "NgkgSourceImport",
+        "metadata": {"name": name},
+        "status": owned
+    }))
 }
 
 /// Closed storage-maintenance intent. None of these operations change RDF or OWL semantics.

@@ -8,10 +8,10 @@ use k8s_openapi::{
     api::{
         batch::v1::{Job, JobSpec},
         core::v1::{
-            Capabilities, Container, EmptyDirVolumeSource, EnvFromSource, EnvVar,
-            EnvVarSource, ObjectFieldSelector, PodSecurityContext, PodSpec, PodTemplateSpec,
-            ResourceRequirements, SeccompProfile,
-            SecretEnvSource, SecurityContext, Volume, VolumeMount,
+            Capabilities, Container, EmptyDirVolumeSource, EnvFromSource, EnvVar, EnvVarSource,
+            ObjectFieldSelector, PodSecurityContext, PodSpec, PodTemplateSpec,
+            ResourceRequirements, SeccompProfile, SecretEnvSource, SecurityContext, Volume,
+            VolumeMount,
         },
     },
     apimachinery::pkg::api::resource::Quantity,
@@ -22,12 +22,10 @@ use kube::{
     runtime::{Controller, controller::Action, watcher},
 };
 use ngkg_artifact_store::ArtifactStore;
-use ngkg_kube::{
-    NgkgStorageRecovery, NgkgStorageRecoveryStatus, StorageRecoveryKind,
-};
+use ngkg_kube::{NgkgStorageRecovery, NgkgStorageRecoveryStatus, StorageRecoveryKind};
 use ngkg_storage_recovery::{
-    RecoveryCertificate, RecoveryPlan, StorageCatalogError, StorageRecoveryRepository,
-    SnapshotBackupManifest, StorageTarget, TransferReason, build_restore_certificate,
+    RecoveryCertificate, RecoveryPlan, SnapshotBackupManifest, StorageCatalogError,
+    StorageRecoveryRepository, StorageTarget, TransferReason, build_restore_certificate,
     validate_backup_manifest, validate_recovery_plan,
 };
 use serde::Deserialize;
@@ -93,12 +91,18 @@ enum OperatorError {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt().json().with_env_filter("info").init();
+    tracing_subscriber::fmt()
+        .json()
+        .with_env_filter("info")
+        .init();
     let namespace = required("NGKG_NAMESPACE")?;
     let database_url = required("NGKG_DATABASE_URL")?;
     let artifact_base_url = required("NGKG_CONTROL_ARTIFACT_BASE_URL")?;
     let client = Client::try_default().await?;
-    let pool = PgPoolOptions::new().max_connections(16).connect(&database_url).await?;
+    let pool = PgPoolOptions::new()
+        .max_connections(16)
+        .connect(&database_url)
+        .await?;
     let context = Arc::new(Context {
         client: client.clone(),
         namespace: namespace.clone(),
@@ -106,8 +110,10 @@ async fn main() -> Result<()> {
         artifact_store: ArtifactStore::from_base_url(&artifact_base_url)?,
         config: Config::from_env()?,
     });
-    let resources: Api<NgkgStorageRecovery> = Api::namespaced(client, &namespace);
+    let resources: Api<NgkgStorageRecovery> = Api::namespaced(client.clone(), &namespace);
+    let jobs: Api<Job> = Api::namespaced(client, &namespace);
     Controller::new(resources, watcher::Config::default())
+        .owns(jobs, watcher::Config::default())
         .run(reconcile, error_policy, context)
         .for_each(|result| async move {
             if let Err(error) = result {
@@ -135,7 +141,9 @@ impl Config {
             memory: required("NGKG_STORAGE_RECOVERY_MEMORY")?,
             scratch_size: required("NGKG_STORAGE_RECOVERY_SCRATCH_SIZE")?,
             active_deadline_seconds: positive_i64("NGKG_STORAGE_RECOVERY_ACTIVE_DEADLINE_SECONDS")?,
-            ttl_seconds_after_finished: positive_i32("NGKG_STORAGE_RECOVERY_TTL_SECONDS_AFTER_FINISHED")?,
+            ttl_seconds_after_finished: positive_i32(
+                "NGKG_STORAGE_RECOVERY_TTL_SECONDS_AFTER_FINISHED",
+            )?,
             max_plan_bytes: positive_u64("NGKG_STORAGE_RECOVERY_MAX_PLAN_BYTES")?,
             max_result_bytes: positive_u64("NGKG_STORAGE_RECOVERY_MAX_RESULT_BYTES")?,
             max_task_bytes: positive_u64("NGKG_STORAGE_RECOVERY_MAX_TASK_BYTES")?,
@@ -171,37 +179,54 @@ async fn reconcile(
     let transfer_name = format!("{base}-copy");
     if recovery.spec.task_count > 0 {
         ensure_job(&jobs, transfer_job(&recovery, &context, &transfer_name)?).await?;
-        match context.catalog.transition(
-            recovery.spec.tenant_id,
-            recovery.spec.operation_id,
-            "PLANNED",
-            "RUNNING",
-        ).await {
+        match context
+            .catalog
+            .transition(
+                recovery.spec.tenant_id,
+                recovery.spec.operation_id,
+                "PLANNED",
+                "RUNNING",
+            )
+            .await
+        {
             Ok(()) | Err(StorageCatalogError::IdempotencyConflict) => {}
             Err(error) => return Err(error.into()),
         }
         let transfer = jobs.get(&transfer_name).await?;
         if condition_true(&transfer, "Failed") {
-            context.catalog.fail(
-                recovery.spec.tenant_id,
-                recovery.spec.operation_id,
-                "TRANSFER_JOB_FAILED",
-            ).await?;
-            patch_status(&recovery, &context, NgkgStorageRecoveryStatus {
-                observed_generation: recovery.metadata.generation,
-                transfer_job_name: Some(transfer_name),
-                condition: Some("TransferFailedClosed".to_owned()),
-                ..recovery.status.clone().unwrap_or_default()
-            }).await?;
+            context
+                .catalog
+                .fail(
+                    recovery.spec.tenant_id,
+                    recovery.spec.operation_id,
+                    "TRANSFER_JOB_FAILED",
+                )
+                .await?;
+            patch_status(
+                &recovery,
+                &context,
+                NgkgStorageRecoveryStatus {
+                    observed_generation: recovery.metadata.generation,
+                    transfer_job_name: Some(transfer_name),
+                    condition: Some("TransferFailedClosed".to_owned()),
+                    ..recovery.status.clone().unwrap_or_default()
+                },
+            )
+            .await?;
             return Ok(Action::await_change());
         }
         if !condition_true(&transfer, "Complete") {
-            patch_status(&recovery, &context, NgkgStorageRecoveryStatus {
-                observed_generation: recovery.metadata.generation,
-                transfer_job_name: Some(transfer_name),
-                condition: Some("DistributedTransferRunning".to_owned()),
-                ..recovery.status.clone().unwrap_or_default()
-            }).await?;
+            patch_status(
+                &recovery,
+                &context,
+                NgkgStorageRecoveryStatus {
+                    observed_generation: recovery.metadata.generation,
+                    transfer_job_name: Some(transfer_name),
+                    condition: Some("DistributedTransferRunning".to_owned()),
+                    ..recovery.status.clone().unwrap_or_default()
+                },
+            )
+            .await?;
             return Ok(Action::requeue(Duration::from_secs(10)));
         }
     }
@@ -210,28 +235,41 @@ async fn reconcile(
     ensure_job(&jobs, finalize_job(&recovery, &context, &finalize_name)?).await?;
     let finalize = jobs.get(&finalize_name).await?;
     if condition_true(&finalize, "Failed") {
-        context.catalog.fail(
-            recovery.spec.tenant_id,
-            recovery.spec.operation_id,
-            "VERIFICATION_BARRIER_FAILED",
-        ).await?;
-        patch_status(&recovery, &context, NgkgStorageRecoveryStatus {
-            observed_generation: recovery.metadata.generation,
-            transfer_job_name: (recovery.spec.task_count > 0).then_some(transfer_name),
-            finalize_job_name: Some(finalize_name),
-            condition: Some("VerificationBarrierFailedClosed".to_owned()),
-            ..recovery.status.clone().unwrap_or_default()
-        }).await?;
+        context
+            .catalog
+            .fail(
+                recovery.spec.tenant_id,
+                recovery.spec.operation_id,
+                "VERIFICATION_BARRIER_FAILED",
+            )
+            .await?;
+        patch_status(
+            &recovery,
+            &context,
+            NgkgStorageRecoveryStatus {
+                observed_generation: recovery.metadata.generation,
+                transfer_job_name: (recovery.spec.task_count > 0).then_some(transfer_name),
+                finalize_job_name: Some(finalize_name),
+                condition: Some("VerificationBarrierFailedClosed".to_owned()),
+                ..recovery.status.clone().unwrap_or_default()
+            },
+        )
+        .await?;
         return Ok(Action::await_change());
     }
     if !condition_true(&finalize, "Complete") {
-        patch_status(&recovery, &context, NgkgStorageRecoveryStatus {
-            observed_generation: recovery.metadata.generation,
-            transfer_job_name: (recovery.spec.task_count > 0).then_some(transfer_name),
-            finalize_job_name: Some(finalize_name),
-            condition: Some("VerificationBarrierRunning".to_owned()),
-            ..recovery.status.clone().unwrap_or_default()
-        }).await?;
+        patch_status(
+            &recovery,
+            &context,
+            NgkgStorageRecoveryStatus {
+                observed_generation: recovery.metadata.generation,
+                transfer_job_name: (recovery.spec.task_count > 0).then_some(transfer_name),
+                finalize_job_name: Some(finalize_name),
+                condition: Some("VerificationBarrierRunning".to_owned()),
+                ..recovery.status.clone().unwrap_or_default()
+            },
+        )
+        .await?;
         return Ok(Action::requeue(Duration::from_secs(10)));
     }
     commit_verified(&recovery, &context, &transfer_name, &finalize_name).await?;
@@ -242,9 +280,18 @@ async fn transition_to_verifying(
     catalog: &StorageRecoveryRepository,
     recovery: &NgkgStorageRecovery,
 ) -> Result<(), OperatorError> {
-    let expected = if recovery.spec.task_count == 0 { "PLANNED" } else { "RUNNING" };
+    let expected = if recovery.spec.task_count == 0 {
+        "PLANNED"
+    } else {
+        "RUNNING"
+    };
     match catalog
-        .transition(recovery.spec.tenant_id, recovery.spec.operation_id, expected, "VERIFYING")
+        .transition(
+            recovery.spec.tenant_id,
+            recovery.spec.operation_id,
+            expected,
+            "VERIFYING",
+        )
         .await
     {
         Ok(()) | Err(StorageCatalogError::IdempotencyConflict) => Ok(()),
@@ -263,12 +310,15 @@ async fn commit_verified(
     tokio::fs::create_dir_all(&scratch).await?;
     let plan_path = scratch.join("plan.json");
     remove_if_present(&plan_path).await?;
-    context.artifact_store.materialize_verified(
-        &recovery.spec.plan_object_key,
-        &recovery.spec.plan_sha256,
-        context.config.max_plan_bytes,
-        &plan_path,
-    ).await?;
+    context
+        .artifact_store
+        .materialize_verified(
+            &recovery.spec.plan_object_key,
+            &recovery.spec.plan_sha256,
+            context.config.max_plan_bytes,
+            &plan_path,
+        )
+        .await?;
     let plan: RecoveryPlan = serde_json::from_slice(&tokio::fs::read(&plan_path).await?)?;
     validate_recovery_plan(&plan).map_err(|error| OperatorError::Contract(error.to_string()))?;
     if plan.operation_id != recovery.spec.operation_id
@@ -289,11 +339,14 @@ async fn commit_verified(
     );
     let certificate_path = scratch.join("certificate.json");
     remove_if_present(&certificate_path).await?;
-    context.artifact_store.materialize_unverified_bounded(
-        &certificate_key,
-        context.config.max_result_bytes,
-        &certificate_path,
-    ).await?;
+    context
+        .artifact_store
+        .materialize_unverified_bounded(
+            &certificate_key,
+            context.config.max_result_bytes,
+            &certificate_path,
+        )
+        .await?;
     let certificate_bytes = tokio::fs::read(&certificate_path).await?;
     let certificate_sha256 = Sha256::digest(&certificate_bytes);
     let certificate_digest: [u8; 32] = certificate_sha256.into();
@@ -315,11 +368,10 @@ async fn commit_verified(
         );
         let path = scratch.join("backup.json");
         remove_if_present(&path).await?;
-        context.artifact_store.materialize_unverified_bounded(
-            &key,
-            context.config.max_plan_bytes,
-            &path,
-        ).await?;
+        context
+            .artifact_store
+            .materialize_unverified_bounded(&key, context.config.max_plan_bytes, &path)
+            .await?;
         let bytes = tokio::fs::read(path).await?;
         let manifest: SnapshotBackupManifest = serde_json::from_slice(&bytes)?;
         validate_backup_manifest(&manifest)
@@ -351,7 +403,8 @@ async fn commit_verified(
             &plan.storage_manifest_sha256,
             &certificate,
             &hex::encode(certificate_digest),
-        ).map_err(|error| OperatorError::Contract(error.to_string()))?;
+        )
+        .map_err(|error| OperatorError::Contract(error.to_string()))?;
         let bytes = serde_json::to_vec(&certificate)?;
         let digest: [u8; 32] = Sha256::digest(&bytes).into();
         let path = scratch.join("restore-certificate.json");
@@ -360,40 +413,51 @@ async fn commit_verified(
             "storage-recovery/{}/restore-certificate.json",
             recovery.spec.operation_id.simple()
         );
-        context.artifact_store.put_file_immutable(
-            &key,
-            &hex::encode(digest),
-            &path,
-            context.config.single_put_max_bytes,
-            context.config.multipart_buffer_bytes,
-            context.config.multipart_concurrency,
-        ).await?;
+        context
+            .artifact_store
+            .put_file_immutable(
+                &key,
+                &hex::encode(digest),
+                &path,
+                context.config.single_put_max_bytes,
+                context.config.multipart_buffer_bytes,
+                context.config.multipart_concurrency,
+            )
+            .await?;
         Some((key, digest))
     } else {
         None
     };
-    context.catalog.commit_success(
-        recovery.spec.tenant_id,
-        recovery.spec.operation_id,
-        &certificate_key,
-        &certificate_digest,
-        &plan,
-        &context.config.targets,
-        backup.as_ref().map(|(key, digest)| (key.as_str(), digest)),
-    ).await?;
-    patch_status(recovery, context, NgkgStorageRecoveryStatus {
-        observed_generation: recovery.metadata.generation,
-        transfer_job_name: (recovery.spec.task_count > 0).then(|| transfer_name.to_owned()),
-        finalize_job_name: Some(finalize_name.to_owned()),
-        recovery_certificate_object_key: Some(certificate_key),
-        recovery_certificate_sha256: Some(hex::encode(certificate_digest)),
-        backup_manifest_object_key: backup.as_ref().map(|value| value.0.clone()),
-        backup_manifest_sha256: backup.as_ref().map(|value| hex::encode(value.1)),
-        restore_certificate_object_key: restore.as_ref().map(|value| value.0.clone()),
-        restore_certificate_sha256: restore.as_ref().map(|value| hex::encode(value.1)),
-        quarantined_replica_count: 0,
-        condition: Some("RecoveryCertifiedComplete".to_owned()),
-    }).await?;
+    context
+        .catalog
+        .commit_success(
+            recovery.spec.tenant_id,
+            recovery.spec.operation_id,
+            &certificate_key,
+            &certificate_digest,
+            &plan,
+            &context.config.targets,
+            backup.as_ref().map(|(key, digest)| (key.as_str(), digest)),
+        )
+        .await?;
+    patch_status(
+        recovery,
+        context,
+        NgkgStorageRecoveryStatus {
+            observed_generation: recovery.metadata.generation,
+            transfer_job_name: (recovery.spec.task_count > 0).then(|| transfer_name.to_owned()),
+            finalize_job_name: Some(finalize_name.to_owned()),
+            recovery_certificate_object_key: Some(certificate_key),
+            recovery_certificate_sha256: Some(hex::encode(certificate_digest)),
+            backup_manifest_object_key: backup.as_ref().map(|value| value.0.clone()),
+            backup_manifest_sha256: backup.as_ref().map(|value| hex::encode(value.1)),
+            restore_certificate_object_key: restore.as_ref().map(|value| value.0.clone()),
+            restore_certificate_sha256: restore.as_ref().map(|value| hex::encode(value.1)),
+            quarantined_replica_count: 0,
+            condition: Some("RecoveryCertifiedComplete".to_owned()),
+        },
+    )
+    .await?;
     Ok(())
 }
 
@@ -414,7 +478,14 @@ fn transfer_job(
     name: &str,
 ) -> Result<Job, OperatorError> {
     let parallelism = recovery.spec.task_count.min(recovery.spec.max_parallelism);
-    job(recovery, context, name, "transfer", Some(recovery.spec.task_count), Some(parallelism))
+    job(
+        recovery,
+        context,
+        name,
+        "transfer",
+        Some(recovery.spec.task_count),
+        Some(parallelism),
+    )
 }
 
 fn finalize_job(
@@ -437,35 +508,75 @@ fn job(
     let mut env_from = Vec::new();
     if let Some(secret) = &config.object_store_credentials_secret {
         env_from.push(EnvFromSource {
-            secret_ref: Some(SecretEnvSource { name: secret.clone(), optional: Some(false) }),
+            secret_ref: Some(SecretEnvSource {
+                name: secret.clone(),
+                optional: Some(false),
+            }),
             ..EnvFromSource::default()
         });
     }
     let mut env = [
         ("NGKG_RECOVERY_MODE", mode.to_owned()),
-        ("NGKG_CONTROL_ARTIFACT_BASE_URL", context.artifact_store.base_url().to_string()),
-        ("NGKG_RECOVERY_PLAN_OBJECT_KEY", recovery.spec.plan_object_key.clone()),
-        ("NGKG_RECOVERY_PLAN_SHA256", recovery.spec.plan_sha256.clone()),
+        (
+            "NGKG_CONTROL_ARTIFACT_BASE_URL",
+            context.artifact_store.base_url().to_string(),
+        ),
+        (
+            "NGKG_RECOVERY_PLAN_OBJECT_KEY",
+            recovery.spec.plan_object_key.clone(),
+        ),
+        (
+            "NGKG_RECOVERY_PLAN_SHA256",
+            recovery.spec.plan_sha256.clone(),
+        ),
         ("NGKG_RECOVERY_SCRATCH_ROOT", "/scratch/recovery".to_owned()),
-        ("NGKG_RECOVERY_MAX_PLAN_BYTES", config.max_plan_bytes.to_string()),
-        ("NGKG_RECOVERY_MAX_RESULT_BYTES", config.max_result_bytes.to_string()),
-        ("NGKG_RECOVERY_MAX_TASK_BYTES", config.max_task_bytes.to_string()),
-        ("NGKG_RECOVERY_TASK_TIMEOUT_SECONDS", config.task_timeout_seconds.to_string()),
-        ("NGKG_SINGLE_PUT_MAX_BYTES", config.single_put_max_bytes.to_string()),
-        ("NGKG_MULTIPART_BUFFER_BYTES", config.multipart_buffer_bytes.to_string()),
-        ("NGKG_MULTIPART_CONCURRENCY", config.multipart_concurrency.to_string()),
+        (
+            "NGKG_RECOVERY_MAX_PLAN_BYTES",
+            config.max_plan_bytes.to_string(),
+        ),
+        (
+            "NGKG_RECOVERY_MAX_RESULT_BYTES",
+            config.max_result_bytes.to_string(),
+        ),
+        (
+            "NGKG_RECOVERY_MAX_TASK_BYTES",
+            config.max_task_bytes.to_string(),
+        ),
+        (
+            "NGKG_RECOVERY_TASK_TIMEOUT_SECONDS",
+            config.task_timeout_seconds.to_string(),
+        ),
+        (
+            "NGKG_SINGLE_PUT_MAX_BYTES",
+            config.single_put_max_bytes.to_string(),
+        ),
+        (
+            "NGKG_MULTIPART_BUFFER_BYTES",
+            config.multipart_buffer_bytes.to_string(),
+        ),
+        (
+            "NGKG_MULTIPART_CONCURRENCY",
+            config.multipart_concurrency.to_string(),
+        ),
         (
             "NGKG_NODE_SATURATION_TARGET_PERCENT",
             config.node_saturation_target_percent.to_string(),
         ),
-        ("NGKG_STORAGE_TARGETS_JSON", config.target_registry_json.clone()),
+        (
+            "NGKG_STORAGE_TARGETS_JSON",
+            config.target_registry_json.clone(),
+        ),
         ("RAYON_NUM_THREADS", config.cpu.clone()),
         ("OMP_NUM_THREADS", "1".to_owned()),
         ("OPENBLAS_NUM_THREADS", "1".to_owned()),
         ("MKL_NUM_THREADS", "1".to_owned()),
     ]
     .into_iter()
-    .map(|(name, value)| EnvVar { name: name.to_owned(), value: Some(value), ..EnvVar::default() })
+    .map(|(name, value)| EnvVar {
+        name: name.to_owned(),
+        value: Some(value),
+        ..EnvVar::default()
+    })
     .collect::<Vec<_>>();
     env.push(EnvVar {
         name: "NGKG_RECOVERY_ATTEMPT_ID".to_owned(),
@@ -484,9 +595,8 @@ fn job(
             value_from: Some(EnvVarSource {
                 field_ref: Some(ObjectFieldSelector {
                     api_version: Some("v1".to_owned()),
-                    field_path:
-                        "metadata.annotations['batch.kubernetes.io/job-completion-index']"
-                            .to_owned(),
+                    field_path: "metadata.annotations['batch.kubernetes.io/job-completion-index']"
+                        .to_owned(),
                 }),
                 ..EnvVarSource::default()
             }),
@@ -497,12 +607,18 @@ fn job(
         requests: Some(BTreeMap::from([
             ("cpu".to_owned(), Quantity(config.cpu.clone())),
             ("memory".to_owned(), Quantity(config.memory.clone())),
-            ("ephemeral-storage".to_owned(), Quantity(config.scratch_size.clone())),
+            (
+                "ephemeral-storage".to_owned(),
+                Quantity(config.scratch_size.clone()),
+            ),
         ])),
         limits: Some(BTreeMap::from([
             ("cpu".to_owned(), Quantity(config.cpu.clone())),
             ("memory".to_owned(), Quantity(config.memory.clone())),
-            ("ephemeral-storage".to_owned(), Quantity(config.scratch_size.clone())),
+            (
+                "ephemeral-storage".to_owned(),
+                Quantity(config.scratch_size.clone()),
+            ),
         ])),
         ..ResourceRequirements::default()
     };
@@ -510,8 +626,14 @@ fn job(
         metadata: Some(ObjectMeta {
             labels: Some(BTreeMap::from([
                 ("app.kubernetes.io/name".to_owned(), "ngkg".to_owned()),
-                ("app.kubernetes.io/component".to_owned(), "storage-recovery-worker".to_owned()),
-                ("ngkg.io/operation-id".to_owned(), recovery.spec.operation_id.to_string()),
+                (
+                    "app.kubernetes.io/component".to_owned(),
+                    "storage-recovery-worker".to_owned(),
+                ),
+                (
+                    "ngkg.io/operation-id".to_owned(),
+                    recovery.spec.operation_id.to_string(),
+                ),
                 ("ngkg.io/network-plane".to_owned(), "batch".to_owned()),
             ])),
             annotations: Some(BTreeMap::from([(
@@ -530,7 +652,10 @@ fn job(
             )])),
             security_context: Some(PodSecurityContext {
                 run_as_non_root: Some(true),
-                seccomp_profile: Some(SeccompProfile { type_: "RuntimeDefault".to_owned(), localhost_profile: None }),
+                seccomp_profile: Some(SeccompProfile {
+                    type_: "RuntimeDefault".to_owned(),
+                    localhost_profile: None,
+                }),
                 ..PodSecurityContext::default()
             }),
             containers: vec![Container {
@@ -548,7 +673,10 @@ fn job(
                     allow_privilege_escalation: Some(false),
                     read_only_root_filesystem: Some(true),
                     run_as_non_root: Some(true),
-                    capabilities: Some(Capabilities { drop: Some(vec!["ALL".to_owned()]), ..Capabilities::default() }),
+                    capabilities: Some(Capabilities {
+                        drop: Some(vec!["ALL".to_owned()]),
+                        ..Capabilities::default()
+                    }),
                     ..SecurityContext::default()
                 }),
                 ..Container::default()
@@ -568,7 +696,9 @@ fn job(
         metadata: ObjectMeta {
             name: Some(name.to_owned()),
             namespace: Some(context.namespace.clone()),
-            owner_references: recovery.controller_owner_ref(&()).map(|reference| vec![reference]),
+            owner_references: recovery
+                .controller_owner_ref(&())
+                .map(|reference| vec![reference]),
             annotations: Some(BTreeMap::from([(
                 "kueue.x-k8s.io/queue-name".to_owned(),
                 config.queue_name.clone(),
@@ -581,8 +711,14 @@ fn job(
         },
         spec: Some(JobSpec {
             template: pod,
-            completions: completions.map(i32::try_from).transpose().map_err(|_| OperatorError::Contract("task count exceeds i32".to_owned()))?,
-            parallelism: parallelism.map(i32::try_from).transpose().map_err(|_| OperatorError::Contract("parallelism exceeds i32".to_owned()))?,
+            completions: completions
+                .map(i32::try_from)
+                .transpose()
+                .map_err(|_| OperatorError::Contract("task count exceeds i32".to_owned()))?,
+            parallelism: parallelism
+                .map(i32::try_from)
+                .transpose()
+                .map_err(|_| OperatorError::Contract("parallelism exceeds i32".to_owned()))?,
             completion_mode: completions.map(|_| "Indexed".to_owned()),
             backoff_limit: completions.is_none().then_some(6),
             backoff_limit_per_index: completions.is_some().then_some(6),
@@ -615,9 +751,10 @@ async fn patch_status(
     let api: Api<NgkgStorageRecovery> = Api::namespaced(context.client.clone(), &context.namespace);
     api.patch_status(
         &recovery.name_any(),
-        &PatchParams::apply("ngkg-storage-recovery-operator").force(),
+        &PatchParams::default(),
         &Patch::Merge(serde_json::json!({"status": status})),
-    ).await?;
+    )
+    .await?;
     Ok(())
 }
 
@@ -628,7 +765,10 @@ fn validate_resource(recovery: &NgkgStorageRecovery, config: &Config) -> Result<
         || spec.operation_id.is_nil()
         || spec.source_snapshot_id.is_nil()
         || spec.plan_sha256.len() != 64
-        || !spec.plan_sha256.bytes().all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+        || !spec
+            .plan_sha256
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
         || spec.task_count > 10_000_000
         || spec.max_parallelism == 0
         || spec.max_parallelism > 4096
@@ -637,11 +777,15 @@ fn validate_resource(recovery: &NgkgStorageRecovery, config: &Config) -> Result<
         || spec.resource_profile != config.resource_profile
         || (spec.kind == StorageRecoveryKind::Restore) != spec.restored_snapshot_id.is_some()
     {
-        return Err(OperatorError::Contract("spec violates the recovery ceiling bundle".to_owned()));
+        return Err(OperatorError::Contract(
+            "spec violates the recovery ceiling bundle".to_owned(),
+        ));
     }
     let admitted_bytes = u64::from(spec.max_parallelism)
         .checked_mul(spec.largest_task_bytes)
-        .ok_or_else(|| OperatorError::Contract("aggregate transfer byte budget overflows".to_owned()))?;
+        .ok_or_else(|| {
+            OperatorError::Contract("aggregate transfer byte budget overflows".to_owned())
+        })?;
     if admitted_bytes > spec.max_in_flight_bytes {
         return Err(OperatorError::Contract(
             "parallel storage work exceeds maxInFlightBytes".to_owned(),
@@ -679,7 +823,10 @@ fn error_policy(
 }
 
 fn required(name: &'static str) -> Result<String> {
-    env::var(name).ok().filter(|value| !value.trim().is_empty()).with_context(|| format!("{name} is required"))
+    env::var(name)
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .with_context(|| format!("{name} is required"))
 }
 
 fn optional(name: &'static str) -> Option<String> {
@@ -695,19 +842,35 @@ fn required_digest_image(name: &'static str) -> Result<String> {
 }
 
 fn positive_u64(name: &'static str) -> Result<u64> {
-    required(name)?.parse::<u64>().ok().filter(|value| *value > 0).with_context(|| format!("{name} must be positive"))
+    required(name)?
+        .parse::<u64>()
+        .ok()
+        .filter(|value| *value > 0)
+        .with_context(|| format!("{name} must be positive"))
 }
 
 fn positive_usize(name: &'static str) -> Result<usize> {
-    required(name)?.parse::<usize>().ok().filter(|value| *value > 0).with_context(|| format!("{name} must be positive"))
+    required(name)?
+        .parse::<usize>()
+        .ok()
+        .filter(|value| *value > 0)
+        .with_context(|| format!("{name} must be positive"))
 }
 
 fn positive_i64(name: &'static str) -> Result<i64> {
-    required(name)?.parse::<i64>().ok().filter(|value| *value > 0).with_context(|| format!("{name} must be positive"))
+    required(name)?
+        .parse::<i64>()
+        .ok()
+        .filter(|value| *value > 0)
+        .with_context(|| format!("{name} must be positive"))
 }
 
 fn positive_i32(name: &'static str) -> Result<i32> {
-    required(name)?.parse::<i32>().ok().filter(|value| *value > 0).with_context(|| format!("{name} must be positive"))
+    required(name)?
+        .parse::<i32>()
+        .ok()
+        .filter(|value| *value > 0)
+        .with_context(|| format!("{name} must be positive"))
 }
 
 fn production_saturation_target(name: &'static str) -> Result<u8> {

@@ -1,0 +1,7 @@
+SELECT ?patient ?condition ?treatment
+WHERE {
+  ?patient a <https://c8-next-generation.io/ontology/Patient> ;
+           <https://c8-next-generation.io/ontology/hasCondition> ?condition .
+  ?condition <https://c8-next-generation.io/ontology/indicatesTreatment> ?treatment .
+}
+ORDER BY ?patient ?condition ?treatment

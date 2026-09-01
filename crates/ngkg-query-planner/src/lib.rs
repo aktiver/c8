@@ -367,15 +367,15 @@ pub fn validate_distributed_property_path_plan(
                 || transition.to_state >= automaton.state_count
                 || match &transition.transition {
                     PathTransitionKind::Epsilon => false,
-                    PathTransitionKind::Predicate { predicate_iri, .. } => {
-                        predicate_iri.is_empty()
-                    }
+                    PathTransitionKind::Predicate { predicate_iri, .. } => predicate_iri.is_empty(),
                     PathTransitionKind::NegatedPropertySet {
                         excluded_predicate_iris,
                         ..
                     } => {
                         excluded_predicate_iris.is_empty()
-                            || excluded_predicate_iris.iter().any(|iri| iri.is_empty())
+                            || excluded_predicate_iris
+                                .iter()
+                                .any(std::string::String::is_empty)
                     }
                 }
         })
@@ -512,19 +512,23 @@ pub fn algebra_execution_waves(
 }
 
 fn lane_is_safe(operator: DistributedAlgebraOperator, lane: AlgebraExecutionLane) -> bool {
-    use AlgebraExecutionLane::{ExactReasonerPartitioned, NativePartitioned, ScalarOraclePartitioned};
+    use AlgebraExecutionLane::{
+        ExactReasonerPartitioned, NativePartitioned, ScalarOraclePartitioned,
+    };
     use DistributedAlgebraOperator::{
         AskFinalize, Bgp, ConstructFinalize, DescribeFinalize, Distinct, Extend, Filter, Graph,
-        Group, Join, Lateral, LeftJoin, Minus, Order, Path, Project, Reduced, Service, Slice, Subquery,
-        Union, Values,
+        Group, Join, Lateral, LeftJoin, Minus, Order, Path, Project, Reduced, Service, Slice,
+        Subquery, Union, Values,
     };
     match operator {
         Bgp => matches!(lane, ExactReasonerPartitioned | ScalarOraclePartitioned),
         Join | Union | Minus | Project | Distinct | Reduced | Slice | Values => {
             lane == NativePartitioned
         }
-        Path | Lateral | LeftJoin | Filter | Extend | Graph | Group | Order | Subquery | Service
-        | AskFinalize | ConstructFinalize | DescribeFinalize => lane == ScalarOraclePartitioned,
+        Path | Lateral | LeftJoin | Filter | Extend | Graph | Group | Order | Subquery
+        | Service | AskFinalize | ConstructFinalize | DescribeFinalize => {
+            lane == ScalarOraclePartitioned
+        }
     }
 }
 
@@ -589,7 +593,7 @@ pub fn route_relevant_graphs(
     if selected.is_empty() {
         return Err(RoutingError::EmptyDataset);
     }
-    let mut queue = VecDeque::from_iter(selected.iter().copied());
+    let mut queue = selected.iter().copied().collect::<VecDeque<_>>();
     while let Some(graph) = queue.pop_front() {
         if let Some(dependencies) = index.dependencies.get(&graph) {
             for dependency in dependencies {
@@ -631,9 +635,9 @@ mod tests {
     use std::collections::{BTreeMap, BTreeSet};
 
     use super::{
-        AlgebraExecutionLane, AlgebraPlanError, DistributedAlgebraOperator,
-        DistributedAlgebraPlan, DistributedAlgebraStage, GraphRoutingIndex, QueryCapability,
-        RoutingError, route_relevant_graphs, validate_distributed_algebra_plan,
+        AlgebraExecutionLane, AlgebraPlanError, DistributedAlgebraOperator, DistributedAlgebraPlan,
+        DistributedAlgebraStage, GraphRoutingIndex, QueryCapability, RoutingError,
+        route_relevant_graphs, validate_distributed_algebra_plan,
     };
 
     #[test]

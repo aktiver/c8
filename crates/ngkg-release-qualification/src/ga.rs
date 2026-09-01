@@ -374,7 +374,10 @@ pub fn validate_defects(ledger: &DefectLedger, release_sha256: &str) -> Result<(
             || !defect.compatibility_reviewed
             || defect.release_blocking
             || (defect.unresolved
-                && matches!(defect.severity, DefectSeverity::Critical | DefectSeverity::High))
+                && matches!(
+                    defect.severity,
+                    DefectSeverity::Critical | DefectSeverity::High
+                ))
             || (!defect.unresolved && !defect.regression_passed)
         {
             return Err(GaError::Defects);
@@ -384,7 +387,10 @@ pub fn validate_defects(ledger: &DefectLedger, release_sha256: &str) -> Result<(
 }
 
 /// Enforce Rust production isolation from Jena and the bounded HermiT role.
-pub fn validate_runtime(audit: &ProductionRuntimeAudit, release_sha256: &str) -> Result<(), GaError> {
+pub fn validate_runtime(
+    audit: &ProductionRuntimeAudit,
+    release_sha256: &str,
+) -> Result<(), GaError> {
     if audit.release_sha256 != release_sha256
         || !audit.rust_production_runtime
         || audit.apache_jena_in_production
@@ -488,7 +494,10 @@ mod tests {
             }],
             complete: true,
         };
-        assert_eq!(validate_ga_qualifications(&ledger), Err(GaError::Qualification));
+        assert_eq!(
+            validate_ga_qualifications(&ledger),
+            Err(GaError::Qualification)
+        );
     }
 
     #[test]
@@ -501,6 +510,9 @@ mod tests {
             report_sha256: "2".repeat(64),
             complete: true,
         };
-        assert_eq!(validate_runtime(&audit, &"1".repeat(64)), Err(GaError::Runtime));
+        assert_eq!(
+            validate_runtime(&audit, &"1".repeat(64)),
+            Err(GaError::Runtime)
+        );
     }
 }

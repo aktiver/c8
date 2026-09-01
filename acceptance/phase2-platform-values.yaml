@@ -1,0 +1,20 @@
+# Non-deployable schema-complete values used only by the Phase 2 native Helm gate.
+images:
+  api: {repository: example.invalid/ngkg/api, digest: "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+  operator: {repository: example.invalid/ngkg/operator, digest: "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+  distributedOperator: {repository: example.invalid/ngkg/distributed-operator, digest: "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+  distributedWorker: {repository: example.invalid/ngkg/distributed-worker, digest: "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+  referenceWorker: {repository: example.invalid/ngkg/reference-worker, digest: "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+  catalogMigrator: {repository: example.invalid/ngkg/catalog-migrator, digest: "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+  storageRecoveryOperator: {repository: example.invalid/ngkg/storage-recovery-operator, digest: "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+  storageRecoveryWorker: {repository: example.invalid/ngkg/storage-recovery-worker, digest: "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+dependencies:
+  databaseSecret: ngkg-database
+  authTokensSecret: ngkg-auth
+artifactStore:
+  baseUrl: s3://phase2-lint-only/ngkg
+api:
+  authTokensFileSha256: "2222222222222222222222222222222222222222222222222222222222222222"
+operator:
+  reference:
+    reasonerAdapterSha256: "3333333333333333333333333333333333333333333333333333333333333333"

@@ -19,8 +19,8 @@ use thiserror::Error;
 
 use super::{
     ExecutionError, PathCheckpoint, PathEdge, PathExpansionResult, PathExpansionWorkItem,
-    PathFrontierKey, expand_path_work_item_borrowed,
-    path_partition_expansion_work_items, seed_scoped_path_frontier,
+    PathFrontierKey, expand_path_work_item_borrowed, path_partition_expansion_work_items,
+    seed_scoped_path_frontier,
 };
 
 /// Four 20-digit IDs, three tabs and one newline.
@@ -161,23 +161,37 @@ impl PartitionAdjacencyIndex {
         let needs_forward = plan.automaton.transitions.iter().any(|transition| {
             matches!(
                 transition.transition,
-                PathTransitionKind::Predicate { direction: PathDirection::Forward, .. }
-                    | PathTransitionKind::NegatedPropertySet { direction: PathDirection::Forward, .. }
+                PathTransitionKind::Predicate {
+                    direction: PathDirection::Forward,
+                    ..
+                } | PathTransitionKind::NegatedPropertySet {
+                    direction: PathDirection::Forward,
+                    ..
+                }
             )
         });
         let needs_reverse = plan.automaton.transitions.iter().any(|transition| {
             matches!(
                 transition.transition,
-                PathTransitionKind::Predicate { direction: PathDirection::Reverse, .. }
-                    | PathTransitionKind::NegatedPropertySet { direction: PathDirection::Reverse, .. }
+                PathTransitionKind::Predicate {
+                    direction: PathDirection::Reverse,
+                    ..
+                } | PathTransitionKind::NegatedPropertySet {
+                    direction: PathDirection::Reverse,
+                    ..
+                }
             )
         });
-        let anchors = frontier.iter().map(|key| key.entity_id).collect::<BTreeSet<_>>();
+        let anchors = frontier
+            .iter()
+            .map(|key| key.entity_id)
+            .collect::<BTreeSet<_>>();
         let mut indexed = BTreeSet::new();
         let mut rows_read = 0_u64;
         if needs_forward {
             for anchor in &anchors {
-                for row in read_anchor_rows(&self.forward, *anchor, max_rows_read, &mut rows_read)? {
+                for row in read_anchor_rows(&self.forward, *anchor, max_rows_read, &mut rows_read)?
+                {
                     if authorized_graphs.contains(&row.graph) {
                         indexed.insert((row.anchor, row.predicate, row.other, row.graph));
                     }
@@ -186,7 +200,8 @@ impl PartitionAdjacencyIndex {
         }
         if needs_reverse {
             for anchor in &anchors {
-                for row in read_anchor_rows(&self.reverse, *anchor, max_rows_read, &mut rows_read)? {
+                for row in read_anchor_rows(&self.reverse, *anchor, max_rows_read, &mut rows_read)?
+                {
                     if authorized_graphs.contains(&row.graph) {
                         indexed.insert((row.other, row.predicate, row.anchor, row.graph));
                     }
@@ -341,11 +356,14 @@ pub fn lookup_dictionary_ids(
     }
     for line in BufReader::new(File::open(path)?).lines() {
         let line = line?;
-        let (id, term) = line.split_once('\t').ok_or(PartitionPathError::Dictionary)?;
+        let (id, term) = line
+            .split_once('\t')
+            .ok_or(PartitionPathError::Dictionary)?;
         if terms.contains(term) {
             output.insert(
                 term.to_owned(),
-                id.parse::<u64>().map_err(|_| PartitionPathError::Dictionary)?,
+                id.parse::<u64>()
+                    .map_err(|_| PartitionPathError::Dictionary)?,
             );
             if output.len() == terms.len() {
                 break;
@@ -371,11 +389,14 @@ pub fn lookup_dictionary_ids_available(
     }
     for line in BufReader::new(File::open(path)?).lines() {
         let line = line?;
-        let (id, term) = line.split_once('\t').ok_or(PartitionPathError::Dictionary)?;
+        let (id, term) = line
+            .split_once('\t')
+            .ok_or(PartitionPathError::Dictionary)?;
         if terms.contains(term) {
             output.insert(
                 term.to_owned(),
-                id.parse::<u64>().map_err(|_| PartitionPathError::Dictionary)?,
+                id.parse::<u64>()
+                    .map_err(|_| PartitionPathError::Dictionary)?,
             );
             if output.len() == terms.len() {
                 break;
@@ -393,7 +414,9 @@ pub fn lookup_dictionary_id_optional(
 ) -> Result<Option<u64>, PartitionPathError> {
     for line in BufReader::new(File::open(path)?).lines() {
         let line = line?;
-        let (id, term) = line.split_once('\t').ok_or(PartitionPathError::Dictionary)?;
+        let (id, term) = line
+            .split_once('\t')
+            .ok_or(PartitionPathError::Dictionary)?;
         if term == required {
             return id
                 .parse::<u64>()
@@ -415,8 +438,12 @@ pub fn lookup_dictionary_terms(
     }
     for line in BufReader::new(File::open(path)?).lines() {
         let line = line?;
-        let (id, term) = line.split_once('\t').ok_or(PartitionPathError::Dictionary)?;
-        let id = id.parse::<u64>().map_err(|_| PartitionPathError::Dictionary)?;
+        let (id, term) = line
+            .split_once('\t')
+            .ok_or(PartitionPathError::Dictionary)?;
+        let id = id
+            .parse::<u64>()
+            .map_err(|_| PartitionPathError::Dictionary)?;
         if ids.contains(&id) {
             output.insert(id, term.to_owned());
             if output.len() == ids.len() {
@@ -449,9 +476,7 @@ pub fn write_checkpoint_atomic(
     fs::create_dir_all(root)?;
     let final_path = root.join(format!(
         "{}-{:08}-{}.json",
-        checkpoint.state.path_id,
-        checkpoint.state.completed_iteration,
-        checkpoint.state_sha256
+        checkpoint.state.path_id, checkpoint.state.completed_iteration, checkpoint.state_sha256
     ));
     if final_path.exists() {
         if sha256_file(&final_path)? == hex_encode(&Sha256::digest(&bytes)) {
@@ -460,7 +485,10 @@ pub fn write_checkpoint_atomic(
         return Err(PartitionPathError::Checkpoint);
     }
     let temporary = root.join(format!(".{}.partial", checkpoint.state_sha256));
-    let mut file = OpenOptions::new().create_new(true).write(true).open(&temporary)?;
+    let mut file = OpenOptions::new()
+        .create_new(true)
+        .write(true)
+        .open(&temporary)?;
     file.write_all(&bytes)?;
     file.sync_all()?;
     fs::rename(&temporary, &final_path)?;
@@ -530,7 +558,9 @@ fn read_record(
     Ok(())
 }
 
-fn parse_row(record: &[u8; ADJACENCY_RECORD_BYTES as usize]) -> Result<AdjacencyRow, PartitionPathError> {
+fn parse_row(
+    record: &[u8; ADJACENCY_RECORD_BYTES as usize],
+) -> Result<AdjacencyRow, PartitionPathError> {
     if record[20] != b'\t' || record[41] != b'\t' || record[62] != b'\t' || record[83] != b'\n' {
         return Err(PartitionPathError::AdjacencyIdentity);
     }
@@ -559,7 +589,7 @@ fn checked_row(current: u64, maximum: u64) -> Result<u64, PartitionPathError> {
 fn sha256_file(path: &Path) -> Result<String, PartitionPathError> {
     let mut reader = BufReader::new(File::open(path)?);
     let mut hasher = Sha256::new();
-    let mut buffer = [0_u8; 128 * 1024];
+    let mut buffer = vec![0_u8; 128 * 1024].into_boxed_slice();
     loop {
         let read = reader.read(&mut buffer)?;
         if read == 0 {
@@ -572,7 +602,9 @@ fn sha256_file(path: &Path) -> Result<String, PartitionPathError> {
 
 fn lower_hex_sha256(value: &str) -> bool {
     value.len() == 64
-        && value.bytes().all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
 }
 
 fn hex_encode(bytes: &[u8]) -> String {
@@ -597,8 +629,8 @@ mod tests {
     use uuid::Uuid;
 
     use super::{
-        ADJACENCY_RECORD_BYTES, AdjacencyArtifactIdentity, PartitionAdjacencyIndex,
-        PathGraphScope, execute_partition_path_batch, hex_encode, sha256_file,
+        ADJACENCY_RECORD_BYTES, AdjacencyArtifactIdentity, PartitionAdjacencyIndex, PathGraphScope,
+        execute_partition_path_batch, hex_encode, sha256_file,
     };
     use crate::PathFrontierKey;
 
@@ -617,9 +649,7 @@ mod tests {
                 },
             }],
         };
-        let automaton_sha256 = hex_encode(&sha2::Sha256::digest(
-            serde_json::to_vec(&automaton)?,
-        ));
+        let automaton_sha256 = hex_encode(&sha2::Sha256::digest(serde_json::to_vec(&automaton)?));
         Ok(DistributedPropertyPathPlan {
             path_id: "property-path-00000".to_owned(),
             path_ordinal: 0,
@@ -646,7 +676,10 @@ mod tests {
         format!("{anchor:020}\t{predicate:020}\t{other:020}\t{graph:020}\n")
     }
 
-    fn identity(path: std::path::PathBuf, rows: u64) -> Result<AdjacencyArtifactIdentity, Box<dyn std::error::Error>> {
+    fn identity(
+        path: std::path::PathBuf,
+        rows: u64,
+    ) -> Result<AdjacencyArtifactIdentity, Box<dyn std::error::Error>> {
         Ok(AdjacencyArtifactIdentity {
             sha256: sha256_file(&path)?,
             bytes: rows * ADJACENCY_RECORD_BYTES,
@@ -656,8 +689,8 @@ mod tests {
     }
 
     #[test]
-    fn partition_scan_binary_seeks_and_hot_splits_literal_endpoints(
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    fn partition_scan_binary_seeks_and_hot_splits_literal_endpoints()
+    -> Result<(), Box<dyn std::error::Error>> {
         let root = std::env::temp_dir().join(format!("ngkg-path-{}", Uuid::new_v4()));
         fs::create_dir_all(&root)?;
         let forward = root.join("forward.tsv");
@@ -669,19 +702,11 @@ mod tests {
             &dictionary,
             "0\tN\turn:g\n1\tN\turn:p\n2\tN\turn:a\n3\tN\turn:b\n4\tL\t\"literal\"\n",
         )?;
-        let index = PartitionAdjacencyIndex::open(
-            identity(forward, 2)?,
-            identity(reverse, 2)?,
-        )?;
+        let index = PartitionAdjacencyIndex::open(identity(forward, 2)?, identity(reverse, 2)?)?;
         let plan = plan()?;
         let allowed = BTreeSet::from([0]);
-        let (seed, rows) = index.seed_frontier(
-            &plan,
-            &PathGraphScope::UnionDefault,
-            Some(2),
-            &allowed,
-            10,
-        )?;
+        let (seed, rows) =
+            index.seed_frontier(&plan, &PathGraphScope::UnionDefault, Some(2), &allowed, 10)?;
         assert!((2..=10).contains(&rows));
         assert_eq!(seed.len(), 1);
         let batch = execute_partition_path_batch(
@@ -706,7 +731,14 @@ mod tests {
         )?;
         assert!((2..=10).contains(&batch.adjacency_rows_read));
         assert_eq!(batch.work.len(), 2);
-        assert_eq!(batch.results.iter().map(|result| result.accepting_endpoints.len()).sum::<usize>(), 2);
+        assert_eq!(
+            batch
+                .results
+                .iter()
+                .map(|result| result.accepting_endpoints.len())
+                .sum::<usize>(),
+            2
+        );
         fs::remove_dir_all(root)?;
         Ok(())
     }

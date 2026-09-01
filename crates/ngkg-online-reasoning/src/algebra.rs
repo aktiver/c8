@@ -199,9 +199,7 @@ impl ResultCursor<'_> {
                 variables,
                 aggregates: aggregates
                     .into_iter()
-                    .map(|(variable, aggregate)| {
-                        Ok((variable, self.aggregate(aggregate)?))
-                    })
+                    .map(|(variable, aggregate)| Ok((variable, self.aggregate(aggregate)?)))
                     .collect::<Result<_, ExactAlgebraError>>()?,
             },
             GraphPattern::Service {
@@ -218,7 +216,10 @@ impl ResultCursor<'_> {
     }
 
     fn values(&mut self) -> Result<GraphPattern, ExactAlgebraError> {
-        let result = self.results.get(self.ordinal).ok_or(ExactAlgebraError::ResultSet)?;
+        let result = self
+            .results
+            .get(self.ordinal)
+            .ok_or(ExactAlgebraError::ResultSet)?;
         validate_direct_bgp_result(result).map_err(|_| ExactAlgebraError::ResultSet)?;
         if result.outcome.status != DirectBgpStatus::Complete
             || result.outcome.exactness != DirectBgpExactness::Exact
@@ -226,7 +227,10 @@ impl ResultCursor<'_> {
         {
             return Err(ExactAlgebraError::ResultSet);
         }
-        self.ordinal = self.ordinal.checked_add(1).ok_or(ExactAlgebraError::ResultSet)?;
+        self.ordinal = self
+            .ordinal
+            .checked_add(1)
+            .ok_or(ExactAlgebraError::ResultSet)?;
         let variables = result
             .variables
             .iter()
@@ -237,13 +241,7 @@ impl ResultCursor<'_> {
             let row = result
                 .variables
                 .iter()
-                .map(|name| {
-                    solution
-                        .bindings
-                        .get(name)
-                        .map(ground_term)
-                        .transpose()
-                })
+                .map(|name| solution.bindings.get(name).map(ground_term).transpose())
                 .collect::<Result<Vec<_>, _>>()?;
             let multiplicity = usize::try_from(solution.multiplicity)
                 .map_err(|_| ExactAlgebraError::RowCeiling)?;

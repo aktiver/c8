@@ -9,9 +9,14 @@ use std::{
 };
 
 use futures::{StreamExt, TryStreamExt, stream};
-use kube::{Api, Client, api::{Patch, PatchParams}};
+use kube::{
+    Api, Client,
+    api::{Patch, PatchParams},
+};
 use ngkg_artifact_store::ArtifactStore;
-use ngkg_kube::{NgkgSourceImport, NgkgSourceImportStatus};
+use ngkg_kube::{
+    NgkgSourceImport, NgkgSourceImportStatus, source_import_status_apply_document,
+};
 use ngkg_source_planner::{CloudDecodePlan, CloudDecodeWorkItem, FrozenCloudSourceObject};
 use oxigraph::io::{RdfFormat, RdfParser, RdfSerializer};
 use serde::{Deserialize, Serialize};
@@ -123,8 +128,14 @@ impl<W: Write> Write for BoundedWriter<W> {
     fn write(&mut self, buffer: &[u8]) -> std::io::Result<usize> {
         let requested = u64::try_from(buffer.len())
             .map_err(|_| std::io::Error::other("decoded fragment byte count overflow"))?;
-        if self.written.checked_add(requested).is_none_or(|next| next > self.maximum) {
-            return Err(std::io::Error::other("decoded fragment exceeds configured byte ceiling"));
+        if self
+            .written
+            .checked_add(requested)
+            .is_none_or(|next| next > self.maximum)
+        {
+            return Err(std::io::Error::other(
+                "decoded fragment exceeds configured byte ceiling",
+            ));
         }
         let count = self.inner.write(buffer)?;
         self.written = self
@@ -153,10 +164,10 @@ pub async fn execute_decode(
     let store = Arc::new(ArtifactStore::from_base_url(
         &required_value(options, "artifact-base-url").map_err(CloudDecodeError::Config)?,
     )?);
-    let plan_key = required_value(options, "decode-plan-object-key")
-        .map_err(CloudDecodeError::Config)?;
-    let plan_sha256 = required_value(options, "decode-plan-sha256")
-        .map_err(CloudDecodeError::Config)?;
+    let plan_key =
+        required_value(options, "decode-plan-object-key").map_err(CloudDecodeError::Config)?;
+    let plan_sha256 =
+        required_value(options, "decode-plan-sha256").map_err(CloudDecodeError::Config)?;
     let plan_path = scratch_root.join("source-decode-plan.json");
     store
         .materialize_verified(
@@ -179,18 +190,20 @@ pub async fn execute_decode(
         })?)
         .filter(|work| work.completion_index == completion_index)
         .cloned()
-        .ok_or_else(|| CloudDecodeError::Config("completion-index is absent from plan".to_owned()))?;
-    let maximum_fragment_bytes = required_u64(options, "decode-max-fragment-bytes")
-        .map_err(CloudDecodeError::Config)?;
+        .ok_or_else(|| {
+            CloudDecodeError::Config("completion-index is absent from plan".to_owned())
+        })?;
+    let maximum_fragment_bytes =
+        required_u64(options, "decode-max-fragment-bytes").map_err(CloudDecodeError::Config)?;
     let object_concurrency = required_usize(options, "decode-object-concurrency")
         .map_err(CloudDecodeError::Config)?
         .min(work.objects.len().max(1));
-    let single_put_max_bytes = required_u64(options, "single-put-max-bytes")
-        .map_err(CloudDecodeError::Config)?;
-    let multipart_buffer_bytes = required_usize(options, "multipart-buffer-bytes")
-        .map_err(CloudDecodeError::Config)?;
-    let multipart_concurrency = required_usize(options, "multipart-concurrency")
-        .map_err(CloudDecodeError::Config)?;
+    let single_put_max_bytes =
+        required_u64(options, "single-put-max-bytes").map_err(CloudDecodeError::Config)?;
+    let multipart_buffer_bytes =
+        required_usize(options, "multipart-buffer-bytes").map_err(CloudDecodeError::Config)?;
+    let multipart_concurrency =
+        required_usize(options, "multipart-concurrency").map_err(CloudDecodeError::Config)?;
     let plan = Arc::new(plan);
     let source_root = Arc::new(source_root);
     let scratch_root = Arc::new(scratch_root);
@@ -261,10 +274,8 @@ pub async fn execute_decode(
             &completion_sha256,
             &completion_path,
             required_u64(options, "single-put-max-bytes").map_err(CloudDecodeError::Config)?,
-            required_usize(options, "multipart-buffer-bytes")
-                .map_err(CloudDecodeError::Config)?,
-            required_usize(options, "multipart-concurrency")
-                .map_err(CloudDecodeError::Config)?,
+            required_usize(options, "multipart-buffer-bytes").map_err(CloudDecodeError::Config)?,
+            required_usize(options, "multipart-concurrency").map_err(CloudDecodeError::Config)?,
         )
         .await?;
     Ok(serde_json::json!({
@@ -287,10 +298,10 @@ pub async fn execute_finalize(
     let store = Arc::new(ArtifactStore::from_base_url(
         &required_value(options, "artifact-base-url").map_err(CloudDecodeError::Config)?,
     )?);
-    let plan_key = required_value(options, "decode-plan-object-key")
-        .map_err(CloudDecodeError::Config)?;
-    let plan_sha256 = required_value(options, "decode-plan-sha256")
-        .map_err(CloudDecodeError::Config)?;
+    let plan_key =
+        required_value(options, "decode-plan-object-key").map_err(CloudDecodeError::Config)?;
+    let plan_sha256 =
+        required_value(options, "decode-plan-sha256").map_err(CloudDecodeError::Config)?;
     let plan_path = scratch_root.join("source-decode-plan.json");
     store
         .materialize_verified(
@@ -304,10 +315,10 @@ pub async fn execute_finalize(
     validate_plan_identity(&plan, &plan_key, &plan_sha256)?;
     let completion_limit = required_u64(options, "decode-max-completion-manifest-bytes")
         .map_err(CloudDecodeError::Config)?;
-    let fragment_limit = required_u64(options, "decode-max-fragment-bytes")
-        .map_err(CloudDecodeError::Config)?;
-    let verify_concurrency = required_usize(options, "decode-finalize-concurrency")
-        .map_err(CloudDecodeError::Config)?;
+    let fragment_limit =
+        required_u64(options, "decode-max-fragment-bytes").map_err(CloudDecodeError::Config)?;
+    let verify_concurrency =
+        required_usize(options, "decode-finalize-concurrency").map_err(CloudDecodeError::Config)?;
     let root = Arc::new(scratch_root.clone());
     let completions = stream::iter(plan.work_items.iter().cloned().map(|work| {
         let store = Arc::clone(&store);
@@ -390,10 +401,8 @@ pub async fn execute_finalize(
             &sha256,
             &path,
             required_u64(options, "single-put-max-bytes").map_err(CloudDecodeError::Config)?,
-            required_usize(options, "multipart-buffer-bytes")
-                .map_err(CloudDecodeError::Config)?,
-            required_usize(options, "multipart-concurrency")
-                .map_err(CloudDecodeError::Config)?,
+            required_usize(options, "multipart-buffer-bytes").map_err(CloudDecodeError::Config)?,
+            required_usize(options, "multipart-concurrency").map_err(CloudDecodeError::Config)?,
         )
         .await?;
     let namespace = required_value(options, "namespace").map_err(CloudDecodeError::Config)?;
@@ -406,11 +415,16 @@ pub async fn execute_finalize(
         condition: Some("CompilerHandoffPublished".to_owned()),
         ..import.status.unwrap_or_default()
     };
+    let document = source_import_status_apply_document(
+        &import_name,
+        &status,
+        &["compilerHandoffObjectKey", "compilerHandoffSha256"],
+    )?;
     imports
         .patch_status(
             &import_name,
-            &PatchParams::default(),
-            &Patch::Merge(serde_json::json!({"status": status})),
+            &PatchParams::apply("ngkg-source-decode-worker"),
+            &Patch::Apply(document),
         )
         .await?;
     Ok(serde_json::json!({
@@ -468,10 +482,12 @@ fn decode_object(
             .checked_add(1)
             .ok_or_else(|| CloudDecodeError::Config("decoded quad count overflow".to_owned()))?;
     }
-    let mut writer = serializer.finish().map_err(|error| CloudDecodeError::Trig {
-        object_key: object.object_key.clone(),
-        detail: error.to_string(),
-    })?;
+    let mut writer = serializer
+        .finish()
+        .map_err(|error| CloudDecodeError::Trig {
+            object_key: object.object_key.clone(),
+            detail: error.to_string(),
+        })?;
     writer.flush()?;
     writer.inner.get_ref().sync_all()?;
     let after = fs::symlink_metadata(&source)?;
@@ -526,7 +542,9 @@ async fn load_and_verify_completion(
         .materialize_unverified_bounded(&key, completion_limit, &path)
         .await?;
     if bytes == 0 {
-        return Err(CloudDecodeError::Config("empty completion manifest".to_owned()));
+        return Err(CloudDecodeError::Config(
+            "empty completion manifest".to_owned(),
+        ));
     }
     let completion: DecodeCompletionManifest = serde_json::from_slice(&fs::read(&path)?)?;
     if completion.format_version != 1
@@ -609,7 +627,9 @@ fn safe_relative_path(value: &str) -> Result<PathBuf, CloudDecodeError> {
         || value.contains('\\')
         || value.split('/').any(str::is_empty)
         || path.is_absolute()
-        || path.components().any(|component| !matches!(component, Component::Normal(_)))
+        || path
+            .components()
+            .any(|component| !matches!(component, Component::Normal(_)))
     {
         return Err(CloudDecodeError::Config(format!(
             "unsafe frozen object key: {value}"

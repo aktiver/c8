@@ -1,0 +1,207 @@
+{{- if .Values.contextSlice.enabled }}
+{{- if and (eq .Values.contextSlice.storage.provider "local-test") (gt (int .Values.contextSlice.replicaCount) 1) }}{{ fail "contextSlice local-test storage cannot be used for HA" }}{{- end }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ngkg-context-slice
+  labels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: context-slice-broker}
+  annotations: {{- toYaml .Values.contextSlice.storage.serviceAccountAnnotations | nindent 4 }}
+automountServiceAccountToken: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ngkg-context-slice
+  labels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: context-slice-broker}
+spec:
+  selector: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: context-slice-broker}
+  ports: [{name: http, port: {{ .Values.contextSlice.port }}, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ngkg-context-slice-broker
+  labels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: context-slice-broker}
+spec:
+  replicas: {{ .Values.contextSlice.replicaCount }}
+  revisionHistoryLimit: 3
+  strategy: {type: RollingUpdate, rollingUpdate: {maxUnavailable: 1, maxSurge: 1}}
+  selector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: context-slice-broker}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: context-slice-broker}
+      annotations: {prometheus.io/scrape: 'true', prometheus.io/port: {{ .Values.contextSlice.port | quote }}}
+    spec:
+      serviceAccountName: ngkg-context-slice
+      terminationGracePeriodSeconds: 120
+      securityContext: {runAsNonRoot: true, runAsUser: 65532, runAsGroup: 65532, fsGroup: 65532, seccompProfile: {type: RuntimeDefault}}
+      nodeSelector: {{- toYaml .Values.contextSlice.scheduling.nodeSelector | nindent 8 }}
+      tolerations: {{- toYaml .Values.contextSlice.scheduling.tolerations | nindent 8 }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: context-slice-broker}}
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: context-slice-broker}}
+      containers:
+        - name: context-slice-broker
+          image: '{{ required "image.repository is required" .Values.image.repository }}@{{ required "image.digest is required" .Values.image.digest }}'
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: [/usr/local/bin/ngkg-context-slice-broker]
+          ports: [{name: http, containerPort: {{ .Values.contextSlice.port }} }]
+          env:
+            - {name: NGKG_CONTEXT_BIND, value: '0.0.0.0:{{ .Values.contextSlice.port }}'}
+            - {name: NGKG_AUTH_MODE, value: {{ .Values.auth.mode | quote }}}
+            {{- if eq .Values.auth.mode "opaque" }}
+            - {name: NGKG_AUTH_TOKEN_FILE, value: /var/run/ngkg/auth/tokens.json}
+            - {name: NGKG_AUTH_TOKEN_FILE_SHA256, value: {{ required "auth.opaque.tokenFileSha256 is required" .Values.auth.opaque.tokenFileSha256 | quote }}}
+            {{- else }}
+            - {name: NGKG_AUTH_ISSUER, value: {{ required "auth.delegation.issuer is required" .Values.auth.delegation.issuer | quote }}}
+            - {name: NGKG_AUTH_AUDIENCE, value: {{ required "auth.delegation.audience is required" .Values.auth.delegation.audience | quote }}}
+            - {name: NGKG_AUTH_JWKS_URL, value: {{ required "auth.delegation.jwksUrl is required" .Values.auth.delegation.jwksUrl | quote }}}
+            - {name: NGKG_AUTH_ALLOWED_ALGORITHMS, value: {{ join "," .Values.auth.delegation.allowedAlgorithms | quote }}}
+            - {name: NGKG_AUTH_REQUIRED_TYP, value: {{ .Values.auth.delegation.requiredTyp | quote }}}
+            - {name: NGKG_AUTH_MAX_TOKEN_LIFETIME_SECONDS, value: {{ .Values.auth.delegation.maximumTokenLifetimeSeconds | quote }}}
+            - {name: NGKG_AUTH_CLOCK_SKEW_SECONDS, value: {{ .Values.auth.delegation.clockSkewSeconds | quote }}}
+            - {name: NGKG_AUTH_JWKS_CACHE_TTL_SECONDS, value: {{ .Values.auth.delegation.jwksCacheTtlSeconds | quote }}}
+            - {name: NGKG_AUTH_JWKS_LAST_KNOWN_GOOD_SECONDS, value: {{ .Values.auth.delegation.lastKnownGoodSeconds | quote }}}
+            - {name: NGKG_AUTH_CONNECT_TIMEOUT_MS, value: {{ .Values.auth.delegation.connectTimeoutMilliseconds | quote }}}
+            - {name: NGKG_AUTH_REQUEST_TIMEOUT_MS, value: {{ .Values.auth.delegation.requestTimeoutMilliseconds | quote }}}
+            {{- end }}
+            - name: NGKG_AGENT_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: {{ .Values.database.runtimeSecret | quote }}, key: {{ .Values.database.runtimeSecretKey | quote }}}}
+            - {name: NGKG_CONTEXT_DATABASE_MAX_CONNECTIONS, value: {{ .Values.database.maximumConnections | quote }}}
+            - {name: NGKG_CONTEXT_DATABASE_ACQUIRE_TIMEOUT_MS, value: {{ .Values.database.acquireTimeoutMilliseconds | quote }}}
+            - {name: NGKG_CONTEXT_CAPABILITY_KEY_FILE, value: /var/run/ngkg/context-capability/signing-key}
+            - {name: NGKG_CONTEXT_CAPABILITY_KEY_SHA256, value: {{ required "contextSlice.capabilityKeySha256 is required" .Values.contextSlice.capabilityKeySha256 | quote }}}
+            - {name: NGKG_CONTEXT_CAPABILITY_ISSUER, value: {{ .Values.contextSlice.capabilityIssuer | quote }}}
+            - {name: NGKG_CONTEXT_CAPABILITY_AUDIENCES, value: {{ join "," .Values.contextSlice.capabilityAudiences | quote }}}
+            - {name: NGKG_CONTEXT_CAPABILITY_MAX_TTL_SECONDS, value: {{ .Values.contextSlice.capabilityMaximumTtlSeconds | quote }}}
+            - {name: NGKG_CONTEXT_CAPABILITY_CLOCK_SKEW_SECONDS, value: {{ .Values.contextSlice.capabilityClockSkewSeconds | quote }}}
+            - {name: NGKG_CONTEXT_MAX_TTL_SECONDS, value: {{ .Values.contextSlice.maximumTtlSeconds | quote }}}
+            - {name: NGKG_CONTEXT_RECOVERY_WINDOW_SECONDS, value: {{ .Values.contextSlice.recoveryWindowSeconds | quote }}}
+            - {name: NGKG_CONTEXT_MAX_CHUNK_BYTES, value: {{ .Values.contextSlice.chunkBytes | quote }}}
+            - {name: NGKG_CONTEXT_MAX_RANGE_BYTES, value: {{ .Values.contextSlice.maximumRangeBytes | quote }}}
+            - {name: NGKG_CONTEXT_MAX_CHUNKS, value: {{ .Values.contextSlice.maximumChunks | quote }}}
+            - {name: NGKG_CONTEXT_MAX_INDEX_BYTES, value: {{ .Values.contextSlice.maximumIndexBytes | quote }}}
+            - {name: NGKG_CONTEXT_MAX_IN_FLIGHT_READS, value: {{ .Values.contextSlice.maximumInFlightReads | quote }}}
+            - {name: NGKG_CONTEXT_MAX_HASH_TASKS, value: {{ .Values.contextSlice.maximumHashTasks | quote }}}
+            - {name: NGKG_CONTEXT_KMS_KEY_ID_SHA256, value: {{ required "contextSlice.kmsKeyIdSha256 is required" .Values.contextSlice.kmsKeyIdSha256 | quote }}}
+            - {name: NGKG_CONTEXT_INDEX_STAGE_DIR, value: /var/lib/ngkg-context-index}
+            - {name: NGKG_CONTEXT_INDEX_OWNER_UID, value: '65532'}
+            - {name: NGKG_CONTEXT_OBJECT_STORE, value: {{ .Values.contextSlice.storage.provider | quote }}}
+            - {name: NGKG_CONTEXT_MAX_HASH_TASKS, value: {{ .Values.contextSlice.maximumHashTasks | quote }}}
+            {{- if eq .Values.contextSlice.storage.provider "s3" }}
+            - {name: NGKG_CONTEXT_S3_BUCKET, value: {{ required "contextSlice.storage.s3.bucket is required" .Values.contextSlice.storage.s3.bucket | quote }}}
+            - {name: AWS_DEFAULT_REGION, value: {{ required "contextSlice.storage.s3.region is required" .Values.contextSlice.storage.s3.region | quote }}}
+            {{- else if eq .Values.contextSlice.storage.provider "azure" }}
+            - {name: NGKG_CONTEXT_AZURE_CONTAINER, value: {{ required "contextSlice.storage.azure.container is required" .Values.contextSlice.storage.azure.container | quote }}}
+            - {name: AZURE_STORAGE_ACCOUNT_NAME, value: {{ required "contextSlice.storage.azure.account is required" .Values.contextSlice.storage.azure.account | quote }}}
+            {{- else if eq .Values.contextSlice.storage.provider "gcs" }}
+            - {name: NGKG_CONTEXT_GCS_BUCKET, value: {{ required "contextSlice.storage.gcs.bucket is required" .Values.contextSlice.storage.gcs.bucket | quote }}}
+            {{- else }}
+            - {name: NGKG_CONTEXT_LOCAL_ROOT, value: {{ .Values.contextSlice.storage.localTest.root | quote }}}
+            {{- end }}
+            - {name: OMP_NUM_THREADS, value: '1'}
+            - {name: OMP_DYNAMIC, value: 'FALSE'}
+            - {name: OMP_MAX_ACTIVE_LEVELS, value: '1'}
+            - {name: OPENBLAS_NUM_THREADS, value: '1'}
+            - {name: MKL_NUM_THREADS, value: '1'}
+          resources: {{- toYaml .Values.contextSlice.resources | nindent 12 }}
+          startupProbe: {httpGet: {path: /health/ready, port: http}, periodSeconds: 5, failureThreshold: 60}
+          readinessProbe: {httpGet: {path: /health/ready, port: http}, periodSeconds: 5, timeoutSeconds: 2}
+          livenessProbe: {httpGet: {path: /health/live, port: http}, periodSeconds: 15, timeoutSeconds: 2}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, runAsNonRoot: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: context-capability, mountPath: /var/run/ngkg/context-capability, readOnly: true}
+            - {name: index-stage, mountPath: /var/lib/ngkg-context-index}
+            {{- if eq .Values.auth.mode "opaque" }}
+            - {name: auth, mountPath: /var/run/ngkg/auth, readOnly: true}
+            {{- end }}
+      volumes:
+        - name: context-capability
+          secret: {secretName: {{ .Values.contextSlice.capabilitySecret | quote }}, defaultMode: 0440, items: [{key: {{ .Values.contextSlice.capabilitySecretKey | quote }}, path: signing-key}]}
+        - name: index-stage
+          emptyDir: {medium: Memory, sizeLimit: {{ .Values.contextSlice.maximumIndexBytes }}}
+        {{- if eq .Values.auth.mode "opaque" }}
+        - name: auth
+          secret: {secretName: {{ .Values.auth.opaque.tokenSecret | quote }}, items: [{key: {{ .Values.auth.opaque.tokenSecretKey | quote }}, path: tokens.json}]}
+        {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: ngkg-context-slice-gc, labels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: context-slice-gc}}
+spec:
+  replicas: {{ .Values.contextSlice.gc.replicaCount }}
+  selector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: context-slice-gc}}
+  template:
+    metadata: {labels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: context-slice-gc}}
+    spec:
+      serviceAccountName: ngkg-context-slice
+      terminationGracePeriodSeconds: 60
+      securityContext: {runAsNonRoot: true, runAsUser: 65532, runAsGroup: 65532, seccompProfile: {type: RuntimeDefault}}
+      nodeSelector: {{- toYaml .Values.contextSlice.scheduling.nodeSelector | nindent 8 }}
+      tolerations: {{- toYaml .Values.contextSlice.scheduling.tolerations | nindent 8 }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: context-slice-gc}}
+      containers:
+        - name: context-slice-gc
+          image: '{{ required "image.repository is required" .Values.image.repository }}@{{ required "image.digest is required" .Values.image.digest }}'
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: [/usr/local/bin/ngkg-context-slice-gc]
+          env:
+            - name: NGKG_AGENT_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: {{ .Values.database.runtimeSecret | quote }}, key: {{ .Values.database.runtimeSecretKey | quote }}}}
+            - {name: NGKG_CONTEXT_GC_LEASE_MS, value: {{ .Values.contextSlice.gc.leaseMilliseconds | quote }}}
+            - {name: NGKG_CONTEXT_GC_IDLE_POLL_MS, value: {{ .Values.contextSlice.gc.idlePollMilliseconds | quote }}}
+            - {name: NGKG_CONTEXT_OBJECT_STORE, value: {{ .Values.contextSlice.storage.provider | quote }}}
+            {{- if eq .Values.contextSlice.storage.provider "s3" }}
+            - {name: NGKG_CONTEXT_S3_BUCKET, value: {{ .Values.contextSlice.storage.s3.bucket | quote }}}
+            - {name: AWS_DEFAULT_REGION, value: {{ .Values.contextSlice.storage.s3.region | quote }}}
+            {{- else if eq .Values.contextSlice.storage.provider "azure" }}
+            - {name: NGKG_CONTEXT_AZURE_CONTAINER, value: {{ .Values.contextSlice.storage.azure.container | quote }}}
+            - {name: AZURE_STORAGE_ACCOUNT_NAME, value: {{ .Values.contextSlice.storage.azure.account | quote }}}
+            {{- else if eq .Values.contextSlice.storage.provider "gcs" }}
+            - {name: NGKG_CONTEXT_GCS_BUCKET, value: {{ .Values.contextSlice.storage.gcs.bucket | quote }}}
+            {{- else }}
+            - {name: NGKG_CONTEXT_LOCAL_ROOT, value: {{ .Values.contextSlice.storage.localTest.root | quote }}}
+            {{- end }}
+          resources: {{- toYaml .Values.contextSlice.gc.resources | nindent 12 }}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, runAsNonRoot: true, capabilities: {drop: [ALL]}}
+---
+{{- if .Values.contextSlice.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: {name: ngkg-context-slice-broker}
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: ngkg-context-slice-broker}
+  minReplicas: {{ .Values.contextSlice.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.contextSlice.autoscaling.maxReplicas }}
+  behavior:
+    scaleUp: {selectPolicy: Max, stabilizationWindowSeconds: 0, policies: [{type: Percent, value: 100, periodSeconds: 60}, {type: Pods, value: 8, periodSeconds: 60}]}
+    scaleDown: {stabilizationWindowSeconds: 600, policies: [{type: Percent, value: 25, periodSeconds: 120}]}
+  metrics:
+    - {type: Resource, resource: {name: cpu, target: {type: Utilization, averageUtilization: {{ .Values.contextSlice.autoscaling.cpuTargetPercent }}}}}
+    - {type: Resource, resource: {name: memory, target: {type: Utilization, averageUtilization: {{ .Values.contextSlice.autoscaling.memoryTargetPercent }}}}}
+---
+{{- end }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: ngkg-context-slice-broker}
+spec:
+  minAvailable: 2
+  selector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: context-slice-broker}}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: ngkg-context-slice-gc}
+spec:
+  minAvailable: 1
+  selector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: context-slice-gc}}
+{{- end }}

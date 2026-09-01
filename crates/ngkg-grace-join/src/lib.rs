@@ -7,9 +7,7 @@ use std::{
     sync::Mutex,
 };
 
-use ngkg_query_executor::{
-    ExecutionError, grace_partition_for_binding, inner_join_sparql_json,
-};
+use ngkg_query_executor::{ExecutionError, grace_partition_for_binding, inner_join_sparql_json};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use thiserror::Error;
@@ -242,8 +240,8 @@ impl GraceJoinEngine {
             ));
         }
         if right.len() <= self.in_memory_build_rows {
-            let max_build_rows = u64::try_from(right.len())
-                .map_err(|_| GraceJoinError::AccountingOverflow)?;
+            let max_build_rows =
+                u64::try_from(right.len()).map_err(|_| GraceJoinError::AccountingOverflow)?;
             return Ok(GraceJoinOutcome {
                 bindings: inner_join_sparql_json(&left, &right, max_rows)?,
                 mode: "in_memory_hash_v1",
@@ -483,8 +481,8 @@ impl<'a> SpillStage<'a> {
         max_row_bytes: usize,
     ) -> Result<(), GraceJoinError> {
         let bucket = grace_partition_for_binding(&row, join_keys, self.engine.bucket_count)?;
-        let bucket_index = usize::try_from(bucket)
-            .map_err(|_| GraceJoinError::AccountingOverflow)?;
+        let bucket_index =
+            usize::try_from(bucket).map_err(|_| GraceJoinError::AccountingOverflow)?;
         let side_offset = usize::from(side)
             .checked_mul(
                 usize::try_from(self.engine.bucket_count)
@@ -536,7 +534,10 @@ impl<'a> SpillStage<'a> {
             .checked_add(FILE_TRAILER_BYTES)
             .ok_or(GraceJoinError::AccountingOverflow)?;
         self.reserved_bytes = self.engine.reserve(self.reserved_bytes, initial_bytes)?;
-        let file = OpenOptions::new().create_new(true).write(true).open(&path)?;
+        let file = OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(&path)?;
         let mut writer = BufWriter::new(file);
         writer.write_all(&header)?;
         let mut hasher = Sha256::new();
@@ -632,8 +633,11 @@ impl VerifiedRecordReader {
         }
         let expected_header = spill_header(identity_digest, file.side, file.bucket, bucket_count);
         let mut reader = BufReader::new(File::open(&file.path)?);
-        let mut actual_header = vec![0_u8; usize::try_from(FILE_HEADER_BYTES)
-            .map_err(|_| GraceJoinError::AccountingOverflow)?];
+        let mut actual_header = vec![
+            0_u8;
+            usize::try_from(FILE_HEADER_BYTES)
+                .map_err(|_| GraceJoinError::AccountingOverflow)?
+        ];
         reader.read_exact(&mut actual_header)?;
         if actual_header != expected_header {
             return Err(GraceJoinError::CorruptSpill);
@@ -731,12 +735,7 @@ fn file_for(files: &[SpillFile], side: u8, bucket: u32) -> Option<&SpillFile> {
         .find(|file| file.side == side && file.bucket == bucket)
 }
 
-fn spill_header(
-    identity_digest: [u8; 32],
-    side: u8,
-    bucket: u32,
-    bucket_count: u32,
-) -> Vec<u8> {
+fn spill_header(identity_digest: [u8; 32], side: u8, bucket: u32, bucket_count: u32) -> Vec<u8> {
     let mut header = Vec::with_capacity(usize::try_from(FILE_HEADER_BYTES).unwrap_or(49));
     header.extend_from_slice(FILE_MAGIC);
     header.extend_from_slice(&identity_digest);
@@ -790,7 +789,9 @@ fn prepare_root(root: &Path) -> Result<(), GraceJoinError> {
             continue;
         }
         let Some(identifier) = name.strip_prefix("stage-") else {
-            return Err(GraceJoinError::UnsafeRoot(format!("unmanaged entry {name}")));
+            return Err(GraceJoinError::UnsafeRoot(format!(
+                "unmanaged entry {name}"
+            )));
         };
         if identifier.parse::<Uuid>().is_err()
             || entry.file_type()?.is_symlink()
@@ -798,7 +799,10 @@ fn prepare_root(root: &Path) -> Result<(), GraceJoinError> {
         {
             return Err(GraceJoinError::UnsafeRoot(format!("invalid stage {name}")));
         }
-        fs::remove_dir_all(entry.path())?;
+        // A root can be shared by concurrent query executions. Never treat a
+        // UUID-shaped directory as abandoned merely because this process did
+        // not create it. Each execution guard removes only its own stage; stale
+        // recovery is a separate lease/checkpoint-aware maintenance operation.
     }
     Ok(())
 }
@@ -850,13 +854,27 @@ mod tests {
             stage: 0,
             partition: 0,
             partition_count: 2,
-            left_input_sha256: hex::encode(Sha256::digest(serde_json::to_vec(left).unwrap_or_default())),
-            right_input_sha256: hex::encode(Sha256::digest(serde_json::to_vec(right).unwrap_or_default())),
+            left_input_sha256: hex::encode(Sha256::digest(
+                serde_json::to_vec(left).unwrap_or_default(),
+            )),
+            right_input_sha256: hex::encode(Sha256::digest(
+                serde_json::to_vec(right).unwrap_or_default(),
+            )),
         }
     }
 
     fn engine(root: &std::path::Path) -> Result<GraceJoinEngine, Box<dyn std::error::Error>> {
-        Ok(GraceJoinEngine::open(root, 1 << 24, 1 << 23, 8, 16, 2, 2, 4096, 1)?)
+        Ok(GraceJoinEngine::open(
+            root,
+            1 << 24,
+            1 << 23,
+            8,
+            16,
+            2,
+            2,
+            4096,
+            1,
+        )?)
     }
 
     fn bag(rows: &[serde_json::Value]) -> Result<BTreeMap<Vec<u8>, u64>, serde_json::Error> {
@@ -869,8 +887,8 @@ mod tests {
     }
 
     #[test]
-    fn out_of_core_join_matches_exact_hot_key_bag_and_cleans_up(
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    fn out_of_core_join_matches_exact_hot_key_bag_and_cleans_up()
+    -> Result<(), Box<dyn std::error::Error>> {
         let root = root();
         let engine = engine(&root)?;
         let left = vec![
@@ -896,15 +914,17 @@ mod tests {
     }
 
     #[test]
-    fn output_limit_fails_closed_and_releases_spill_budget(
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    fn output_limit_fails_closed_and_releases_spill_budget()
+    -> Result<(), Box<dyn std::error::Error>> {
         let root = root();
         let engine = engine(&root)?;
         let left = vec![json!({"k": {"type": "uri", "value": "urn:k"}}); 2];
         let right = vec![json!({"k": {"type": "uri", "value": "urn:k"}}); 3];
-        assert!(engine
-            .join(&identity(&left, &right), left, right, &["k".to_owned()], 5)
-            .is_err());
+        assert!(
+            engine
+                .join(&identity(&left, &right), left, right, &["k".to_owned()], 5)
+                .is_err()
+        );
         assert_eq!(engine.active_spill_bytes()?, 0);
         assert_eq!(fs::read_dir(&root)?.count(), 1);
         fs::remove_dir_all(root)?;
@@ -926,8 +946,8 @@ mod tests {
     }
 
     #[test]
-    fn streamed_join_matches_independent_bag_and_releases_on_decoder_error(
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    fn streamed_join_matches_independent_bag_and_releases_on_decoder_error()
+    -> Result<(), Box<dyn std::error::Error>> {
         let root = root();
         let engine = engine(&root)?;
         let left = vec![json!({"k": {"type": "uri", "value": "urn:k"}}); 2];
@@ -943,21 +963,18 @@ mod tests {
                     .cloned()
                     .map(|row| Ok((GraceJoinSide::Right, row))),
             );
-        let outcome = engine.join_stream(
-            &identity(&left, &right),
-            rows,
-            &["k".to_owned()],
-            8,
-        )?;
+        let outcome = engine.join_stream(&identity(&left, &right), rows, &["k".to_owned()], 8)?;
         assert_eq!(outcome.mode, "grace_hash_nvme_v1");
         assert_eq!(bag(&outcome.bindings)?, bag(&expected)?);
         let failure = vec![
             Ok((GraceJoinSide::Left, left[0].clone())),
             Err(GraceJoinError::CorruptSpill),
         ];
-        assert!(engine
-            .join_stream(&identity(&left, &right), failure, &["k".to_owned()], 8)
-            .is_err());
+        assert!(
+            engine
+                .join_stream(&identity(&left, &right), failure, &["k".to_owned()], 8)
+                .is_err()
+        );
         assert_eq!(engine.active_spill_bytes()?, 0);
         assert_eq!(fs::read_dir(&root)?.count(), 1);
         fs::remove_dir_all(root)?;
@@ -965,8 +982,8 @@ mod tests {
     }
 
     #[test]
-    fn request_and_process_spill_budgets_are_independent(
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    fn request_and_process_spill_budgets_are_independent() -> Result<(), Box<dyn std::error::Error>>
+    {
         let root = root();
         let engine = GraceJoinEngine::open(&root, 300, 200, 2, 4, 2, 2, 4096, 1)?;
         let first_request = engine.reserve(0, 150)?;
@@ -985,8 +1002,8 @@ mod tests {
     }
 
     #[test]
-    fn appended_spill_corruption_is_rejected_and_cleaned(
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    fn appended_spill_corruption_is_rejected_and_cleaned() -> Result<(), Box<dyn std::error::Error>>
+    {
         let root = root();
         let engine = engine(&root)?;
         let row = json!({"k": {"type": "uri", "value": "urn:k"}});
@@ -1006,6 +1023,27 @@ mod tests {
         assert!(VerifiedRecordReader::open(file, digest, 8, 4096).is_err());
         stage.cleanup()?;
         assert_eq!(engine.active_spill_bytes()?, 0);
+        fs::remove_dir_all(root)?;
+        Ok(())
+    }
+
+    #[test]
+    fn opening_a_parallel_executor_preserves_live_spill_namespace()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let root = root();
+        let first_engine = engine(&root)?;
+        let first = SpillStage::create(&first_engine, [7_u8; 32])?;
+        let first_path = first.root.clone();
+        assert!(first_path.is_dir());
+
+        let second_engine = engine(&root)?;
+        let second = SpillStage::create(&second_engine, [8_u8; 32])?;
+        assert!(first_path.is_dir(), "parallel executor erased a live spill directory");
+        assert_ne!(first.root, second.root);
+
+        second.cleanup()?;
+        assert!(first_path.is_dir());
+        first.cleanup()?;
         fs::remove_dir_all(root)?;
         Ok(())
     }

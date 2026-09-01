@@ -34,7 +34,6 @@ const DEFAULT_MAX_TRIPLES_PER_BGP: usize = 65_536;
 const RDF_TYPE: &str = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
 const RDF_FIRST: &str = "http://www.w3.org/1999/02/22-rdf-syntax-ns#first";
 const RDF_REST: &str = "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest";
-const RDF_NIL: &str = "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil";
 const RDFS_SUBCLASS: &str = "http://www.w3.org/2000/01/rdf-schema#subClassOf";
 const RDFS_SUBPROPERTY: &str = "http://www.w3.org/2000/01/rdf-schema#subPropertyOf";
 const RDFS_DOMAIN: &str = "http://www.w3.org/2000/01/rdf-schema#domain";
@@ -111,10 +110,6 @@ struct BgpLeaf {
     scope: DirectBgpScope,
     patterns: Vec<TriplePattern>,
 }
-
-/// Classify all BGP leaves in one already parsed SPARQL query. Independent leaves are processed
-/// in bounded CPU lanes. Results are sorted back to typed-algebra preorder, so CPU scheduling can
-/// never affect serialized legality evidence.
 
 /// Recover the exact typed triple template for one already-admitted BGP ordinal.
 ///
@@ -353,7 +348,7 @@ fn collect_bgps(
         | GraphPattern::Distinct { inner }
         | GraphPattern::Reduced { inner }
         | GraphPattern::Slice { inner, .. } => {
-            collect_bgps(inner, scope, output, has_property_path)
+            collect_bgps(inner, scope, output, has_property_path);
         }
         GraphPattern::Graph { name, inner } => {
             let nested = match name {

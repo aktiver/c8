@@ -134,6 +134,7 @@
         "fragmentExchangeConcurrency",
         "distributedAlgebraEnabled",
         "distributedAlgebraReplicas",
+        "nativeCutoverMode",
         "partitionNativePathsEnabled",
         "propertyPathWorkerThreads",
         "propertyPathMaxScanRows",
@@ -382,6 +383,10 @@
           "type": "string",
           "pattern": "^([2-9]|[1-9][0-9]+)$"
         },
+        "nativeCutoverMode": {
+          "type": "string",
+          "enum": ["disabled", "shadow", "required"]
+        },
         "shufflePartitions": {
           "type": "string",
           "pattern": "^[1-9][0-9]*$"
@@ -615,9 +620,9 @@
       "additionalProperties": false,
       "required": [
         "enabled",
-        "prometheusServerAddress",
         "sharedWorkspaceClaim",
         "sharedTokenSecret",
+        "sharedTokenKey",
         "sharedTokenSha256Key",
         "javaExecutable",
         "adapterJar",
@@ -639,9 +644,9 @@
       ],
       "properties": {
         "enabled": {"type": "boolean"},
-        "prometheusServerAddress": {"type": "string", "pattern": "^https?://[^/]+(?::[0-9]+)?$", "maxLength": 253},
         "sharedWorkspaceClaim": {"type": "string"},
         "sharedTokenSecret": {"type": "string"},
+        "sharedTokenKey": {"type": "string", "minLength": 1},
         "sharedTokenSha256Key": {"type": "string", "minLength": 1},
         "javaExecutable": {"type": "string", "pattern": "^/"},
         "adapterJar": {"type": "string", "pattern": "^/"},
@@ -659,6 +664,9 @@
         "partitionTimeoutSeconds": {"type": "string", "pattern": "^[1-9][0-9]*$"},
         "maxCertificateBytes": {"type": "string", "pattern": "^[1-9][0-9]*$"},
         "maxProofSupportIds": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "dispatchConcurrency": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "dispatchAttempts": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "maxPartitionResponseBytes": {"type": "string", "pattern": "^[1-9][0-9]*$"},
         "autoscaling": {
           "type": "object",
           "additionalProperties": false,

@@ -9,15 +9,14 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use futures::{StreamExt, TryStreamExt, stream};
+use ngkg_direct_reasoner::{
+    DirectExactAdapter, DirectExactBindings, DirectExactError, DirectExactLimits,
+    DirectExactOntologyBundle, direct_exact_request_set_sha256, merge_partition_results,
+};
 use ngkg_types::{
     DirectBgpLegalityRecord, DirectBgpLegalityStatus, DirectBgpResult, DirectCertificate,
     DirectExactPartition, DirectExactPartitionResult, DirectExactRequest, DirectProofManifest,
     direct_bgp_result_sha256, validate_direct_exact_partition_result,
-};
-use ngkg_direct_reasoner::{
-    DirectExactAdapter, DirectExactBindings, DirectExactError, DirectExactLimits,
-    DirectExactOntologyBundle, direct_exact_request_set_sha256,
-    merge_partition_results,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -325,8 +324,8 @@ pub fn require_acceleration_equivalence(
 ) -> Result<(), OnlineReasoningError> {
     let accelerated_sha256 = direct_bgp_result_sha256(accelerated)
         .map_err(|_| OnlineReasoningError::CoverageMismatch)?;
-    let exact_sha256 = direct_bgp_result_sha256(exact)
-        .map_err(|_| OnlineReasoningError::CoverageMismatch)?;
+    let exact_sha256 =
+        direct_bgp_result_sha256(exact).map_err(|_| OnlineReasoningError::CoverageMismatch)?;
     if accelerated.dataset_id != exact.dataset_id
         || accelerated.snapshot_id != exact.snapshot_id
         || accelerated.query_sha256 != exact.query_sha256
@@ -447,14 +446,17 @@ pub fn complete_distributed_exact_bgp(
     let complete = require_complete_partition_set(plan, results)
         .map_err(|_| DirectExactError::PartitionMismatch)?;
     if requests.len() != plan.partitions.len()
-        || requests.iter().zip(&plan.partitions).any(|(request, partition)| {
-            request.dataset_id != plan.dataset_id
-                || request.snapshot_id != plan.snapshot_id
-                || request.query_sha256 != plan.query_sha256
-                || request.bgp_sha256 != plan.bgp_sha256
-                || request.aggregate_input_sha256 != plan.ontology_snapshot_sha256
-                || request.partition != *partition
-        })
+        || requests
+            .iter()
+            .zip(&plan.partitions)
+            .any(|(request, partition)| {
+                request.dataset_id != plan.dataset_id
+                    || request.snapshot_id != plan.snapshot_id
+                    || request.query_sha256 != plan.query_sha256
+                    || request.bgp_sha256 != plan.bgp_sha256
+                    || request.aggregate_input_sha256 != plan.ontology_snapshot_sha256
+                    || request.partition != *partition
+            })
     {
         return Err(DirectExactError::PartitionMismatch);
     }
@@ -581,8 +583,7 @@ pub async fn dispatch_exact_partitions_with_retry(
                 accepted = Some((result, bytes.len()));
                 break;
             }
-            let (result, response_bytes) =
-                accepted.ok_or(OnlineReasoningError::WorkerResponse)?;
+            let (result, response_bytes) = accepted.ok_or(OnlineReasoningError::WorkerResponse)?;
             response_total
                 .fetch_update(
                     std::sync::atomic::Ordering::AcqRel,
@@ -683,8 +684,7 @@ mod tests {
     }
 
     #[test]
-    fn closure_and_provenance_never_enter_asserted_snapshot(
-    ) -> Result<(), OnlineReasoningError> {
+    fn closure_and_provenance_never_enter_asserted_snapshot() -> Result<(), OnlineReasoningError> {
         let labels = BTreeSet::from(["finance".to_owned()]);
         let graphs = [
             AuthorizedGraph {
@@ -738,8 +738,8 @@ mod tests {
     }
 
     #[test]
-    fn partition_count_is_independent_of_current_replica_count(
-    ) -> Result<(), OnlineReasoningError> {
+    fn partition_count_is_independent_of_current_replica_count() -> Result<(), OnlineReasoningError>
+    {
         let plan = build_distributed_reasoner_plan(
             Uuid::new_v4(),
             Uuid::new_v4(),

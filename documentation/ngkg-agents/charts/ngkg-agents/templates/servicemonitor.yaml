@@ -1,0 +1,17 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ngkg-mcp-gateway
+  labels:
+    {{- include "ngkg-agents.labels" . | nindent 4 }}
+    {{- with .Values.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ngkg-agents
+  endpoints:
+    - {port: http, path: /metrics, interval: {{ .Values.serviceMonitor.interval | quote }}}
+{{- end }}

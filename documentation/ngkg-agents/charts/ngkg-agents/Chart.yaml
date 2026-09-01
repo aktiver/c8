@@ -1,0 +1,7 @@
+apiVersion: v2
+name: ngkg-agents
+description: HA semantic gateway, managed RDF agents, qualified MCP tools, and distributed CPU/HPC workers for NGKG 1.0
+type: application
+version: 0.10.0
+appVersion: 0.10.0
+kubeVersion: '>=1.33.0-0'

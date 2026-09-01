@@ -495,6 +495,21 @@ pub struct FinalizeQueryExecutionLog {
     pub participating_nodes: Option<i32>,
     pub allocated_cpu_millis: Option<i64>,
     pub allocated_memory_bytes: Option<i64>,
+    /// CPU and memory requested before scheduling; never presented as consumption.
+    pub requested_cpu_millis: Option<i64>,
+    pub requested_memory_bytes: Option<i64>,
+    /// Measured cgroup usage. CPU is an interval delta; RSS is the interval peak.
+    pub measured_cpu_time_millis: Option<i64>,
+    pub measured_peak_rss_bytes: Option<i64>,
+    pub measured_gpu_time_millis: Option<i64>,
+    pub measured_gpu_peak_memory_bytes: Option<i64>,
+    /// Immutable Kubernetes identities that supplied measurement evidence.
+    pub participating_pod_uids: Vec<String>,
+    pub participating_node_uids: Vec<String>,
+    /// Bounded autoscaler observations correlated to this execution.
+    pub autoscaling_events: serde_json::Value,
+    /// COORDINATOR_CGROUP_INTERVAL, ALL_PARTICIPANTS, or UNAVAILABLE.
+    pub measurement_scope: String,
     pub result_rows: Option<i64>,
     pub result_bytes: Option<i64>,
     pub cache_hit: Option<bool>,
@@ -535,6 +550,16 @@ pub struct QueryExecutionLogRecord {
     pub participating_nodes: Option<i32>,
     pub allocated_cpu_millis: Option<i64>,
     pub allocated_memory_bytes: Option<i64>,
+    pub requested_cpu_millis: Option<i64>,
+    pub requested_memory_bytes: Option<i64>,
+    pub measured_cpu_time_millis: Option<i64>,
+    pub measured_peak_rss_bytes: Option<i64>,
+    pub measured_gpu_time_millis: Option<i64>,
+    pub measured_gpu_peak_memory_bytes: Option<i64>,
+    pub participating_pod_uids: Vec<String>,
+    pub participating_node_uids: Vec<String>,
+    pub autoscaling_events: serde_json::Value,
+    pub measurement_scope: String,
     pub result_rows: Option<i64>,
     pub result_bytes: Option<i64>,
     pub cache_hit: Option<bool>,
@@ -542,6 +567,23 @@ pub struct QueryExecutionLogRecord {
     pub end_time_epoch_ms: Option<i64>,
     pub total_duration_ms: Option<i64>,
     pub error_code: Option<String>,
+}
+
+/// PostgreSQL-owned stage state. Kubernetes Jobs are replaceable execution attempts,
+/// never the source of truth for completion.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OrchestrationStageRecord {
+    pub tenant_id: Uuid,
+    pub operation_id: Uuid,
+    pub stage_name: String,
+    pub stage_spec_sha256: String,
+    pub state: String,
+    pub job_namespace: String,
+    pub job_name: String,
+    pub job_uid: Option<String>,
+    pub terminal_evidence: Option<serde_json::Value>,
+    pub attempt_count: i32,
 }
 
 /// Result of certification plus optional automatic publication.
@@ -720,7 +762,9 @@ impl OperationRepository {
             identity_namespace: row.try_get("identity_namespace")?,
             policy_version: row.try_get("policy_version")?,
         };
-        if record.identity_namespace != identity_namespace || record.policy_version != policy_version {
+        if record.identity_namespace != identity_namespace
+            || record.policy_version != policy_version
+        {
             return Err(CatalogError::DatasetConflict);
         }
         tx.commit().await?;
@@ -1139,7 +1183,6 @@ impl OperationRepository {
                     transition_locked(&mut tx, &mut operation, next, actor, None, None).await?;
                 }
             }
-            DistributedWorkKind::Artifact => {}
             _ => {}
         }
         let summary = load_distributed_summary(&mut tx, tenant_id, operation_id).await?;
@@ -1611,11 +1654,12 @@ impl OperationRepository {
         .ok_or(CatalogError::NotFound)?;
         let identity_namespace: Uuid = row.try_get("identity_namespace")?;
         let snapshot = snapshot_from_row(&row)?;
-        let cloud_activation = match load_cloud_activation(&mut tx, tenant_id, snapshot.operation_id).await {
-            Ok(value) => Some(value),
-            Err(CatalogError::NotFound) => None,
-            Err(error) => return Err(error),
-        };
+        let cloud_activation =
+            match load_cloud_activation(&mut tx, tenant_id, snapshot.operation_id).await {
+                Ok(value) => Some(value),
+                Err(CatalogError::NotFound) => None,
+                Err(error) => return Err(error),
+            };
         if cloud_activation.is_some() {
             let bound: bool = sqlx::query_scalar(
                 "SELECT EXISTS(SELECT 1 FROM cloud_snapshot_activation \
@@ -1682,11 +1726,12 @@ impl OperationRepository {
         .await?
         .ok_or(CatalogError::NotFound)?;
         let snapshot = snapshot_from_row(&row)?;
-        let cloud_activation = match load_cloud_activation(&mut tx, tenant_id, snapshot.operation_id).await {
-            Ok(value) => Some(value),
-            Err(CatalogError::NotFound) => None,
-            Err(error) => return Err(error),
-        };
+        let cloud_activation =
+            match load_cloud_activation(&mut tx, tenant_id, snapshot.operation_id).await {
+                Ok(value) => Some(value),
+                Err(CatalogError::NotFound) => None,
+                Err(error) => return Err(error),
+            };
         let serving_root = if cloud_activation.is_none() {
             match load_serving_root(&mut tx, tenant_id, snapshot.operation_id).await {
                 Ok(value) => Some(value),
@@ -1697,7 +1742,11 @@ impl OperationRepository {
             None
         };
         tx.commit().await?;
-        Ok(SnapshotRecoveryRoots { snapshot, cloud_activation, serving_root })
+        Ok(SnapshotRecoveryRoots {
+            snapshot,
+            cloud_activation,
+            serving_root,
+        })
     }
 
     /// Resolve the active serving snapshot from an owned repository handle.
@@ -2071,12 +2120,19 @@ impl OperationRepository {
         let dataset_id = operation.dataset_id;
         let snapshot_id = durable.target_snapshot_id;
         let parent_snapshot_id = durable.parent_snapshot_id;
-        let automatic = durable.publication_policy == PublicationPolicy::AutomaticAfterCertification;
+        let automatic =
+            durable.publication_policy == PublicationPolicy::AutomaticAfterCertification;
         tx.commit().await?;
         let mut publication_conflict = false;
         if automatic {
             match self
-                .publish_snapshot(tenant_id, dataset_id, snapshot_id, parent_snapshot_id, actor)
+                .publish_snapshot(
+                    tenant_id,
+                    dataset_id,
+                    snapshot_id,
+                    parent_snapshot_id,
+                    actor,
+                )
                 .await
             {
                 Ok(_) => {}
@@ -2084,7 +2140,9 @@ impl OperationRepository {
                 Err(error) => return Err(error),
             }
         }
-        let snapshot = self.get_snapshot(tenant_id, dataset_id, snapshot_id).await?;
+        let snapshot = self
+            .get_snapshot(tenant_id, dataset_id, snapshot_id)
+            .await?;
         Ok(CertificationOutcome {
             published: snapshot.state == "PUBLISHED",
             snapshot,
@@ -2228,9 +2286,208 @@ impl OperationRepository {
         .bind(snapshot_id)
         .execute(&mut *tx)
         .await?;
-        snapshot.state = "PUBLISHED".to_owned();
+        "PUBLISHED".clone_into(&mut snapshot.state);
         tx.commit().await?;
         Ok(snapshot)
+    }
+
+    /// Reserve a source identity before any object-store side effect. A published retry
+    /// returns the exact durable response; a different checksum fails closed.
+    pub async fn reserve_source_upload(
+        &self,
+        tenant_id: Uuid,
+        dataset_id: Uuid,
+        source_id: Uuid,
+        content_sha256: &[u8; 32],
+    ) -> Result<Option<serde_json::Value>, CatalogError> {
+        let mut tx = self.pool.begin().await?;
+        set_tenant(&mut tx, tenant_id).await?;
+        sqlx::query(
+            "INSERT INTO source_upload_reservation \
+             (tenant_id,dataset_id,source_id,content_sha256) VALUES ($1,$2,$3,$4) \
+             ON CONFLICT DO NOTHING",
+        )
+        .bind(tenant_id)
+        .bind(dataset_id)
+        .bind(source_id)
+        .bind(content_sha256.as_slice())
+        .execute(&mut *tx)
+        .await?;
+        let row = sqlx::query(
+            "SELECT content_sha256, state, response_payload FROM source_upload_reservation \
+             WHERE tenant_id=$1 AND dataset_id=$2 AND source_id=$3 FOR UPDATE",
+        )
+        .bind(tenant_id)
+        .bind(dataset_id)
+        .bind(source_id)
+        .fetch_one(&mut *tx)
+        .await?;
+        let observed: Vec<u8> = row.try_get("content_sha256")?;
+        if observed.as_slice() != content_sha256 {
+            return Err(CatalogError::IdempotencyConflict);
+        }
+        let state: String = row.try_get("state")?;
+        let response = if state == "PUBLISHED" {
+            Some(row.try_get("response_payload")?)
+        } else {
+            None
+        };
+        tx.commit().await?;
+        Ok(response)
+    }
+
+    /// Commit the checksum-equal response only after both immutable objects verify remotely.
+    pub async fn publish_source_upload(
+        &self,
+        tenant_id: Uuid,
+        dataset_id: Uuid,
+        source_id: Uuid,
+        response: &serde_json::Value,
+    ) -> Result<(), CatalogError> {
+        let mut tx = self.pool.begin().await?;
+        set_tenant(&mut tx, tenant_id).await?;
+        let changed = sqlx::query(
+            "UPDATE source_upload_reservation SET state='PUBLISHED', response_payload=$4, published_at=now() \
+             WHERE tenant_id=$1 AND dataset_id=$2 AND source_id=$3 AND state='RESERVED'",
+        )
+        .bind(tenant_id)
+        .bind(dataset_id)
+        .bind(source_id)
+        .bind(response)
+        .execute(&mut *tx)
+        .await?
+        .rows_affected();
+        if changed != 1 {
+            let row = sqlx::query(
+                "SELECT response_payload FROM source_upload_reservation \
+                 WHERE tenant_id=$1 AND dataset_id=$2 AND source_id=$3 AND state='PUBLISHED'",
+            )
+            .bind(tenant_id)
+            .bind(dataset_id)
+            .bind(source_id)
+            .fetch_optional(&mut *tx)
+            .await?;
+            let identical = row
+                .as_ref()
+                .and_then(|row| row.try_get::<serde_json::Value, _>("response_payload").ok())
+                .is_some_and(|observed| observed == *response);
+            if !identical {
+                return Err(CatalogError::IdempotencyConflict);
+            }
+        }
+        tx.commit().await?;
+        Ok(())
+    }
+
+    /// Reserve an immutable stage identity before creating its Kubernetes Job.
+    /// A committed SUCCEEDED row remains authoritative after Job TTL deletion or restart.
+    pub async fn reserve_orchestration_stage(
+        &self,
+        tenant_id: Uuid,
+        operation_id: Uuid,
+        stage_name: &str,
+        stage_spec_sha256: &[u8; 32],
+        job_namespace: &str,
+        job_name: &str,
+    ) -> Result<OrchestrationStageRecord, CatalogError> {
+        let mut tx = self.pool.begin().await?;
+        set_tenant(&mut tx, tenant_id).await?;
+        sqlx::query(
+            "INSERT INTO orchestration_stage \
+             (tenant_id, operation_id, stage_name, stage_spec_sha256, job_namespace, job_name) \
+             VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING",
+        )
+        .bind(tenant_id)
+        .bind(operation_id)
+        .bind(stage_name)
+        .bind(stage_spec_sha256.as_slice())
+        .bind(job_namespace)
+        .bind(job_name)
+        .execute(&mut *tx)
+        .await?;
+        let row = sqlx::query(
+            "SELECT tenant_id, operation_id, stage_name, encode(stage_spec_sha256,'hex') AS stage_spec_sha256, \
+                    state::text AS state, job_namespace, job_name, job_uid, terminal_evidence, attempt_count \
+             FROM orchestration_stage WHERE tenant_id=$1 AND operation_id=$2 AND stage_name=$3 FOR UPDATE",
+        )
+        .bind(tenant_id)
+        .bind(operation_id)
+        .bind(stage_name)
+        .fetch_one(&mut *tx)
+        .await?;
+        let record = orchestration_stage_from_row(&row)?;
+        if record.stage_spec_sha256 != hex::encode(stage_spec_sha256)
+            || record.job_namespace != job_namespace
+            || record.job_name != job_name
+        {
+            return Err(CatalogError::SnapshotConflict);
+        }
+        tx.commit().await?;
+        Ok(record)
+    }
+
+    /// Attach a concrete Job attempt without changing the immutable stage identity.
+    pub async fn mark_orchestration_stage_running(
+        &self,
+        tenant_id: Uuid,
+        operation_id: Uuid,
+        stage_name: &str,
+        job_uid: &str,
+    ) -> Result<(), CatalogError> {
+        let mut tx = self.pool.begin().await?;
+        set_tenant(&mut tx, tenant_id).await?;
+        let changed = sqlx::query(
+            "UPDATE orchestration_stage SET state='RUNNING', job_uid=$4, \
+                    attempt_count=attempt_count + CASE WHEN job_uid IS DISTINCT FROM $4 THEN 1 ELSE 0 END, \
+                    terminal_evidence=NULL, completed_at=NULL \
+             WHERE tenant_id=$1 AND operation_id=$2 AND stage_name=$3 \
+               AND state IN ('RESERVED','RUNNING','FAILED')",
+        )
+        .bind(tenant_id)
+        .bind(operation_id)
+        .bind(stage_name)
+        .bind(job_uid)
+        .execute(&mut *tx)
+        .await?
+        .rows_affected();
+        if changed != 1 {
+            return Err(CatalogError::NotFound);
+        }
+        tx.commit().await?;
+        Ok(())
+    }
+
+    /// Persist a terminal Job outcome before Kubernetes garbage collection can remove it.
+    pub async fn complete_orchestration_stage(
+        &self,
+        tenant_id: Uuid,
+        operation_id: Uuid,
+        stage_name: &str,
+        succeeded: bool,
+        evidence: &serde_json::Value,
+    ) -> Result<(), CatalogError> {
+        let mut tx = self.pool.begin().await?;
+        set_tenant(&mut tx, tenant_id).await?;
+        let state = if succeeded { "SUCCEEDED" } else { "FAILED" };
+        let changed = sqlx::query(
+            "UPDATE orchestration_stage SET state=$4::ngkg_orchestration_stage_state, \
+                    terminal_evidence=$5, completed_at=CASE WHEN $4='SUCCEEDED' THEN now() ELSE NULL END \
+             WHERE tenant_id=$1 AND operation_id=$2 AND stage_name=$3 \
+               AND (state IN ('RESERVED','RUNNING','FAILED') OR (state='SUCCEEDED' AND $4='SUCCEEDED'))",
+        )
+        .bind(tenant_id)
+        .bind(operation_id)
+        .bind(stage_name)
+        .bind(state)
+        .bind(evidence)
+        .execute(&mut *tx)
+        .await?
+        .rows_affected();
+        if changed != 1 {
+            return Err(CatalogError::NotFound);
+        }
+        tx.commit().await?;
+        Ok(())
     }
 
     /// Insert the RUNNING record before distributed execution is admitted.
@@ -2273,7 +2530,12 @@ impl OperationRepository {
             "UPDATE query_execution_log SET snapshot_id=$3, query_form=$4, execution_mode=$5, \
              status=$6::ngkg_query_execution_status, participating_nodes=$7, allocated_cpu_millis=$8, \
              allocated_memory_bytes=$9, result_rows=$10, result_bytes=$11, cache_hit=$12, \
-             end_time_epoch_ms=$13, total_duration_ms=$14, error_code=$15, finalized_at=now() \
+             end_time_epoch_ms=$13, total_duration_ms=$14, error_code=$15, \
+             requested_cpu_millis=$16, requested_memory_bytes=$17, measured_cpu_time_millis=$18, \
+             measured_peak_rss_bytes=$19, measured_gpu_time_millis=$20, \
+             measured_gpu_peak_memory_bytes=$21, participating_pod_uids=$22, \
+             participating_node_uids=$23, autoscaling_events=$24, measurement_scope=$25, \
+             finalized_at=now() \
              WHERE tenant_id=$1 AND query_execution_id=$2 AND status='RUNNING'",
         )
         .bind(tenant_id)
@@ -2291,6 +2553,16 @@ impl OperationRepository {
         .bind(finish.end_time_epoch_ms)
         .bind(finish.total_duration_ms)
         .bind(&finish.error_code)
+        .bind(finish.requested_cpu_millis)
+        .bind(finish.requested_memory_bytes)
+        .bind(finish.measured_cpu_time_millis)
+        .bind(finish.measured_peak_rss_bytes)
+        .bind(finish.measured_gpu_time_millis)
+        .bind(finish.measured_gpu_peak_memory_bytes)
+        .bind(&finish.participating_pod_uids)
+        .bind(&finish.participating_node_uids)
+        .bind(&finish.autoscaling_events)
+        .bind(&finish.measurement_scope)
         .execute(&mut *tx)
         .await?
         .rows_affected();
@@ -2332,6 +2604,9 @@ impl OperationRepository {
             "SELECT tenant_id, query_execution_id, dataset_id, snapshot_id, principal_id, request_id, \
                     encode(query_sha256,'hex') AS query_sha256, query_text, query_form, execution_mode, \
                     status::text AS status, participating_nodes, allocated_cpu_millis, allocated_memory_bytes, \
+                    requested_cpu_millis, requested_memory_bytes, measured_cpu_time_millis, \
+                    measured_peak_rss_bytes, measured_gpu_time_millis, measured_gpu_peak_memory_bytes, \
+                    participating_pod_uids, participating_node_uids, autoscaling_events, measurement_scope, \
                     result_rows, result_bytes, cache_hit, start_time_epoch_ms, end_time_epoch_ms, \
                     total_duration_ms, error_code \
              FROM query_execution_log WHERE tenant_id=$1 \
@@ -2363,13 +2638,32 @@ impl OperationRepository {
     }
 }
 
-const QUERY_EXECUTION_LOG_SELECT: &str =
-    "SELECT tenant_id, query_execution_id, dataset_id, snapshot_id, principal_id, request_id, \
+const QUERY_EXECUTION_LOG_SELECT: &str = "SELECT tenant_id, query_execution_id, dataset_id, snapshot_id, principal_id, request_id, \
             encode(query_sha256,'hex') AS query_sha256, query_text, query_form, execution_mode, \
             status::text AS status, participating_nodes, allocated_cpu_millis, allocated_memory_bytes, \
+            requested_cpu_millis, requested_memory_bytes, measured_cpu_time_millis, \
+            measured_peak_rss_bytes, measured_gpu_time_millis, measured_gpu_peak_memory_bytes, \
+            participating_pod_uids, participating_node_uids, autoscaling_events, measurement_scope, \
             result_rows, result_bytes, cache_hit, start_time_epoch_ms, end_time_epoch_ms, \
             total_duration_ms, error_code \
      FROM query_execution_log WHERE tenant_id=$1 AND query_execution_id=$2";
+
+fn orchestration_stage_from_row(
+    row: &sqlx::postgres::PgRow,
+) -> Result<OrchestrationStageRecord, CatalogError> {
+    Ok(OrchestrationStageRecord {
+        tenant_id: row.try_get("tenant_id")?,
+        operation_id: row.try_get("operation_id")?,
+        stage_name: row.try_get("stage_name")?,
+        stage_spec_sha256: row.try_get("stage_spec_sha256")?,
+        state: row.try_get("state")?,
+        job_namespace: row.try_get("job_namespace")?,
+        job_name: row.try_get("job_name")?,
+        job_uid: row.try_get("job_uid")?,
+        terminal_evidence: row.try_get("terminal_evidence")?,
+        attempt_count: row.try_get("attempt_count")?,
+    })
+}
 
 fn query_execution_log_from_row(
     row: &sqlx::postgres::PgRow,
@@ -2389,6 +2683,16 @@ fn query_execution_log_from_row(
         participating_nodes: row.try_get("participating_nodes")?,
         allocated_cpu_millis: row.try_get("allocated_cpu_millis")?,
         allocated_memory_bytes: row.try_get("allocated_memory_bytes")?,
+        requested_cpu_millis: row.try_get("requested_cpu_millis")?,
+        requested_memory_bytes: row.try_get("requested_memory_bytes")?,
+        measured_cpu_time_millis: row.try_get("measured_cpu_time_millis")?,
+        measured_peak_rss_bytes: row.try_get("measured_peak_rss_bytes")?,
+        measured_gpu_time_millis: row.try_get("measured_gpu_time_millis")?,
+        measured_gpu_peak_memory_bytes: row.try_get("measured_gpu_peak_memory_bytes")?,
+        participating_pod_uids: row.try_get("participating_pod_uids")?,
+        participating_node_uids: row.try_get("participating_node_uids")?,
+        autoscaling_events: row.try_get("autoscaling_events")?,
+        measurement_scope: row.try_get("measurement_scope")?,
         result_rows: row.try_get("result_rows")?,
         result_bytes: row.try_get("result_bytes")?,
         cache_hit: row.try_get("cache_hit")?,
@@ -3050,7 +3354,7 @@ fn array_32(bytes: &[u8]) -> Result<[u8; 32], CatalogError> {
 fn is_unique_violation(error: &sqlx::Error) -> bool {
     error
         .as_database_error()
-        .and_then(|database_error| database_error.code())
+        .and_then(sqlx::error::DatabaseError::code)
         .is_some_and(|code| code == "23505")
 }
 

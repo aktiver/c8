@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-phase40-reference-ceilings
+  name: {{ .Release.Name }}-phase40-reference-ceilings-{{ toJson .Values.phase40.direct | sha256sum | trunc 12 }}
   labels:
     app.kubernetes.io/name: ngkg
     app.kubernetes.io/component: reference-worker

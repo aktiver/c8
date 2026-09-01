@@ -2,35 +2,34 @@
 
 pub mod direct_bgp;
 pub mod direct_certificate;
-pub mod direct_legality;
 pub mod direct_exact;
+pub mod direct_legality;
 pub mod direct_proof;
 
 pub use direct_bgp::{
     DirectBgpCompleteness, DirectBgpExactness, DirectBgpFailure, DirectBgpFailureCode,
-    DirectBgpGraphContext, DirectBgpOutcome, DirectBgpRdfTerm, DirectBgpResult,
-    DirectBgpSolution, DirectBgpStatus, DirectBgpValidationError, validate_direct_bgp_result,
+    DirectBgpGraphContext, DirectBgpOutcome, DirectBgpRdfTerm, DirectBgpResult, DirectBgpSolution,
+    DirectBgpStatus, DirectBgpValidationError, validate_direct_bgp_result,
 };
 pub use direct_certificate::{
     DirectCertificate, DirectCertificateValidationError, DirectCertifiedOutcome,
     DirectCompletenessEvidence, DirectCompletenessMethod, DirectProofCoverage,
-    DirectReasonerIdentity, DirectSupportKind, DirectSupportReference,
-    direct_bgp_result_sha256, validate_direct_certificate, validate_direct_certificate_result,
+    DirectReasonerIdentity, DirectSupportKind, DirectSupportReference, direct_bgp_result_sha256,
+    validate_direct_certificate, validate_direct_certificate_result,
 };
 
 pub use direct_legality::{
     DIRECT_BGP_CLASSIFIER_V1, DirectBgpLegalityFailure, DirectBgpLegalityFailureCode,
-    DirectBgpLegalityRecord, DirectBgpLegalityReport, DirectBgpLegalityStatus, DirectBgpScope,
-    DirectBgpLegalityValidationError, DirectVariableRole, DirectVariableRoleSource,
+    DirectBgpLegalityRecord, DirectBgpLegalityReport, DirectBgpLegalityStatus,
+    DirectBgpLegalityValidationError, DirectBgpScope, DirectVariableRole, DirectVariableRoleSource,
     DirectVariableTyping, validate_direct_bgp_legality_report,
 };
-
 
 pub use direct_proof::{
     DIRECT_PROOF_FORMAT_VERSION, DirectProofManifest, DirectProofOntologyInput,
     DirectProofValidationError, DirectReasonerCheckProof, direct_binding_sha256,
-    direct_completion_support_id, direct_reasoner_support_id,
-    validate_direct_proof_bundle, validate_direct_proof_manifest,
+    direct_completion_support_id, direct_reasoner_support_id, validate_direct_proof_bundle,
+    validate_direct_proof_manifest,
 };
 
 pub use direct_exact::{

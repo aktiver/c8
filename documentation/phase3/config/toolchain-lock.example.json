@@ -1,0 +1,17 @@
+{
+  "formatVersion": 1,
+  "tools": [
+    {"name":"docker","sha256":"replace-with-reviewed-binary-sha256"},
+    {"name":"crane","sha256":"replace-with-reviewed-binary-sha256"},
+    {"name":"syft","sha256":"replace-with-reviewed-binary-sha256"},
+    {"name":"grype","sha256":"replace-with-reviewed-binary-sha256"},
+    {"name":"trivy","sha256":"replace-with-reviewed-binary-sha256"},
+    {"name":"cosign","sha256":"replace-with-reviewed-binary-sha256"},
+    {"name":"jq","sha256":"replace-with-reviewed-binary-sha256"},
+    {"name":"helm","sha256":"replace-with-reviewed-binary-sha256"},
+    {"name":"kubectl","sha256":"replace-with-reviewed-binary-sha256"},
+    {"name":"psql","sha256":"replace-with-reviewed-binary-sha256"},
+    {"name":"pg_dump","sha256":"replace-with-reviewed-binary-sha256"},
+    {"name":"python3","sha256":"replace-with-reviewed-binary-sha256"}
+  ]
+}

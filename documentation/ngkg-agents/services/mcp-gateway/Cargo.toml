@@ -1,0 +1,38 @@
+[package]
+name = "ngkg-mcp-gateway"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+axum.workspace = true
+hex.workspace = true
+http.workspace = true
+ngkg-api-client = { path = "../../crates/ngkg-api-client" }
+ngkg-agent-catalog = { path = "../../crates/ngkg-agent-catalog" }
+ngkg-agent-input = { path = "../../crates/ngkg-agent-input" }
+ngkg-agent-memory = { path = "../../crates/ngkg-agent-memory" }
+ngkg-agent-orchestrator = { path = "../../crates/ngkg-agent-orchestrator" }
+ngkg-cpu-work-plane = { path = "../../crates/ngkg-cpu-work-plane" }
+ngkg-auth = { path = "../../crates/ngkg-auth" }
+ngkg-mcp-contracts = { path = "../../crates/ngkg-mcp-contracts" }
+ngkg-model-provider = { path = "../../crates/ngkg-model-provider" }
+ngkg-tool-broker = { path = "../../crates/ngkg-tool-broker" }
+rmcp.workspace = true
+rmcp-macros.workspace = true
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+tower-http.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+url.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

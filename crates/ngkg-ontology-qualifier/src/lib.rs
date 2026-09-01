@@ -18,9 +18,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use ngkg_semantic_compiler::{
-    GraphRole, SemanticCompilationRoot, SemanticPartitionManifest,
-};
+use ngkg_semantic_compiler::{GraphRole, SemanticCompilationRoot, SemanticPartitionManifest};
 use oxigraph::{
     io::{RdfFormat, RdfParser},
     model::{GraphName, Quad, Term},
@@ -271,8 +269,14 @@ pub fn validate_qualification_request(
         if !is_asserted_graph_iri(&graph.graph_iri)
             || candidates.get(&format!("<{}>", graph.graph_iri)) != Some(&graph.graph_id)
             || graph.authorization_labels.is_empty()
-            || graph.authorization_labels.iter().any(|label| label.is_empty())
-            || graph.authorization_labels.windows(2).any(|pair| pair[0] >= pair[1])
+            || graph
+                .authorization_labels
+                .iter()
+                .any(|label| label.is_empty())
+            || graph
+                .authorization_labels
+                .windows(2)
+                .any(|pair| pair[0] >= pair[1])
             || previous == Some(graph.graph_iri.as_str())
         {
             return Err(OntologyQualificationError::Contract(
@@ -300,7 +304,10 @@ pub fn validate_qualification_request(
             || pinned_extension(&import.object_key).is_none()
             || previous_import.as_deref() >= Some(import.ontology_iri.as_str())
             || !aliases.insert(import.ontology_iri.clone())
-            || import.version_iri.as_ref().is_some_and(|iri| !aliases.insert(iri.clone()))
+            || import
+                .version_iri
+                .as_ref()
+                .is_some_and(|iri| !aliases.insert(iri.clone()))
         {
             return Err(OntologyQualificationError::Contract(
                 "pinned imports are invalid, duplicated, or unsorted".to_owned(),
@@ -342,7 +349,9 @@ pub fn project_partition(
         .partitions
         .iter()
         .find(|entry| entry.partition_index == partition.partition_index)
-        .ok_or_else(|| OntologyQualificationError::Contract("partition absent from root".to_owned()))?;
+        .ok_or_else(|| {
+            OntologyQualificationError::Contract("partition absent from root".to_owned())
+        })?;
     if expected.manifest_sha256 != partition_manifest_sha256 {
         return Err(OntologyQualificationError::Contract(
             "partition manifest checksum differs from root".to_owned(),
@@ -411,7 +420,9 @@ pub fn project_partition(
     )?;
     let mut artifacts = Vec::new();
     for (ordinal, graph) in authorized.iter().enumerate() {
-        let Some(runs) = run_paths.remove(*graph) else { continue; };
+        let Some(runs) = run_paths.remove(*graph) else {
+            continue;
+        };
         let relative = format!("graphs/{ordinal:08}.nt");
         let path = output_root.join(&relative);
         if let Some(parent) = path.parent() {
@@ -483,7 +494,9 @@ pub fn assemble_snapshot_ontology(
     if projections
         .iter()
         .enumerate()
-        .any(|(index, (_, manifest))| manifest.partition_index != u32::try_from(index).unwrap_or(u32::MAX))
+        .any(|(index, (_, manifest))| {
+            manifest.partition_index != u32::try_from(index).unwrap_or(u32::MAX)
+        })
     {
         return Err(OntologyQualificationError::Contract(
             "ontology projection partition set is incomplete or duplicated".to_owned(),
@@ -501,7 +514,10 @@ pub fn assemble_snapshot_ontology(
         for artifact in &manifest.artifacts {
             let path = safe_join(parent, &artifact.relative_path)?;
             verify_file(&path, &artifact.sha256, Some(artifact.bytes))?;
-            graph_runs.entry(artifact.graph_iri.clone()).or_default().push(path);
+            graph_runs
+                .entry(artifact.graph_iri.clone())
+                .or_default()
+                .push(path);
         }
     }
     let authorized = request
@@ -628,9 +644,9 @@ pub fn build_hermit_request(
         ));
     }
     fs::create_dir_all(output_root)?;
-    let assembly_root = assembly_path.parent().ok_or_else(|| {
-        OntologyQualificationError::Contract("assembly has no parent".to_owned())
-    })?;
+    let assembly_root = assembly_path
+        .parent()
+        .ok_or_else(|| OntologyQualificationError::Contract("assembly has no parent".to_owned()))?;
     let mut inputs = Vec::new();
     for document in &assembly.documents {
         let path = safe_join(assembly_root, &document.relative_path)?;
@@ -652,11 +668,26 @@ pub fn build_hermit_request(
         snapshot_id: assembly.snapshot_id,
         inputs,
         aggregate_input_sha256: assembly.aggregate_input_sha256,
-        output_closure_path: output_root.join("finite-closure.nt").to_string_lossy().into_owned(),
-        output_report_path: output_root.join("reasoner-report.json").to_string_lossy().into_owned(),
-        output_owl_signature_path: output_root.join("owl-signature.json").to_string_lossy().into_owned(),
-        output_owl_profile_qualification_path: output_root.join("owl-profile-qualification.json").to_string_lossy().into_owned(),
-        output_owl_consistency_qualification_path: output_root.join("owl-consistency-qualification.json").to_string_lossy().into_owned(),
+        output_closure_path: output_root
+            .join("finite-closure.nt")
+            .to_string_lossy()
+            .into_owned(),
+        output_report_path: output_root
+            .join("reasoner-report.json")
+            .to_string_lossy()
+            .into_owned(),
+        output_owl_signature_path: output_root
+            .join("owl-signature.json")
+            .to_string_lossy()
+            .into_owned(),
+        output_owl_profile_qualification_path: output_root
+            .join("owl-profile-qualification.json")
+            .to_string_lossy()
+            .into_owned(),
+        output_owl_consistency_qualification_path: output_root
+            .join("owl-consistency-qualification.json")
+            .to_string_lossy()
+            .into_owned(),
         datatype_policy_path: datatype_policy_path.to_string_lossy().into_owned(),
         datatype_policy_sha256: assembly.datatype_policy_sha256,
         max_named_individuals,
@@ -864,7 +895,11 @@ fn scan_ontology_document(path: &Path) -> Result<OntologyIdentity, OntologyQuali
         Some("ttl") => RdfFormat::Turtle,
         Some("trig") => RdfFormat::TriG,
         Some("rdf" | "owl" | "xml") => RdfFormat::RdfXml,
-        _ => return Err(OntologyQualificationError::Contract("unsupported ontology document format".to_owned())),
+        _ => {
+            return Err(OntologyQualificationError::Contract(
+                "unsupported ontology document format".to_owned(),
+            ));
+        }
     };
     let parser = RdfParser::from_format(format).for_reader(BufReader::new(File::open(path)?));
     let mut headers = BTreeSet::new();
@@ -873,19 +908,31 @@ fn scan_ontology_document(path: &Path) -> Result<OntologyIdentity, OntologyQuali
     let mut count = 0_u64;
     for result in parser {
         let quad = result.map_err(|error| OntologyQualificationError::Rdf(error.to_string()))?;
-        count = count.checked_add(1).ok_or_else(|| OntologyQualificationError::Contract("triple count overflow".to_owned()))?;
-        let Some(subject) = named_subject(&quad) else { continue; };
+        count = count.checked_add(1).ok_or_else(|| {
+            OntologyQualificationError::Contract("triple count overflow".to_owned())
+        })?;
+        let Some(subject) = named_subject(&quad) else {
+            continue;
+        };
         if quad.predicate.as_str() == RDF_TYPE && named_object(&quad) == Some(OWL_ONTOLOGY) {
             headers.insert(subject.to_owned());
         } else if quad.predicate.as_str() == OWL_VERSION_IRI {
             if let Some(value) = named_object(&quad) {
-                if versions.insert(subject.to_owned(), value.to_owned()).is_some() {
-                    return Err(OntologyQualificationError::Contract("ontology has multiple version IRIs".to_owned()));
+                if versions
+                    .insert(subject.to_owned(), value.to_owned())
+                    .is_some()
+                {
+                    return Err(OntologyQualificationError::Contract(
+                        "ontology has multiple version IRIs".to_owned(),
+                    ));
                 }
             }
         } else if quad.predicate.as_str() == OWL_IMPORTS {
             if let Some(value) = named_object(&quad) {
-                imports.entry(subject.to_owned()).or_default().insert(value.to_owned());
+                imports
+                    .entry(subject.to_owned())
+                    .or_default()
+                    .insert(value.to_owned());
             }
         }
     }
@@ -906,13 +953,19 @@ fn scan_ontology_document(path: &Path) -> Result<OntologyIdentity, OntologyQuali
     }
     Ok(OntologyIdentity {
         version_iri: versions.remove(&ontology_iri),
-        import_iris: imports.remove(&ontology_iri).unwrap_or_default().into_iter().collect(),
+        import_iris: imports
+            .remove(&ontology_iri)
+            .unwrap_or_default()
+            .into_iter()
+            .collect(),
         ontology_iri,
         triple_count: count,
     })
 }
 
-fn validate_import_closure(documents: &[AssembledOntologyDocument]) -> Result<(), OntologyQualificationError> {
+fn validate_import_closure(
+    documents: &[AssembledOntologyDocument],
+) -> Result<(), OntologyQualificationError> {
     let mut aliases = BTreeMap::new();
     for (index, document) in documents.iter().enumerate() {
         for alias in std::iter::once(&document.ontology_iri).chain(document.version_iri.iter()) {
@@ -926,9 +979,9 @@ fn validate_import_closure(documents: &[AssembledOntologyDocument]) -> Result<()
     for document in documents {
         for imported in &document.import_iris {
             if !aliases.contains_key(imported) {
-                return Err(OntologyQualificationError::Contract(
-                    format!("unresolved or unpinned owl:imports target: {imported}"),
-                ));
+                return Err(OntologyQualificationError::Contract(format!(
+                    "unresolved or unpinned owl:imports target: {imported}"
+                )));
             }
         }
     }
@@ -974,7 +1027,9 @@ fn flush_projection_buffers(
     counters: &mut BTreeMap<String, usize>,
 ) -> Result<(), OntologyQualificationError> {
     for (graph, rows) in buffers.iter_mut() {
-        if rows.is_empty() { continue; }
+        if rows.is_empty() {
+            continue;
+        }
         rows.sort();
         rows.dedup();
         let ordinal = graph_ordinals.get(graph).ok_or_else(|| {
@@ -982,7 +1037,9 @@ fn flush_projection_buffers(
         })?;
         let counter = counters.entry(graph.clone()).or_default();
         let path = output_root.join(format!(".spill/{ordinal:08}/run-{:08}.nt", *counter));
-        if let Some(parent) = path.parent() { fs::create_dir_all(parent)?; }
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
+        }
         let mut writer = BufWriter::new(create_new(&path)?);
         for row in rows.iter() {
             writer.write_all(row.as_bytes())?;
@@ -996,12 +1053,20 @@ fn flush_projection_buffers(
     Ok(())
 }
 
-fn read_nonempty_line(reader: &mut BufReader<File>) -> Result<Option<String>, OntologyQualificationError> {
+fn read_nonempty_line(
+    reader: &mut BufReader<File>,
+) -> Result<Option<String>, OntologyQualificationError> {
     loop {
         let mut row = String::new();
-        if reader.read_line(&mut row)? == 0 { return Ok(None); }
-        while matches!(row.as_bytes().last(), Some(b'\n') | Some(b'\r')) { row.pop(); }
-        if !row.is_empty() { return Ok(Some(row)); }
+        if reader.read_line(&mut row)? == 0 {
+            return Ok(None);
+        }
+        while matches!(row.as_bytes().last(), Some(b'\n') | Some(b'\r')) {
+            row.pop();
+        }
+        if !row.is_empty() {
+            return Ok(Some(row));
+        }
     }
 }
 
@@ -1011,7 +1076,7 @@ fn as_ntriple(quad: &Quad) -> String {
 
 fn named_subject(quad: &Quad) -> Option<&str> {
     match &quad.subject {
-        oxigraph::model::Subject::NamedNode(node) => Some(node.as_str()),
+        oxigraph::model::NamedOrBlankNode::NamedNode(node) => Some(node.as_str()),
         _ => None,
     }
 }
@@ -1032,7 +1097,12 @@ fn is_asserted_graph_iri(value: &str) -> bool {
 }
 
 fn pinned_extension(object_key: &str) -> Option<&'static str> {
-    match Path::new(object_key).extension()?.to_str()?.to_ascii_lowercase().as_str() {
+    match Path::new(object_key)
+        .extension()?
+        .to_str()?
+        .to_ascii_lowercase()
+        .as_str()
+    {
         "ttl" => Some("ttl"),
         "nt" => Some("nt"),
         "rdf" => Some("rdf"),
@@ -1056,7 +1126,9 @@ pub fn hash_authorized_graphs(graphs: &[AuthorizedOntologyGraph]) -> String {
     hex::encode(digest.finalize())
 }
 
-fn aggregate_input_sha256(documents: &[AssembledOntologyDocument]) -> Result<String, OntologyQualificationError> {
+fn aggregate_input_sha256(
+    documents: &[AssembledOntologyDocument],
+) -> Result<String, OntologyQualificationError> {
     let mut digest = Sha256::new();
     for document in documents {
         let decoded = decode_sha256(&document.sha256)?;
@@ -1066,12 +1138,16 @@ fn aggregate_input_sha256(documents: &[AssembledOntologyDocument]) -> Result<Str
     Ok(hex::encode(digest.finalize()))
 }
 
-fn hash_document_set(documents: &[AssembledOntologyDocument]) -> Result<String, OntologyQualificationError> {
+fn hash_document_set(
+    documents: &[AssembledOntologyDocument],
+) -> Result<String, OntologyQualificationError> {
     let mut digest = Sha256::new();
     digest.update(b"ngkg-ontology-document-set-v1\0");
     for document in documents {
         hash_string(&mut digest, &document.ontology_iri);
-        if let Some(version) = &document.version_iri { hash_string(&mut digest, version); }
+        if let Some(version) = &document.version_iri {
+            hash_string(&mut digest, version);
+        }
         digest.update(decode_sha256(&document.sha256)?);
     }
     Ok(hex::encode(digest.finalize()))
@@ -1093,7 +1169,9 @@ fn hash_synthetic_snapshot(
         request.datatype_policy_sha256.as_str(),
         aggregate,
         ontology_hashes,
-    ] { digest.update(hex::decode(value).unwrap_or_default()); }
+    ] {
+        digest.update(hex::decode(value).unwrap_or_default());
+    }
     hex::encode(digest.finalize())
 }
 
@@ -1106,14 +1184,18 @@ fn hash_string(digest: &mut Sha256, value: &str) {
 pub fn sha256_path(path: &Path) -> Result<String, OntologyQualificationError> {
     let metadata = fs::symlink_metadata(path)?;
     if !metadata.file_type().is_file() || metadata.file_type().is_symlink() {
-        return Err(OntologyQualificationError::Contract("artifact is not a regular file".to_owned()));
+        return Err(OntologyQualificationError::Contract(
+            "artifact is not a regular file".to_owned(),
+        ));
     }
     let mut reader = BufReader::new(File::open(path)?);
     let mut digest = Sha256::new();
     let mut buffer = vec![0_u8; 1024 * 1024];
     loop {
         let read = reader.read(&mut buffer)?;
-        if read == 0 { break; }
+        if read == 0 {
+            break;
+        }
         digest.update(&buffer[..read]);
     }
     Ok(hex::encode(digest.finalize()))
@@ -1138,40 +1220,62 @@ fn create_new(path: &Path) -> Result<File, OntologyQualificationError> {
 
 fn ensure_new_root(path: &Path) -> Result<(), OntologyQualificationError> {
     if path.exists() {
-        return Err(OntologyQualificationError::Contract("immutable output root already exists".to_owned()));
+        return Err(OntologyQualificationError::Contract(
+            "immutable output root already exists".to_owned(),
+        ));
     }
     fs::create_dir_all(path)?;
     Ok(())
 }
 
-fn verify_file(path: &Path, sha256: &str, bytes: Option<u64>) -> Result<(), OntologyQualificationError> {
+fn verify_file(
+    path: &Path,
+    sha256: &str,
+    bytes: Option<u64>,
+) -> Result<(), OntologyQualificationError> {
     require_sha256(sha256)?;
     let metadata = fs::symlink_metadata(path)?;
-    if !metadata.file_type().is_file() || metadata.file_type().is_symlink()
+    if !metadata.file_type().is_file()
+        || metadata.file_type().is_symlink()
         || bytes.is_some_and(|expected| expected != metadata.len())
         || sha256_path(path)? != sha256
     {
-        return Err(OntologyQualificationError::Contract("artifact checksum/size mismatch".to_owned()));
+        return Err(OntologyQualificationError::Contract(
+            "artifact checksum/size mismatch".to_owned(),
+        ));
     }
     Ok(())
 }
 
 fn require_sha256(value: &str) -> Result<(), OntologyQualificationError> {
-    if value.len() != 64 || !value.bytes().all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase()) {
-        return Err(OntologyQualificationError::Contract("invalid lowercase SHA-256".to_owned()));
+    if value.len() != 64
+        || !value
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    {
+        return Err(OntologyQualificationError::Contract(
+            "invalid lowercase SHA-256".to_owned(),
+        ));
     }
     Ok(())
 }
 
 fn decode_sha256(value: &str) -> Result<Vec<u8>, OntologyQualificationError> {
     require_sha256(value)?;
-    hex::decode(value).map_err(|_| OntologyQualificationError::Contract("invalid SHA-256 encoding".to_owned()))
+    hex::decode(value)
+        .map_err(|_| OntologyQualificationError::Contract("invalid SHA-256 encoding".to_owned()))
 }
 
 fn safe_join(root: &Path, relative: &str) -> Result<PathBuf, OntologyQualificationError> {
     let path = Path::new(relative);
-    if path.is_absolute() || path.components().any(|component| !matches!(component, std::path::Component::Normal(_))) {
-        return Err(OntologyQualificationError::Contract("artifact path escapes its root".to_owned()));
+    if path.is_absolute()
+        || path
+            .components()
+            .any(|component| !matches!(component, std::path::Component::Normal(_)))
+    {
+        return Err(OntologyQualificationError::Contract(
+            "artifact path escapes its root".to_owned(),
+        ));
     }
     Ok(root.join(path))
 }
@@ -1188,10 +1292,18 @@ mod tests {
 
     #[test]
     fn graph_role_boundary_rejects_non_asserted_artifacts() {
-        assert!(is_asserted_graph_iri("https://c8-next-generation.io/supply/chain/semkg"));
-        assert!(!is_asserted_graph_iri("https://c8-next-generation.io/supply/chain/closure"));
-        assert!(!is_asserted_graph_iri("https://c8-next-generation.io/supply/chain/provenance"));
-        assert!(!is_asserted_graph_iri("https://c8-next-generation.io/supply/chain/alignment/semkg"));
+        assert!(is_asserted_graph_iri(
+            "https://c8-next-generation.io/supply/chain/semkg"
+        ));
+        assert!(!is_asserted_graph_iri(
+            "https://c8-next-generation.io/supply/chain/closure"
+        ));
+        assert!(!is_asserted_graph_iri(
+            "https://c8-next-generation.io/supply/chain/provenance"
+        ));
+        assert!(!is_asserted_graph_iri(
+            "https://c8-next-generation.io/supply/chain/alignment/semkg"
+        ));
     }
 
     #[test]
@@ -1201,13 +1313,16 @@ mod tests {
             graph_id: 42,
             authorization_labels: vec!["domain:oncology".to_owned()],
         }];
-        assert_eq!(hash_authorized_graphs(&graphs), hash_authorized_graphs(&graphs));
+        assert_eq!(
+            hash_authorized_graphs(&graphs),
+            hash_authorized_graphs(&graphs)
+        );
     }
 
     #[test]
     fn module_scan_and_import_closure_fail_closed() -> Result<(), Box<dyn std::error::Error>> {
-        let root: PathBuf = std::env::temp_dir()
-            .join(format!("ngkg-ontology-qualifier-{}", Uuid::new_v4()));
+        let root: PathBuf =
+            std::env::temp_dir().join(format!("ngkg-ontology-qualifier-{}", Uuid::new_v4()));
         fs::create_dir_all(&root)?;
         let path = root.join("module.nt");
         fs::write(
@@ -1219,7 +1334,10 @@ mod tests {
         )?;
         let identity = scan_ontology_document(&path)?;
         assert_eq!(identity.ontology_iri, "https://example.test/ontology");
-        assert_eq!(identity.import_iris, vec!["https://example.test/imported".to_owned()]);
+        assert_eq!(
+            identity.import_iris,
+            vec!["https://example.test/imported".to_owned()]
+        );
         let documents = vec![AssembledOntologyDocument {
             document_id: "asserted:test".to_owned(),
             source_kind: "authorized-asserted-semkg".to_owned(),

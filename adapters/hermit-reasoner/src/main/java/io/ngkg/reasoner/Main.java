@@ -231,7 +231,7 @@ public final class Main {
         }
         DatatypePolicy policy = JSON.readValue(policyPath.toFile(), DatatypePolicy.class);
         if (policy.formatVersion() != 1
-                || policy.policyId() == null || policy.policyId().isBlank()
+                || !"ngkg-owl2-direct-datatype-policy-v1".equals(policy.policyId())
                 || !"reject_snapshot".equals(policy.unsupportedDatatypeBehavior())
                 || !"reject_snapshot".equals(policy.illTypedLiteralBehavior())
                 || !"preserve_source_lexical_form".equals(policy.canonicalization())

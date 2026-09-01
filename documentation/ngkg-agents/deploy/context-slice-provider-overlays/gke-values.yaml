@@ -1,0 +1,7 @@
+contextSlice:
+  enabled: true
+  storage:
+    provider: gcs
+    gcs: {bucket: replace-context-slice-bucket, endpoint: ''}
+    serviceAccountAnnotations: {iam.gke.io/gcp-service-account: replace-ngkg-context-slice@replace-project.iam.gserviceaccount.com}
+  scheduling: {nodeSelector: {ngkg.io/workload-class: cpu-hpc}, tolerations: []}

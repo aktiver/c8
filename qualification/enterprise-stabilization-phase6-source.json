@@ -1,0 +1,15 @@
+{
+  "formatVersion": 1,
+  "phase": "ENTERPRISE_STABILIZATION_6",
+  "status": "SOURCE_ONLY",
+  "productionQualified": false,
+  "liveEvidenceIncluded": false,
+  "semanticDifferentialExecuted": false,
+  "capacityExecuted": false,
+  "chaosExecuted": false,
+  "providersExecuted": [],
+  "signedImagesVerified": false,
+  "sbomsVerified": false,
+  "reproducibleBuildVerified": false,
+  "qualificationBoundary": "The controlled Phase 6 workflow must execute against digest-pinned images on isolated RKE2, EKS, AKS and GKE clusters. Source/static evidence cannot issue a production certificate."
+}

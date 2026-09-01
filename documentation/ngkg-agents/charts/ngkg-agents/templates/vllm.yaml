@@ -1,0 +1,174 @@
+{{- if .Values.vllm.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ngkg-vllm
+  labels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: vllm-backend}
+  annotations: {{- toYaml .Values.vllm.serviceAccountAnnotations | nindent 4 }}
+automountServiceAccountToken: false
+---
+# Only the pod agent is exposed. vLLM itself binds 127.0.0.1 and has no Service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: ngkg-vllm-backend
+  labels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: vllm-backend}
+spec:
+  publishNotReadyAddresses: false
+  selector: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: vllm-backend}
+  ports: [{name: http, port: {{ .Values.vllm.podAgentPort }}, targetPort: pod-agent}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ngkg-vllm-backend
+  labels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: vllm-backend}
+  annotations:
+    ngkg.io/gpu-provider: {{ .Values.vllm.nodeProvisioning.provider | quote }}
+    ngkg.io/gpu-pool: {{ .Values.vllm.nodeProvisioning.poolName | quote }}
+spec:
+  replicas: {{ .Values.vllm.autoscaling.minReplicas }}
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: vllm-backend}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxUnavailable: 1, maxSurge: 1}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ngkg-agents
+        app.kubernetes.io/component: vllm-backend
+        ngkg.io/workload-class: gpu-inference
+        {{- with .Values.vllm.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: {{ .Values.vllm.podAgentPort | quote }}
+        cluster-autoscaler.kubernetes.io/safe-to-evict: 'false'
+        {{- with .Values.vllm.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: ngkg-vllm
+      automountServiceAccountToken: false
+      {{- if .Values.vllm.runtimeClassName }}
+      runtimeClassName: {{ .Values.vllm.runtimeClassName | quote }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.vllm.terminationGracePeriodSeconds }}
+      securityContext: {runAsNonRoot: true, runAsUser: 65532, runAsGroup: 65532, fsGroup: 65532, seccompProfile: {type: RuntimeDefault}}
+      nodeSelector: {{- toYaml .Values.vllm.scheduling.nodeSelector | nindent 8 }}
+      tolerations: {{- toYaml .Values.vllm.scheduling.tolerations | nindent 8 }}
+      affinity:
+        {{- if .Values.vllm.scheduling.capacityTypeValues }}
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: karpenter.sh/capacity-type
+                    operator: In
+                    values: {{- toYaml .Values.vllm.scheduling.capacityTypeValues | nindent 22 }}
+        {{- end }}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: vllm-backend}}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: {{ .Values.vllm.scheduling.topologyKey | quote }}
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: vllm-backend}
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: vllm-backend}
+      containers:
+        - name: pod-agent
+          image: '{{ required "image.repository is required" .Values.image.repository }}@{{ required "image.digest is required" .Values.image.digest }}'
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: [/usr/local/bin/ngkg-vllm-pod-agent]
+          ports: [{name: pod-agent, containerPort: {{ .Values.vllm.podAgentPort }}}]
+          env:
+            - {name: NGKG_VLLM_AGENT_BIND, value: '0.0.0.0:{{ .Values.vllm.podAgentPort }}'}
+            - {name: NGKG_VLLM_AGENT_ADMIN_BIND, value: '127.0.0.1:{{ .Values.vllm.podAgentAdminPort }}'}
+            - {name: NGKG_VLLM_AGENT_DRAIN_URL, value: 'http://127.0.0.1:{{ .Values.vllm.podAgentAdminPort }}/admin/drain'}
+            - {name: NGKG_VLLM_DRAIN_COMPLETE_FILE, value: /var/run/ngkg-vllm-drain/complete}
+            - {name: NGKG_VLLM_UPSTREAM_URL, value: 'http://127.0.0.1:{{ .Values.vllm.enginePort }}/'}
+            - {name: NGKG_VLLM_SERVED_MODEL, value: {{ .Values.vllm.servedModelName | quote }} }
+            - {name: NGKG_VLLM_AGENT_MAX_REQUEST_BYTES, value: {{ .Values.vllm.maximumRequestBytes | quote }} }
+            - {name: NGKG_VLLM_AGENT_MAX_RESPONSE_BYTES, value: {{ .Values.vllm.maximumResponseBytes | quote }} }
+            - {name: NGKG_VLLM_AGENT_MAX_IN_FLIGHT, value: {{ .Values.vllm.maximumInFlightPerPod | quote }} }
+            - {name: NGKG_VLLM_AGENT_CONNECT_TIMEOUT_MS, value: {{ .Values.vllm.connectTimeoutMilliseconds | quote }} }
+            - {name: NGKG_VLLM_AGENT_UPSTREAM_TIMEOUT_MS, value: {{ .Values.vllm.upstreamTimeoutMilliseconds | quote }} }
+            - {name: NGKG_VLLM_AGENT_READINESS_POLL_MS, value: {{ .Values.vllm.readinessPollMilliseconds | quote }} }
+            - {name: NGKG_VLLM_AGENT_DRAIN_TIMEOUT_MS, value: {{ mul .Values.vllm.drainTimeoutSeconds 1000 | quote }} }
+          resources: {{- toYaml .Values.vllm.podAgentResources | nindent 12 }}
+          startupProbe: {httpGet: {path: /health/live, port: pod-agent}, periodSeconds: 2, failureThreshold: 30}
+          readinessProbe: {httpGet: {path: /health/ready, port: pod-agent}, periodSeconds: 2, timeoutSeconds: 1, failureThreshold: 2}
+          livenessProbe: {httpGet: {path: /health/live, port: pod-agent}, periodSeconds: 15, timeoutSeconds: 2, failureThreshold: 4}
+          lifecycle:
+            preStop:
+              exec: {command: [/usr/local/bin/ngkg-vllm-pod-agent, drain]}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, runAsNonRoot: true, runAsUser: 65532, runAsGroup: 65532, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: agent-tmp, mountPath: /tmp}
+            - {name: drain-state, mountPath: /var/run/ngkg-vllm-drain}
+        - name: vllm
+          image: '{{ required "vllm.image.repository is required" .Values.vllm.image.repository }}@{{ required "vllm.image.digest is required" .Values.vllm.image.digest }}'
+          imagePullPolicy: {{ .Values.vllm.image.pullPolicy }}
+          args: [serve, {{ required "vllm.model is required" .Values.vllm.model | quote }}, '--host=127.0.0.1', '--port={{ .Values.vllm.enginePort }}', '--served-model-name={{ .Values.vllm.servedModelName }}', '--tensor-parallel-size={{ .Values.vllm.tensorParallelSize }}', '--max-model-len={{ .Values.vllm.maximumModelLength }}']
+          env:
+            - {name: HOME, value: /tmp}
+            - {name: HF_HOME, value: /tmp/huggingface}
+            - {name: VLLM_CACHE_ROOT, value: /tmp/vllm}
+          resources: {{- toYaml .Values.vllm.resources | nindent 12 }}
+          startupProbe:
+            exec:
+              command: [python3, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:{{ .Values.vllm.enginePort }}/health', timeout=2)"]
+            periodSeconds: 10
+            failureThreshold: {{ .Values.vllm.startupFailureThreshold }}
+          livenessProbe:
+            exec:
+              command: [python3, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:{{ .Values.vllm.enginePort }}/health', timeout=2)"]
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 4
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -ec
+                  - 'i=0; while [ ! -f /var/run/ngkg-vllm-drain/complete ] && [ "$i" -lt {{ .Values.vllm.drainTimeoutSeconds }} ]; do sleep 1; i=$((i+1)); done'
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, runAsNonRoot: true, runAsUser: 65532, runAsGroup: 65532, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: shm, mountPath: /dev/shm}
+            - {name: vllm-tmp, mountPath: /tmp}
+            - {name: drain-state, mountPath: /var/run/ngkg-vllm-drain, readOnly: true}
+            {{- if .Values.vllm.modelCache.enabled }}
+            - {name: model-cache, mountPath: {{ .Values.vllm.modelCache.mountPath | quote }}, readOnly: {{ .Values.vllm.modelCache.readOnly }} }
+            {{- end }}
+      volumes:
+        - name: shm
+          emptyDir: {medium: Memory, sizeLimit: {{ .Values.vllm.sharedMemorySizeLimit | quote }}}
+        - {name: agent-tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: vllm-tmp, emptyDir: {sizeLimit: 4Gi}}
+        - {name: drain-state, emptyDir: {sizeLimit: 1Mi}}
+        {{- if .Values.vllm.modelCache.enabled }}
+        - name: model-cache
+          persistentVolumeClaim: {claimName: {{ required "vllm.modelCache.existingClaim is required" .Values.vllm.modelCache.existingClaim | quote }}}
+        {{- end }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: ngkg-vllm-backend}
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: vllm-backend}
+{{- end }}

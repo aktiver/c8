@@ -93,8 +93,6 @@ enum OperatorError {
     Kubernetes(#[from] kube::Error),
     #[error("CR differs from durable catalog field {0}")]
     SpecConflict(&'static str),
-    #[error("resource quantity is invalid: {0}")]
-    Quantity(String),
     #[error("distributed operator configuration is inconsistent: {0}")]
     Config(String),
 }
@@ -118,8 +116,10 @@ async fn main() -> Result<()> {
         namespace: namespace.clone(),
         config: Config::from_env()?,
     });
-    let compilations: Api<NgkgCompilation> = Api::namespaced(client, &namespace);
+    let compilations: Api<NgkgCompilation> = Api::namespaced(client.clone(), &namespace);
+    let jobs: Api<Job> = Api::namespaced(client, &namespace);
     Controller::new(compilations, watcher::Config::default())
+        .owns(jobs, watcher::Config::default())
         .run(reconcile, error_policy, context)
         .for_each(|result| async move {
             if let Err(error) = result {

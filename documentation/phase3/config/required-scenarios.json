@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "providers": ["rke2", "eks", "aks", "gke"],
+  "scenarios": [
+    "api_openapi_health",
+    "sparql_owl2dl_cross_domain",
+    "mcp_initialize_tools_query",
+    "hermit_exact_fallback",
+    "cpu_memory_hpa_80_percent",
+    "node_autoscaler_scale_up",
+    "node_loss_query_recovery",
+    "storage_checksum_backup_restore",
+    "gpu_vllm_scale_from_zero",
+    "gpu_inference_drain",
+    "tenant_dataset_isolation",
+    "tenant_mcp_memory_tool_isolation"
+  ]
+}

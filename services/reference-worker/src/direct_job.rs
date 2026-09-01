@@ -86,22 +86,37 @@ pub fn execute(path: &Path) -> Result<String, String> {
     let request_root = canonical_existing_dir(&job.request_root, "requestRoot")?;
     fs::create_dir_all(&job.work_root).map_err(|e| e.to_string())?;
     let work_root = canonical_existing_dir(&job.work_root, "workRoot")?;
-    require_existing_descendant(&snapshot_root, &job.snapshot_manifest_path, "snapshotManifestPath")?;
+    require_existing_descendant(
+        &snapshot_root,
+        &job.snapshot_manifest_path,
+        "snapshotManifestPath",
+    )?;
     require_existing_descendant(&request_root, &job.query_path, "queryPath")?;
-    require_existing_descendant(&request_root, &job.legality_report_path, "legalityReportPath")?;
+    require_existing_descendant(
+        &request_root,
+        &job.legality_report_path,
+        "legalityReportPath",
+    )?;
     require_output_descendant(&work_root, &job.work_dir, "workDir")?;
     require_output_descendant(&work_root, &job.output_result_path, "outputResultPath")?;
-    require_output_descendant(&work_root, &job.output_certificate_path, "outputCertificatePath")?;
-    require_output_descendant(&work_root, &job.output_proof_manifest_path, "outputProofManifestPath")?;
+    require_output_descendant(
+        &work_root,
+        &job.output_certificate_path,
+        "outputCertificatePath",
+    )?;
+    require_output_descendant(
+        &work_root,
+        &job.output_proof_manifest_path,
+        "outputProofManifestPath",
+    )?;
 
     verify_hash(&job.snapshot_manifest_path, &job.snapshot_manifest_sha256)?;
     verify_hash(&job.query_path, &job.query_sha256)?;
     verify_hash(&job.reasoner_adapter_jar, &job.reasoner_adapter_sha256)?;
 
-    let manifest: ReferenceSnapshotManifest = serde_json::from_slice(
-        &fs::read(&job.snapshot_manifest_path).map_err(|e| e.to_string())?,
-    )
-    .map_err(|e| e.to_string())?;
+    let manifest: ReferenceSnapshotManifest =
+        serde_json::from_slice(&fs::read(&job.snapshot_manifest_path).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
     let signature_sha = manifest
         .owl_signature_sha256
         .clone()
@@ -121,20 +136,23 @@ pub fn execute(path: &Path) -> Result<String, String> {
 
     let signature_path = snapshot_root.join("reasoner/owl-signature.json");
     verify_hash(&signature_path, &signature_sha)?;
-    let signature: OwlSignature = serde_json::from_slice(
-        &fs::read(&signature_path).map_err(|e| e.to_string())?,
-    )
-    .map_err(|e| e.to_string())?;
-    if signature.dataset_id != manifest.dataset_id || signature.snapshot_id != manifest.snapshot_id {
+    let signature: OwlSignature =
+        serde_json::from_slice(&fs::read(&signature_path).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+    if signature.dataset_id != manifest.dataset_id || signature.snapshot_id != manifest.snapshot_id
+    {
         return Err("OWL signature does not belong to snapshot".to_owned());
     }
 
     let graph_catalog_path = snapshot_root.join("indexes/rdf-dataset-catalog.json");
-    verify_manifest_artifact(&manifest, &graph_catalog_path, "indexes/rdf-dataset-catalog.json")?;
-    let graph_catalog: GraphCatalog = serde_json::from_slice(
-        &fs::read(&graph_catalog_path).map_err(|e| e.to_string())?,
-    )
-    .map_err(|e| e.to_string())?;
+    verify_manifest_artifact(
+        &manifest,
+        &graph_catalog_path,
+        "indexes/rdf-dataset-catalog.json",
+    )?;
+    let graph_catalog: GraphCatalog =
+        serde_json::from_slice(&fs::read(&graph_catalog_path).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
     validate_resolved_dataset(&graph_catalog, &job.resolved_dataset).map_err(|e| e.to_string())?;
 
     let query_dataset_path = snapshot_root.join("data/query-dataset.nq");
@@ -142,10 +160,9 @@ pub fn execute(path: &Path) -> Result<String, String> {
 
     let query_text = fs::read_to_string(&job.query_path).map_err(|e| e.to_string())?;
     let compiled = CompiledSparqlQuery::parse(&query_text).map_err(|e| e.to_string())?;
-    let report: DirectBgpLegalityReport = serde_json::from_slice(
-        &fs::read(&job.legality_report_path).map_err(|e| e.to_string())?,
-    )
-    .map_err(|e| e.to_string())?;
+    let report: DirectBgpLegalityReport =
+        serde_json::from_slice(&fs::read(&job.legality_report_path).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
     validate_direct_bgp_legality_report(&report).map_err(|e| e.to_string())?;
     if report.dataset_id != manifest.dataset_id
         || report.snapshot_id != manifest.snapshot_id
@@ -168,15 +185,18 @@ pub fn execute(path: &Path) -> Result<String, String> {
         .iter()
         .find(|record| record.ordinal == job.bgp_ordinal)
         .ok_or_else(|| "requested BGP ordinal is absent from legality report".to_owned())?;
-    if legality.status != DirectBgpLegalityStatus::Legal
-        || !legality.grounded_owl2dl_check_required
+    if legality.status != DirectBgpLegalityStatus::Legal || !legality.grounded_owl2dl_check_required
     {
         return Err("requested BGP was not admitted by Phase 40.7".to_owned());
     }
     match (&legality.graph_scope, job.graph_binding_iri.as_deref()) {
         (DirectBgpScope::Default | DirectBgpScope::Named { .. }, None) => {}
         (DirectBgpScope::NamedVariable { .. }, Some(value)) if absolute_iri(value) => {}
-        _ => return Err("graphBindingIri is inconsistent with the Phase 40.7 graph scope".to_owned()),
+        _ => {
+            return Err(
+                "graphBindingIri is inconsistent with the Phase 40.7 graph scope".to_owned(),
+            );
+        }
     }
 
     let active_bundle = build_direct_active_ontology_bundle(
@@ -213,8 +233,14 @@ pub fn execute(path: &Path) -> Result<String, String> {
         reasoner_version: job.reasoner_version.clone(),
     };
     let limits = DirectExactLimits {
-        max_candidate_bindings: positive(job.limits.max_candidate_bindings, "maxCandidateBindings")?,
-        max_partition_candidates: positive(job.limits.max_partition_candidates, "maxPartitionCandidates")?,
+        max_candidate_bindings: positive(
+            job.limits.max_candidate_bindings,
+            "maxCandidateBindings",
+        )?,
+        max_partition_candidates: positive(
+            job.limits.max_partition_candidates,
+            "maxPartitionCandidates",
+        )?,
         max_exact_partitions: trusted_phase40.max_exact_partitions,
         max_grounded_axioms_per_candidate: positive(
             job.limits.max_grounded_axioms_per_candidate,
@@ -235,7 +261,8 @@ pub fn execute(path: &Path) -> Result<String, String> {
         )?),
         max_certificate_bytes: trusted_phase40.max_certificate_bytes,
         max_proof_support_ids: trusted_phase40.max_proof_support_ids,
-    };    let (result, certificate, proof_manifest) = execute_exact_direct_bgp(
+    };
+    let (result, certificate, proof_manifest) = execute_exact_direct_bgp(
         &compiled,
         legality,
         &bindings,
@@ -246,8 +273,10 @@ pub fn execute(path: &Path) -> Result<String, String> {
     )
     .map_err(|e| e.to_string())?;
     atomic_json(&job.output_result_path, &result)?;
-    if u64::try_from(proof_manifest.answer_proofs.len()).map_err(|_| "proof-support count overflow".to_owned())?
-        .checked_add(1).ok_or_else(|| "proof-support count overflow".to_owned())?
+    if u64::try_from(proof_manifest.answer_proofs.len())
+        .map_err(|_| "proof-support count overflow".to_owned())?
+        .checked_add(1)
+        .ok_or_else(|| "proof-support count overflow".to_owned())?
         > trusted_phase40.max_proof_support_ids
     {
         return Err("Phase 40 proof-support output exceeds trusted maxProofSupportIds".to_owned());
@@ -259,7 +288,13 @@ pub fn execute(path: &Path) -> Result<String, String> {
         trusted_phase40.max_certificate_bytes,
         "Direct certificate",
     )?;
-    verify_hash(&job.output_proof_manifest_path, certificate.proof_manifest_sha256.as_deref().ok_or_else(|| "Phase 40.9 certificate omits proofManifestSha256".to_owned())?)?;
+    verify_hash(
+        &job.output_proof_manifest_path,
+        certificate
+            .proof_manifest_sha256
+            .as_deref()
+            .ok_or_else(|| "Phase 40.9 certificate omits proofManifestSha256".to_owned())?,
+    )?;
     Ok(serde_json::json!({
         "status":"exact-direct-bgp-complete",
         "candidateBindingCount": result.candidate_binding_count,
@@ -294,7 +329,9 @@ fn verify_manifest_artifact(
     verify_hash(path, &artifact.sha256)?;
     let bytes = fs::metadata(path).map_err(|e| e.to_string())?.len();
     if bytes != artifact.bytes {
-        return Err(format!("snapshot artifact byte count mismatch for {relative}"));
+        return Err(format!(
+            "snapshot artifact byte count mismatch for {relative}"
+        ));
     }
     Ok(())
 }
@@ -310,10 +347,12 @@ fn verify_hash(path: &Path, expected: &str) -> Result<(), String> {
     use std::io::Read;
     let mut file = fs::File::open(path).map_err(|e| e.to_string())?;
     let mut digest = Sha256::new();
-    let mut buffer = [0_u8; 1024 * 1024];
+    let mut buffer = vec![0_u8; 1024 * 1024].into_boxed_slice();
     loop {
         let read = file.read(&mut buffer).map_err(|e| e.to_string())?;
-        if read == 0 { break; }
+        if read == 0 {
+            break;
+        }
         digest.update(&buffer[..read]);
     }
     let observed = hex::encode(digest.finalize());
@@ -340,10 +379,15 @@ fn require_existing_descendant(root: &Path, path: &Path, name: &str) -> Result<(
 }
 
 fn require_output_descendant(root: &Path, path: &Path, name: &str) -> Result<(), String> {
-    if path.components().any(|component| matches!(component, Component::ParentDir)) {
+    if path
+        .components()
+        .any(|component| matches!(component, Component::ParentDir))
+    {
         return Err(format!("{name} contains parent traversal"));
     }
-    let parent = path.parent().ok_or_else(|| format!("{name} has no parent"))?;
+    let parent = path
+        .parent()
+        .ok_or_else(|| format!("{name} has no parent"))?;
     fs::create_dir_all(parent).map_err(|e| format!("{name}: {e}"))?;
     let canonical_parent = fs::canonicalize(parent).map_err(|e| format!("{name}: {e}"))?;
     if !canonical_parent.starts_with(root) {
@@ -356,14 +400,21 @@ fn absolute_iri(value: &str) -> bool {
     value.contains(':') && !value.chars().any(char::is_whitespace)
 }
 
-fn atomic_json_bounded<T: serde::Serialize>(path: &Path, value: &T, max_bytes: u64, label: &str) -> Result<(), String> {
+fn atomic_json_bounded<T: serde::Serialize>(
+    path: &Path,
+    value: &T,
+    max_bytes: u64,
+    label: &str,
+) -> Result<(), String> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
     let bytes = serde_json::to_vec_pretty(value).map_err(|e| e.to_string())?;
     let len = u64::try_from(bytes.len()).map_err(|_| format!("{label} byte count overflow"))?;
     if len > max_bytes {
-        return Err(format!("{label} bytes {len} exceed trusted Phase 40 ceiling {max_bytes}"));
+        return Err(format!(
+            "{label} bytes {len} exceed trusted Phase 40 ceiling {max_bytes}"
+        ));
     }
     let tmp = path.with_extension(format!("tmp-{}", uuid::Uuid::new_v4()));
     fs::write(&tmp, bytes).map_err(|e| e.to_string())?;

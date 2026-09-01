@@ -10,12 +10,11 @@ use ngkg_artifact_store::{ArtifactStore, ArtifactStoreError};
 use ngkg_catalog::{
     CatalogError, DistributedWorkKind, JobState, OperationRepository, ServingCertification,
 };
-use ngkg_distributed_build::DistributedRootManifest;
 use ngkg_distributed_artifacts::DistributedArtifactRootManifest;
+use ngkg_distributed_build::DistributedRootManifest;
 use ngkg_hydration::{
     HydratedShardRow, ServingEquivalenceReport, ServingQueryEquivalence, ServingRootManifest,
-    ShardedQualifiedGuid, VerifiedPayloadShard, hydrate_sharded_payload,
-    verify_payload_shard,
+    ShardedQualifiedGuid, VerifiedPayloadShard, hydrate_sharded_payload, verify_payload_shard,
 };
 use ngkg_identity::guid_for_canonical_iri;
 use ngkg_locator::MmapLocatorIndex;
@@ -86,18 +85,17 @@ impl ObjectCompileError {
                 | Self::Hydration(_)
                 | Self::Locator(_)
                 | Self::Identity(_)
-        )
-            || matches!(
-                self,
-                Self::Store(
-                    ArtifactStoreError::UnsafeKey(_)
-                        | ArtifactStoreError::InvalidSha256
-                        | ArtifactStoreError::SizeLimit { .. }
-                        | ArtifactStoreError::AggregateSizeLimit { .. }
-                        | ArtifactStoreError::ChecksumMismatch { .. }
-                        | ArtifactStoreError::ImmutableConflict(_)
-                )
+        ) || matches!(
+            self,
+            Self::Store(
+                ArtifactStoreError::UnsafeKey(_)
+                    | ArtifactStoreError::InvalidSha256
+                    | ArtifactStoreError::SizeLimit { .. }
+                    | ArtifactStoreError::AggregateSizeLimit { .. }
+                    | ArtifactStoreError::ChecksumMismatch { .. }
+                    | ArtifactStoreError::ImmutableConflict(_)
             )
+        )
     }
 }
 
@@ -188,12 +186,10 @@ pub(crate) async fn compile_object_store(
             "distributed serving root key and hash must be supplied together".to_owned(),
         ));
     }
-    if distributed_finalize != distributed_artifacts
-        || distributed_artifacts != distributed_serving
+    if distributed_finalize != distributed_artifacts || distributed_artifacts != distributed_serving
     {
         return Err(ObjectCompileError::Config(
-            "distributed source, artifact and serving roots must be supplied together"
-                .to_owned(),
+            "distributed source, artifact and serving roots must be supplied together".to_owned(),
         ));
     }
     let executable_state = if distributed_finalize {
@@ -280,8 +276,9 @@ async fn run_attempt(
             &bundle_path,
         )
         .await?;
-    let bundle: CompilationBundle = serde_json::from_slice(&tokio::fs::read(&bundle_path).await?)
-        .map_err(|error| ObjectCompileError::Bundle(error.to_string()))?;
+    let bundle: CompilationBundle =
+        serde_json::from_slice(&tokio::fs::read(&bundle_path).await?)
+            .map_err(|error| ObjectCompileError::Bundle(error.to_string()))?;
     validate_bundle(
         &bundle,
         dataset_id,
@@ -372,11 +369,7 @@ async fn run_attempt(
         let catalog_root = catalog.get_artifact_root(tenant_id, operation_id).await?;
         let catalog_plan = catalog.get_artifact_plan(tenant_id, operation_id).await?;
         let catalog_partitions = catalog
-            .list_distributed_outputs(
-                tenant_id,
-                operation_id,
-                DistributedWorkKind::Artifact,
-            )
+            .list_distributed_outputs(tenant_id, operation_id, DistributedWorkKind::Artifact)
             .await?;
         if catalog_root.root_manifest_object_key != *root_key
             || catalog_root.root_manifest_sha256 != root_sha256
@@ -403,10 +396,8 @@ async fn run_attempt(
             || root.dictionary_sha256 != catalog_plan.dictionary_sha256
             || root.semantic_content_sha256 != catalog_root.semantic_content_sha256
             || i64::try_from(root.fact_count).ok() != Some(catalog_root.fact_count)
-            || i64::try_from(root.semantic_row_count).ok()
-                != Some(catalog_root.semantic_row_count)
-            || i64::try_from(root.payload_row_count).ok()
-                != Some(catalog_root.payload_row_count)
+            || i64::try_from(root.semantic_row_count).ok() != Some(catalog_root.semantic_row_count)
+            || i64::try_from(root.payload_row_count).ok() != Some(catalog_root.payload_row_count)
             || i64::try_from(root.locator_record_count).ok()
                 != Some(catalog_root.locator_record_count)
             || root.partitions.len()
@@ -422,8 +413,7 @@ async fn run_attempt(
                     .to_owned(),
             ));
         }
-        for (reference, catalog_partition) in
-            root.partitions.iter().zip(catalog_partitions.iter())
+        for (reference, catalog_partition) in root.partitions.iter().zip(catalog_partitions.iter())
         {
             let (Some(manifest_key), Some(manifest_sha256)) = (
                 catalog_partition.output_manifest_object_key.as_deref(),
@@ -433,8 +423,7 @@ async fn run_attempt(
                     "successful artifact completion omits its manifest identity".to_owned(),
                 ));
             };
-            if i32::try_from(reference.partition_index).ok()
-                != Some(catalog_partition.work_index)
+            if i32::try_from(reference.partition_index).ok() != Some(catalog_partition.work_index)
                 || reference.manifest_path != manifest_key
                 || reference.manifest_sha256 != manifest_sha256
             {
@@ -452,7 +441,9 @@ async fn run_attempt(
                 &locator_path,
             )
             .await?;
-        let added = tokio::fs::metadata(&root_path).await?.len()
+        let added = tokio::fs::metadata(&root_path)
+            .await?
+            .len()
             .checked_add(tokio::fs::metadata(&locator_path).await?.len())
             .ok_or_else(|| ObjectCompileError::Bundle("staged byte count overflow".to_owned()))?;
         let canonical_bytes = match distributed_source.as_ref() {
@@ -472,8 +463,7 @@ async fn run_attempt(
     } else {
         None
     };
-    let serving_inputs = if let Some(root_key) =
-        options.get("distributed-serving-root-object-key")
+    let serving_inputs = if let Some(root_key) = options.get("distributed-serving-root-object-key")
     {
         let root_sha256 = value(options, "distributed-serving-root-sha256")?;
         let catalog_root = catalog.get_serving_root(tenant_id, operation_id).await?;
@@ -513,8 +503,7 @@ async fn run_attempt(
             || i32::try_from(manifest.row_group_rows).ok() != Some(catalog_root.row_group_rows)
             || i64::try_from(manifest.locator_record_count).ok()
                 != Some(catalog_root.locator_record_count)
-            || i32::try_from(manifest.partitions.len()).ok()
-                != Some(catalog_root.partition_count)
+            || i32::try_from(manifest.partitions.len()).ok() != Some(catalog_root.partition_count)
         {
             return Err(ObjectCompileError::Bundle(
                 "distributed serving root differs from catalog or artifact truth".to_owned(),
@@ -562,19 +551,18 @@ async fn run_attempt(
             Some(source) => std::fs::metadata(&source.path)?.len(),
             None => 0,
         };
-        let prior_distributed_bytes = tokio::fs::metadata(
-            input_root.join("distributed-artifact-root.json"),
-        )
-        .await?
-        .len()
-        .checked_add(
-            tokio::fs::metadata(input_root.join("distributed-locator.tsv"))
+        let prior_distributed_bytes =
+            tokio::fs::metadata(input_root.join("distributed-artifact-root.json"))
                 .await?
-                .len(),
-        )
-        .ok_or_else(|| {
-            ObjectCompileError::Bundle("distributed input byte count overflow".to_owned())
-        })?;
+                .len()
+                .checked_add(
+                    tokio::fs::metadata(input_root.join("distributed-locator.tsv"))
+                        .await?
+                        .len(),
+                )
+                .ok_or_else(|| {
+                    ObjectCompileError::Bundle("distributed input byte count overflow".to_owned())
+                })?;
         let total = staged_bytes(&staged)?
             .checked_add(canonical_bytes)
             .and_then(|value| value.checked_add(prior_distributed_bytes))
@@ -596,12 +584,7 @@ async fn run_attempt(
     } else {
         None
     };
-    let manifest = local_manifest(
-        &bundle,
-        &staged,
-        output_root.clone(),
-        distributed_source,
-    )?;
+    let manifest = local_manifest(&bundle, &staged, output_root.clone(), distributed_source)?;
     let manifest_path = input_root.join("reference-compile.json");
     write_json_new(&manifest_path, &manifest).await?;
 
@@ -742,10 +725,7 @@ async fn run_attempt(
                 tenant_id,
                 operation_id,
                 &ServingCertification {
-                    report_object_key: format!(
-                        "{snapshot_prefix}/{}",
-                        certification.relative_path
-                    ),
+                    report_object_key: format!("{snapshot_prefix}/{}", certification.relative_path),
                     report_sha256: certification.sha256,
                     serving_root_sha256: serving_inputs
                         .as_ref()
@@ -851,9 +831,7 @@ async fn certify_sharded_hydration(
             .map(|(ordinal, guid)| {
                 Ok(ShardedQualifiedGuid {
                     query_ordinal: u64::try_from(ordinal).map_err(|_| {
-                        ObjectCompileError::Reference(
-                            "hydration query ordinal overflow".to_owned(),
-                        )
+                        ObjectCompileError::Reference("hydration query ordinal overflow".to_owned())
                     })?,
                     entity_guid: *guid,
                     multiplicity: 1,
@@ -919,11 +897,7 @@ async fn certify_sharded_hydration(
                 "payload partition {partition_index} byte count differs from serving root"
             )));
         }
-        let verified = verify_payload_shard(
-            partition_index,
-            &local,
-            &partition.payload_sha256,
-        )?;
+        let verified = verify_payload_shard(partition_index, &local, &partition.payload_sha256)?;
         shards.insert(partition_index, verified);
     }
     let mut query_reports = Vec::with_capacity(cases.len());
@@ -941,11 +915,7 @@ async fn certify_sharded_hydration(
             )?
         };
         let reference_rows = canonical_reference_rows(&case.reference)?;
-        let sharded_rows = canonical_sharded_rows(
-            &sharded,
-            &case.guid_to_iri,
-            &dictionary,
-        )?;
+        let sharded_rows = canonical_sharded_rows(&sharded, &case.guid_to_iri, &dictionary)?;
         if reference_rows != sharded_rows {
             return Err(ObjectCompileError::Reference(format!(
                 "sharded hydration differs from reference query {}",
@@ -976,9 +946,7 @@ async fn certify_sharded_hydration(
     })
 }
 
-fn canonical_reference_rows(
-    rows: &[HydratedPayload],
-) -> Result<Vec<String>, ObjectCompileError> {
+fn canonical_reference_rows(rows: &[HydratedPayload]) -> Result<Vec<String>, ObjectCompileError> {
     let mut canonical = rows
         .iter()
         .map(|row| {
@@ -1017,7 +985,9 @@ fn canonical_sharded_rows(
             ));
         }
         let predicate = dictionary.get(&row.predicate_id).ok_or_else(|| {
-            ObjectCompileError::Reference("payload predicate ID is absent from dictionary".to_owned())
+            ObjectCompileError::Reference(
+                "payload predicate ID is absent from dictionary".to_owned(),
+            )
         })?;
         let graph = dictionary.get(&row.graph_id).ok_or_else(|| {
             ObjectCompileError::Reference("payload graph ID is absent from dictionary".to_owned())
@@ -1103,8 +1073,9 @@ fn validate_artifact_equivalence(
         ObjectCompileError::Reference("snapshot manifest has no parent".to_owned())
     })?;
     let verification_path = snapshot_root.join("certification/verification.json");
-    let verification: serde_json::Value = serde_json::from_slice(&std::fs::read(verification_path)?)
-        .map_err(|error| ObjectCompileError::Reference(error.to_string()))?;
+    let verification: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(verification_path)?)
+            .map_err(|error| ObjectCompileError::Reference(error.to_string()))?;
     let count = |name: &str| {
         verification
             .get(name)
@@ -1178,16 +1149,18 @@ async fn materialize_inputs(
     let mut total_bytes = 0_u64;
     for result in results {
         let (name, destination, bytes) = result?;
-        total_bytes = total_bytes
-            .checked_add(bytes)
-            .ok_or_else(|| ObjectCompileError::Bundle("staged input byte count overflow".to_owned()))?;
+        total_bytes = total_bytes.checked_add(bytes).ok_or_else(|| {
+            ObjectCompileError::Bundle("staged input byte count overflow".to_owned())
+        })?;
         if total_bytes > max_total_bytes {
             return Err(ObjectCompileError::Bundle(format!(
                 "staged inputs exceed operator ceiling {max_total_bytes}"
             )));
         }
         if staged.insert(name.clone(), destination).is_some() {
-            return Err(ObjectCompileError::Bundle(format!("duplicate staged file name {name}")));
+            return Err(ObjectCompileError::Bundle(format!(
+                "duplicate staged file name {name}"
+            )));
         }
     }
     Ok(staged)
@@ -1245,9 +1218,7 @@ fn normalized_segment(value: &str) -> bool {
     bytes
         .next()
         .is_some_and(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
-        && bytes.all(|byte| {
-            byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-')
-        })
+        && bytes.all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-'))
 }
 
 fn local_manifest(
@@ -1258,10 +1229,9 @@ fn local_manifest(
 ) -> Result<ReferenceCompileManifest, ObjectCompileError> {
     let artifact = |input: &ObjectArtifact| -> Result<InputArtifact, ObjectCompileError> {
         Ok(InputArtifact {
-            path: staged
-                .get(&input.file_name)
-                .cloned()
-                .ok_or_else(|| ObjectCompileError::Bundle(format!("missing staged file {}", input.file_name)))?,
+            path: staged.get(&input.file_name).cloned().ok_or_else(|| {
+                ObjectCompileError::Bundle(format!("missing staged file {}", input.file_name))
+            })?,
             sha256: input.sha256.clone(),
         })
     };
@@ -1325,9 +1295,9 @@ async fn upload_snapshot(
     multipart_buffer_bytes: usize,
     multipart_concurrency: usize,
 ) -> Result<(), ObjectCompileError> {
-    let snapshot_root = snapshot_manifest_path
-        .parent()
-        .ok_or_else(|| ObjectCompileError::Reference("snapshot manifest has no parent".to_owned()))?;
+    let snapshot_root = snapshot_manifest_path.parent().ok_or_else(|| {
+        ObjectCompileError::Reference("snapshot manifest has no parent".to_owned())
+    })?;
     let mut paths = BTreeSet::new();
     let uploads = snapshot
         .artifacts
@@ -1398,11 +1368,14 @@ fn validate_snapshot_budget(
             snapshot.artifacts.len()
         )));
     }
-    let total = snapshot.artifacts.iter().try_fold(0_u64, |total, artifact| {
-        total.checked_add(artifact.bytes).ok_or_else(|| {
-            ObjectCompileError::Reference("snapshot artifact byte count overflow".to_owned())
-        })
-    })?;
+    let total = snapshot
+        .artifacts
+        .iter()
+        .try_fold(0_u64, |total, artifact| {
+            total.checked_add(artifact.bytes).ok_or_else(|| {
+                ObjectCompileError::Reference("snapshot artifact byte count overflow".to_owned())
+            })
+        })?;
     if total > max_bytes {
         return Err(ObjectCompileError::Reference(format!(
             "snapshot contains {total} bytes, exceeding operator ceiling {max_bytes}"
@@ -1420,7 +1393,9 @@ fn validate_bundle(
     policy_version: &str,
 ) -> Result<(), ObjectCompileError> {
     if bundle.format_version != 1 {
-        return Err(ObjectCompileError::Bundle("unsupported formatVersion".to_owned()));
+        return Err(ObjectCompileError::Bundle(
+            "unsupported formatVersion".to_owned(),
+        ));
     }
     if bundle.dataset_id != dataset_id || bundle.snapshot_id != snapshot_id {
         return Err(ObjectCompileError::Bundle(
@@ -1451,9 +1426,17 @@ fn validate_bundle(
     Ok(())
 }
 
-async fn write_json_new<T: serde::Serialize>(path: &Path, value: &T) -> Result<(), ObjectCompileError> {
-    let bytes = serde_json::to_vec_pretty(value).map_err(|error| ObjectCompileError::Bundle(error.to_string()))?;
-    let mut file = tokio::fs::OpenOptions::new().create_new(true).write(true).open(path).await?;
+async fn write_json_new<T: serde::Serialize>(
+    path: &Path,
+    value: &T,
+) -> Result<(), ObjectCompileError> {
+    let bytes = serde_json::to_vec_pretty(value)
+        .map_err(|error| ObjectCompileError::Bundle(error.to_string()))?;
+    let mut file = tokio::fs::OpenOptions::new()
+        .create_new(true)
+        .write(true)
+        .open(path)
+        .await?;
     tokio::io::AsyncWriteExt::write_all(&mut file, &bytes).await?;
     file.sync_all().await?;
     Ok(())
@@ -1500,15 +1483,24 @@ fn positive_u64(options: &BTreeMap<String, String>, name: &str) -> Result<u64, O
         .parse::<u64>()
         .ok()
         .filter(|value| *value > 0)
-        .ok_or_else(|| ObjectCompileError::Config(format!("--{name} must be a positive 64-bit integer")))
+        .ok_or_else(|| {
+            ObjectCompileError::Config(format!("--{name} must be a positive 64-bit integer"))
+        })
 }
 
-fn positive_usize(options: &BTreeMap<String, String>, name: &str) -> Result<usize, ObjectCompileError> {
+fn positive_usize(
+    options: &BTreeMap<String, String>,
+    name: &str,
+) -> Result<usize, ObjectCompileError> {
     value(options, name)?
         .parse::<usize>()
         .ok()
         .filter(|value| *value > 0)
-        .ok_or_else(|| ObjectCompileError::Config(format!("--{name} must be a positive platform-sized integer")))
+        .ok_or_else(|| {
+            ObjectCompileError::Config(format!(
+                "--{name} must be a positive platform-sized integer"
+            ))
+        })
 }
 
 fn decode_sha256(value: &str) -> Result<[u8; 32], ObjectCompileError> {
@@ -1517,9 +1509,12 @@ fn decode_sha256(value: &str) -> Result<[u8; 32], ObjectCompileError> {
             .bytes()
             .any(|byte| !byte.is_ascii_hexdigit() || byte.is_ascii_uppercase())
     {
-        return Err(ObjectCompileError::Bundle("invalid lowercase SHA-256".to_owned()));
+        return Err(ObjectCompileError::Bundle(
+            "invalid lowercase SHA-256".to_owned(),
+        ));
     }
-    let bytes = hex::decode(value).map_err(|error| ObjectCompileError::Bundle(error.to_string()))?;
+    let bytes =
+        hex::decode(value).map_err(|error| ObjectCompileError::Bundle(error.to_string()))?;
     let mut output = [0_u8; 32];
     output.copy_from_slice(&bytes);
     Ok(output)

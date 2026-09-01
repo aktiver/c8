@@ -74,6 +74,9 @@ onlineServing:
   fragmentExchangeConcurrency: '16'
   distributedAlgebraEnabled: true
   distributedAlgebraReplicas: '2'
+  # shadow keeps the scalar runtime available only for Phase 3/4/5 differential qualification.
+  # Set required after native-cutover certificates exist for every production query workload.
+  nativeCutoverMode: shadow
   partitionNativePathsEnabled: true
   propertyPathWorkerThreads: '4'
   propertyPathMaxScanRows: '64000000'

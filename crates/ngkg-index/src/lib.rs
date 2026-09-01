@@ -62,13 +62,22 @@ pub fn verify_open(
     policy_hash: [u8; 32],
 ) -> Result<(), IndexOpenError> {
     if header.dataset_id != requested_dataset {
-        return Err(IndexOpenError::DatasetMismatch { requested: requested_dataset, found: header.dataset_id });
+        return Err(IndexOpenError::DatasetMismatch {
+            requested: requested_dataset,
+            found: header.dataset_id,
+        });
     }
     if header.snapshot_id != requested_snapshot {
-        return Err(IndexOpenError::SnapshotMismatch { requested: requested_snapshot, found: header.snapshot_id });
+        return Err(IndexOpenError::SnapshotMismatch {
+            requested: requested_snapshot,
+            found: header.snapshot_id,
+        });
     }
     if header.format_name != "ngkg-index" || header.format_version != 1 {
-        return Err(IndexOpenError::UnsupportedFormat { name: header.format_name.clone(), version: header.format_version });
+        return Err(IndexOpenError::UnsupportedFormat {
+            name: header.format_name.clone(),
+            version: header.format_version,
+        });
     }
     if header.ontology_hash != ontology_hash {
         return Err(IndexOpenError::SemanticDependency("ontology"));
@@ -85,4 +94,3 @@ pub fn verify_open(
     }
     Ok(())
 }
-

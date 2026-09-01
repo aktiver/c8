@@ -21,6 +21,7 @@ ngkg-hydration = { path = "../../crates/ngkg-hydration" }
 ngkg-hpc-runtime = { path = "../../crates/ngkg-hpc-runtime" }
 ngkg-identity = { path = "../../crates/ngkg-identity" }
 ngkg-locator = { path = "../../crates/ngkg-locator" }
+ngkg-native-runtime = { path = "../../crates/ngkg-native-runtime" }
 ngkg-owl-direct = { path = "../../crates/ngkg-owl-direct" }
 ngkg-online-reasoning = { path = "../../crates/ngkg-online-reasoning" }
 ngkg-query-executor = { path = "../../crates/ngkg-query-executor" }

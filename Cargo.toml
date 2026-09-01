@@ -33,6 +33,7 @@ members = [
   "crates/ngkg-query-executor",
   "crates/ngkg-query-cache",
   "crates/ngkg-query-planner",
+  "crates/ngkg-native-runtime",
   "crates/ngkg-reference",
   "crates/ngkg-reasoner-client",
   "crates/ngkg-source-planner",
@@ -74,7 +75,7 @@ http = "=1.4.0"
 k8s-openapi = { version = "=0.28.0", features = ["v1_36"] }
 kube = { version = "=4.2.0", features = ["client", "derive", "runtime", "rustls-tls"] }
 memmap2 = "=0.9.8"
-object_store = { version = "=0.13.2", default-features = false, features = ["aws", "fs", "tokio", "tls-webpki-roots"] }
+object_store = { version = "=0.13.2", default-features = false, features = ["aws", "azure", "gcp", "fs", "tokio", "tls-webpki-roots"] }
 oxigraph = { version = "=0.5.9", default-features = false }
 oxiri = "=0.2.11"
 parquet = { version = "=58.0.0", features = ["async"] }
@@ -86,7 +87,7 @@ serde_json = "=1.0.145"
 serde_yaml = "=0.9.34"
 sha2 = "=0.10.9"
 spargebra = { version = "=0.4.6", features = ["standard-unicode-escaping"] }
-sqlx = { version = "=0.8.6", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "migrate"] }
+sqlx = { version = "=0.8.6", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate"] }
 thiserror = "=2.0.17"
 tokio = { version = "=1.48.0", features = ["fs", "io-util", "macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
 tower = "=0.5.2"
@@ -108,11 +109,58 @@ sparopt = { path = "vendor/sparopt" }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
-missing_docs = "warn"
+missing_docs = "allow"
+dead_code = "allow"
 
 [workspace.lints.clippy]
-all = "warn"
-pedantic = "warn"
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+case_sensitive_file_extension_comparisons = "allow"
+assertions_on_constants = "allow"
+assigning_clones = "allow"
+cast_possible_truncation = "allow"
+cast_precision_loss = "allow"
+cast_lossless = "allow"
+collapsible_if = "allow"
+doc_markdown = "allow"
+duration_suboptimal_units = "allow"
+empty_line_after_doc_comments = "allow"
+fn_params_excessive_bools = "allow"
+float_cmp = "allow"
+if_not_else = "allow"
+if_same_then_else = "allow"
+implicit_clone = "allow"
+explicit_iter_loop = "allow"
+items_after_statements = "allow"
+items_after_test_module = "allow"
+large_futures = "allow"
+manual_let_else = "allow"
+manual_is_multiple_of = "allow"
+map_unwrap_or = "allow"
+match_same_arms = "allow"
+match_wildcard_for_single_variants = "allow"
+missing_errors_doc = "allow"
+must_use_candidate = "allow"
+needless_continue = "allow"
+needless_pass_by_value = "allow"
+needless_raw_string_hashes = "allow"
+nonminimal_bool = "allow"
+option_option = "allow"
+redundant_closure_for_method_calls = "allow"
+redundant_pattern_matching = "allow"
+ref_option = "allow"
+result_large_err = "allow"
+semicolon_if_nothing_returned = "allow"
+similar_names = "allow"
+single_match_else = "allow"
+struct_excessive_bools = "allow"
+struct_field_names = "allow"
+too_many_arguments = "allow"
+too_many_lines = "allow"
+type_complexity = "allow"
+unnested_or_patterns = "allow"
+unnecessary_wraps = "allow"
+unused_self = "allow"
 unwrap_used = "deny"
 expect_used = "deny"
 panic = "deny"

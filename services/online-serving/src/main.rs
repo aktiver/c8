@@ -9,7 +9,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{
         Arc, OnceLock,
-        atomic::{AtomicU64, AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
     },
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
@@ -36,12 +36,12 @@ use ngkg_catalog::{
     FinalizeQueryExecutionLog, OperationRepository, QueryExecutionLogFilter,
     QueryExecutionLogRecord,
 };
+use ngkg_dataset::{restrict_resolved_dataset_to_roles, validate_resolved_dataset};
 use ngkg_direct_reasoner::{
     DirectExactAdapter, DirectExactBindings, DirectExactLimits, DirectExactOntologyBundle,
     prepare_exact_direct_bgp_requests,
 };
 use ngkg_federation::{FederationQueryEvidence, FederationRegistry};
-use ngkg_dataset::{restrict_resolved_dataset_to_roles, validate_resolved_dataset};
 use ngkg_grace_join::{GraceJoinEngine, GraceJoinError, GraceJoinIdentity, GraceJoinSide};
 use ngkg_hpc_runtime::{CapabilityReport, ThreadBudget, capability_report};
 use ngkg_hydration::{
@@ -50,28 +50,32 @@ use ngkg_hydration::{
 };
 use ngkg_identity::{IdentityError, guid_for_canonical_iri};
 use ngkg_locator::{LocatorError, MmapLocatorIndex, ShardLocatorRecord};
-use ngkg_owl_direct::{DirectBgpClassificationLimits, OwlSignatureIndex, classify_direct_bgps};
+use ngkg_native_runtime::{
+    LeafPredicate, LeafScanLimits, LeafScanResult, NativeCutoverMode,
+    scan_verified_parquet_leaf,
+};
 use ngkg_online_reasoning::{
     CoverageState, EntailmentRoute, EntailmentRoutingInput, build_distributed_reasoner_plan,
     complete_distributed_exact_bgp, dispatch_exact_partitions_with_retry, route_entailment,
     substitute_exact_bgp_results,
 };
+use ngkg_owl_direct::{DirectBgpClassificationLimits, OwlSignatureIndex, classify_direct_bgps};
 use ngkg_query_cache::{
     QUERY_CACHE_HEADER_BYTES, QueryCacheError, QueryCacheKey, QueryCacheLookup, QueryResultCache,
 };
 use ngkg_query_executor::{
     ARROW_STREAM_EOS, ARROW_STREAM_MEDIA_TYPE, AdjacencyArtifactIdentity, ExecutionError,
-    FragmentBatchMetadata,
-    FragmentBindingStream, ShuffleJoinMetadata, ShuffleJoinStream, ShuffleJoinStreamHeader,
-    PartitionAdjacencyIndex, PartitionPathBatch, PathEndpoint, PathFrontierKey,
-    PathGraphScope, complete_path_iteration, execute_partition_path_batch,
-    inner_join_sparql_json, lookup_dictionary_id_optional, lookup_dictionary_ids_available,
-    project_sparql_json, shuffle_partition_for_binding, write_checkpoint_atomic,
-    write_fragment_arrow_stream, write_shuffle_join_stream_iter,
+    FragmentBatchMetadata, FragmentBindingStream, PartitionAdjacencyIndex, PartitionPathBatch,
+    PathEndpoint, PathFrontierKey, PathGraphScope, ShuffleJoinMetadata, ShuffleJoinStream,
+    ShuffleJoinStreamHeader, complete_path_iteration, distinct_sparql_json,
+    execute_partition_path_batch, global_slice_sparql_json, inner_join_sparql_json,
+    lookup_dictionary_id_optional, lookup_dictionary_ids_available, minus_sparql_json,
+    project_sparql_json, shuffle_partition_for_binding, union_sparql_json,
+    write_checkpoint_atomic, write_fragment_arrow_stream, write_shuffle_join_stream_iter,
 };
 use ngkg_query_planner::{
-    DistributedAlgebraLimits, DistributedPropertyPathLimits, DistributedPropertyPathPlan,
-    algebra_execution_waves,
+    AlgebraExecutionLane, DistributedAlgebraLimits, DistributedAlgebraOperator,
+    DistributedPropertyPathLimits, DistributedPropertyPathPlan, algebra_execution_waves,
 };
 use ngkg_reference::{
     CERTIFIED_QUERY_RESULT_HASH_VERSION, CertifiedFragmentRuntime, CertifiedQueryExecutionLimits,
@@ -87,11 +91,10 @@ use ngkg_sparql_compiler::{
     CompiledSparqlQuery, QueryForm, SPARQL_ALGEBRA_FORMAT_VERSION, SparqlCompileError,
 };
 use ngkg_types::{
-    DIRECT_BGP_CLASSIFIER_V1, DirectBgpCompleteness, DirectBgpExactness,
-    DirectBgpGraphContext, DirectBgpLegalityReport, DirectBgpOutcome, DirectBgpRdfTerm,
-    DirectBgpResult, DirectBgpScope, DirectBgpSolution, DirectBgpStatus, DirectCertificate,
-    DirectProofManifest,
-    EntailmentRegime, direct_bgp_result_sha256, validate_direct_bgp_legality_report,
+    DIRECT_BGP_CLASSIFIER_V1, DirectBgpCompleteness, DirectBgpExactness, DirectBgpGraphContext,
+    DirectBgpLegalityReport, DirectBgpOutcome, DirectBgpRdfTerm, DirectBgpResult, DirectBgpScope,
+    DirectBgpSolution, DirectBgpStatus, DirectCertificate, DirectProofManifest, EntailmentRegime,
+    direct_bgp_result_sha256, validate_direct_bgp_legality_report,
 };
 use oxigraph::{
     io::{RdfFormat, RdfParser, RdfSerializer},
@@ -104,6 +107,7 @@ use oxigraph::{
 use reqwest::{Client as HttpClient, Response as HttpResponse};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use spargebra::{Query as SparqlQuery, algebra::GraphPattern};
 use sqlx::postgres::PgPoolOptions;
 use thiserror::Error;
 use tokio::io::AsyncWriteExt;
@@ -160,6 +164,7 @@ struct AppState {
     fragment_exchange_concurrency: usize,
     distributed_algebra_enabled: bool,
     distributed_algebra_replicas: usize,
+    native_cutover_mode: NativeCutoverMode,
     shuffle_partition_count: u32,
     max_shuffle_request_bytes: usize,
     shuffle_request_spool: Option<Arc<StreamingRequestSpool>>,
@@ -476,6 +481,10 @@ struct SemanticState {
 struct SemanticPartitionFiles {
     semantic_root_sha256: String,
     partition_manifest_sha256: String,
+    facts_path: PathBuf,
+    facts_sha256: String,
+    facts_bytes: u64,
+    facts_rows: u64,
     forward: AdjacencyArtifactIdentity,
     reverse: AdjacencyArtifactIdentity,
     dictionary_path: PathBuf,
@@ -1168,11 +1177,13 @@ impl AdmissionController {
         for (name, value) in [
             (
                 "ngkg_property_path_pending_work_items",
-                self.property_path_pending_work_items.load(Ordering::Relaxed),
+                self.property_path_pending_work_items
+                    .load(Ordering::Relaxed),
             ),
             (
                 "ngkg_property_path_active_frontier_items",
-                self.property_path_active_frontier_items.load(Ordering::Relaxed),
+                self.property_path_active_frontier_items
+                    .load(Ordering::Relaxed),
             ),
             (
                 "ngkg_property_path_checkpoint_bytes",
@@ -1505,7 +1516,7 @@ impl FragmentResponseLease {
         }
         let mut file = File::open(&self.path)?;
         let mut hasher = Sha256::new();
-        let mut buffer = [0_u8; 1024 * 1024];
+        let mut buffer = vec![0_u8; 1024 * 1024].into_boxed_slice();
         loop {
             let read = file.read(&mut buffer)?;
             if read == 0 {
@@ -2525,6 +2536,31 @@ struct QueryRequest {
     named_graph_uris: Vec<String>,
 }
 
+/// Internal, authenticated native leaf-scan request. Dictionary IDs are resolved by the
+/// coordinator from the same checksum-bound semantic dictionary used by this worker.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+struct NativeLeafScanRequest {
+    snapshot_id: Uuid,
+    manifest_sha256: String,
+    semantic_root_sha256: String,
+    active_dataset: ResolvedDataset,
+    predicate: LeafPredicate,
+    limits: LeafScanLimits,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct NativeLeafScanResponse {
+    dataset_id: Uuid,
+    snapshot_id: Uuid,
+    query_sha256: String,
+    partition: u32,
+    partition_manifest_sha256: String,
+    worker_id: String,
+    result: LeafScanResult,
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct DirectBgpValidationRequest {
@@ -2772,11 +2808,18 @@ struct QueryLogUser {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct QueryLogResources {
-    nodes_activated: Option<i32>,
-    cores_activated: Option<i64>,
-    cpu_millicores: Option<i64>,
-    ram_bytes: Option<i64>,
-    ram_gib: Option<i64>,
+    participating_pods: Vec<String>,
+    participating_nodes: Vec<String>,
+    requested_cpu_millicores: Option<i64>,
+    requested_ram_bytes: Option<i64>,
+    allocated_cpu_millicores: Option<i64>,
+    allocated_ram_bytes: Option<i64>,
+    measured_cpu_time_ms: Option<i64>,
+    measured_peak_rss_bytes: Option<i64>,
+    measured_gpu_time_ms: Option<i64>,
+    measured_gpu_peak_memory_bytes: Option<i64>,
+    measurement_scope: String,
+    autoscaling_events: serde_json::Value,
 }
 
 #[derive(Debug, Serialize)]
@@ -3052,6 +3095,8 @@ enum OnlineError {
     ActiveDatasetNotCertified,
     #[error("the active serving snapshot conflicts with the request: {0}")]
     SnapshotConflict(String),
+    #[error("native distributed execution is unavailable: {0}")]
+    NativeCutoverUnavailable(String),
     #[error("catalog access failed: {0}")]
     Catalog(#[from] CatalogError),
     #[error("object storage failed: {0}")]
@@ -3104,6 +3149,7 @@ impl OnlineError {
             Self::NotAcceptable => "SPARQL_RESULT_FORMAT_NOT_ACCEPTABLE",
             Self::ActiveDatasetNotCertified => "ACTIVE_DATASET_NOT_CERTIFIED",
             Self::SnapshotConflict(_) => "SNAPSHOT_CONFLICT",
+            Self::NativeCutoverUnavailable(_) => "NATIVE_CUTOVER_UNAVAILABLE",
             Self::Reference(ReferenceRuntimeError::UncertifiedQuery) => "UNCERTIFIED_QUERY",
             Self::GatewayTimeout(_) => "UPSTREAM_TIMEOUT",
             _ => "SERVING_DEPENDENCY_FAILED",
@@ -3180,6 +3226,11 @@ impl IntoResponse for OnlineError {
             Self::SnapshotConflict(message) => (
                 StatusCode::CONFLICT,
                 "SNAPSHOT_CONFLICT",
+                message.clone(),
+            ),
+            Self::NativeCutoverUnavailable(message) => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "NATIVE_CUTOVER_UNAVAILABLE",
                 message.clone(),
             ),
             Self::Catalog(CatalogError::NotFound) => {
@@ -3474,6 +3525,7 @@ async fn async_main(
         Duration::from_millis(admission_wait_milliseconds),
     ));
     let query_logs = load_query_log_config(role)?;
+    let max_request_bytes = positive_usize("NGKG_MAX_REQUEST_BYTES")?;
     let state = AppState {
         role,
         authorizer,
@@ -3489,7 +3541,10 @@ async fn async_main(
                 online_direct
                     .as_ref()
                     .map_or(Duration::from_secs(1), |config| {
-                        config.limits.reasoner_timeout.saturating_add(Duration::from_secs(10))
+                        config
+                            .limits
+                            .reasoner_timeout
+                            .saturating_add(Duration::from_secs(10))
                     }),
             )
             .build()?,
@@ -3519,6 +3574,7 @@ async fn async_main(
         fragment_exchange_concurrency: positive_usize("NGKG_FRAGMENT_EXCHANGE_CONCURRENCY")?,
         distributed_algebra_enabled: required_bool("NGKG_DISTRIBUTED_ALGEBRA_ENABLED")?,
         distributed_algebra_replicas: positive_usize("NGKG_DISTRIBUTED_ALGEBRA_REPLICAS")?,
+        native_cutover_mode: required("NGKG_NATIVE_CUTOVER_MODE")?.parse()?,
         shuffle_partition_count: positive_u32("NGKG_SHUFFLE_PARTITIONS")?,
         max_shuffle_request_bytes: positive_usize("NGKG_MAX_SHUFFLE_REQUEST_BYTES")?,
         shuffle_request_spool,
@@ -3529,19 +3585,13 @@ async fn async_main(
         max_shuffle_spill_bytes: positive_u64("NGKG_MAX_SHUFFLE_SPILL_BYTES")?,
         max_shuffle_open_files: positive_usize("NGKG_MAX_SHUFFLE_OPEN_FILES")?,
         property_path_max_iterations: positive_u32("NGKG_PROPERTY_PATH_MAX_ITERATIONS")?,
-        property_path_max_frontier_items: positive_u64(
-            "NGKG_PROPERTY_PATH_MAX_FRONTIER_ITEMS",
-        )?,
-        property_path_max_visited_items: positive_u64(
-            "NGKG_PROPERTY_PATH_MAX_VISITED_ITEMS",
-        )?,
+        property_path_max_frontier_items: positive_u64("NGKG_PROPERTY_PATH_MAX_FRONTIER_ITEMS")?,
+        property_path_max_visited_items: positive_u64("NGKG_PROPERTY_PATH_MAX_VISITED_ITEMS")?,
         property_path_max_checkpoint_bytes: positive_u64(
             "NGKG_PROPERTY_PATH_MAX_CHECKPOINT_BYTES",
         )?,
         property_path_max_spill_bytes: positive_u64("NGKG_PROPERTY_PATH_MAX_SPILL_BYTES")?,
-        property_path_hot_vertex_degree: positive_u64(
-            "NGKG_PROPERTY_PATH_HOT_VERTEX_DEGREE",
-        )?,
+        property_path_hot_vertex_degree: positive_u64("NGKG_PROPERTY_PATH_HOT_VERTEX_DEGREE")?,
         property_path_max_hot_vertex_splits: positive_u32(
             "NGKG_PROPERTY_PATH_MAX_HOT_VERTEX_SPLITS",
         )?,
@@ -3594,6 +3644,13 @@ async fn async_main(
     }
     if state.distributed_algebra_enabled && state.distributed_algebra_replicas < 2 {
         anyhow::bail!("distributed algebra requires at least two scalar-oracle replicas");
+    }
+    if state.native_cutover_mode.requires_native()
+        && (!state.distributed_algebra_enabled || !state.partition_native_paths_enabled)
+    {
+        anyhow::bail!(
+            "required native cutover needs distributed algebra and partition-native paths"
+        );
     }
     if state.distributed_algebra_replicas > state.max_distributed_fragments
         || state.distributed_algebra_replicas > state.fragment_exchange_concurrency
@@ -3721,7 +3778,6 @@ async fn async_main(
     {
         anyhow::bail!("two shuffle spill files per partition must fit the open-file ceiling");
     }
-    let max_request_bytes = positive_usize("NGKG_MAX_REQUEST_BYTES")?;
     if state.max_shuffle_request_bytes > max_request_bytes {
         anyhow::bail!("NGKG_MAX_SHUFFLE_REQUEST_BYTES cannot exceed NGKG_MAX_REQUEST_BYTES");
     }
@@ -3804,6 +3860,10 @@ fn role_router(role: Role) -> Router<AppState> {
             .route(
                 "/v1/datasets/{dataset_id}/paths/{query_sha256}/{path_id}/{iteration}/{partition}/expand",
                 post(execute_partition_path),
+            )
+            .route(
+                "/v1/datasets/{dataset_id}/native/leaves/{query_sha256}/{partition}/scan",
+                post(execute_native_leaf_scan),
             ),
         Role::Locator => Router::new().route("/v1/datasets/{dataset_id}/locate", post(locate)),
         Role::Hydration => Router::new().route("/v1/datasets/{dataset_id}/hydrate", post(hydrate)),
@@ -3850,6 +3910,7 @@ fn role_exposes_openapi_path(role: Role, path: &str) -> bool {
                 | "/v1/datasets/{datasetId}/shuffles/{querySha256}/{stage}/{partition}/join"
                 | "/v1/datasets/{datasetId}/algebra/{querySha256}/{replica}/execute"
                 | "/v1/datasets/{datasetId}/paths/{querySha256}/{pathId}/{iteration}/{partition}/expand"
+                | "/v1/datasets/{datasetId}/native/leaves/{querySha256}/{partition}/scan"
         ),
         Role::Locator => path == "/v1/datasets/{datasetId}/locate",
         Role::Hydration => path == "/v1/datasets/{datasetId}/hydrate",
@@ -3999,8 +4060,18 @@ async fn metrics(State(state): State<AppState>) -> impl IntoResponse {
     );
     if let Some(registry) = &state.federation {
         let snapshot = registry.metrics().snapshot();
-        push_metric(&mut body, "ngkg_federation_pending_calls", "", snapshot.pending);
-        push_metric(&mut body, "ngkg_federation_active_calls", "", snapshot.active);
+        push_metric(
+            &mut body,
+            "ngkg_federation_pending_calls",
+            "",
+            snapshot.pending,
+        );
+        push_metric(
+            &mut body,
+            "ngkg_federation_active_calls",
+            "",
+            snapshot.active,
+        );
         push_metric(
             &mut body,
             "ngkg_federation_completed_calls_total",
@@ -4129,6 +4200,20 @@ async fn execute_sparql_protocol(
     request: SparqlProtocolRequest,
 ) -> Result<Response, OnlineError> {
     require_protocol_query_size(&request.query, state.max_query_bytes)?;
+    // Negotiate before admission, durable logging, cache lookup, federation, or
+    // distributed execution. A representation the client refuses must consume
+    // no semantic-query capacity and must never appear as a completed query.
+    let protocol_query = compile_certified_query(&request.query)?;
+    let protocol_form = protocol_query.form();
+    let protocol_ordered = protocol_query.solution_order_is_significant();
+    match protocol_form {
+        QueryForm::Select | QueryForm::Ask => {
+            select_sparql_solution_format(&headers)?;
+        }
+        QueryForm::Construct | QueryForm::Describe => {
+            select_sparql_graph_format(&headers)?;
+        }
+    }
     let maximum = state.max_query_response_bytes;
     let response_headers = headers.clone();
     let custom = query(
@@ -4207,14 +4292,27 @@ async fn execute_sparql_protocol(
             )
         }
     };
+    let semantic_result_sha256 = canonical_query_payload_sha256(
+        certified.query_form,
+        &certified.head,
+        &certified.bindings,
+        certified.boolean_result,
+        &certified.graph_ntriples,
+        protocol_ordered,
+        CertifiedQueryExecutionLimits {
+            max_solution_rows: state.max_query_result_rows,
+            max_graph_triples: state.max_query_graph_triples,
+            max_graph_blank_nodes: state.max_query_graph_blank_nodes,
+        },
+    )
+    .map_err(ReferenceRuntimeError::Query)?;
     let mut response = ([(CONTENT_TYPE, content_type)], output).into_response();
     response
         .headers_mut()
         .insert("x-ngkg-query-cache", cache_header);
-    response.headers_mut().insert(
-        "x-ngkg-query-execution-id",
-        query_execution_header,
-    );
+    response
+        .headers_mut()
+        .insert("x-ngkg-query-execution-id", query_execution_header);
     response.headers_mut().insert(
         "x-ngkg-snapshot-id",
         header_value(&certified.snapshot_id.to_string())?,
@@ -4222,6 +4320,14 @@ async fn execute_sparql_protocol(
     response.headers_mut().insert(
         "x-ngkg-query-sha256",
         header_value(&certified.query_sha256)?,
+    );
+    response.headers_mut().insert(
+        "x-ngkg-semantic-result-sha256",
+        header_value(&semantic_result_sha256)?,
+    );
+    response.headers_mut().insert(
+        "x-ngkg-native-cutover-mode",
+        HeaderValue::from_static(state.native_cutover_mode.as_str()),
     );
     response
         .headers_mut()
@@ -4965,13 +5071,8 @@ async fn route_direct_bgps(
     headers: HeaderMap,
     Json(request): Json<DirectBgpValidationRequest>,
 ) -> Result<Json<DirectEntailmentRoutingResponse>, OnlineError> {
-    let Json(legality) = validate_direct_bgps(
-        State(state),
-        AxumPath(dataset_id),
-        headers,
-        Json(request),
-    )
-    .await?;
+    let Json(legality) =
+        validate_direct_bgps(State(state), AxumPath(dataset_id), headers, Json(request)).await?;
     let routes = legality
         .bgps
         .iter()
@@ -5061,7 +5162,11 @@ fn query_resource_envelope(
                 .ok_or_else(|| OnlineError::Request("query RAM accounting overflow".to_owned()))?,
         )
         .and_then(|value| {
-            value.checked_add(config.hydration_memory_bytes.checked_mul(hydration_workers)?)
+            value.checked_add(
+                config
+                    .hydration_memory_bytes
+                    .checked_mul(hydration_workers)?,
+            )
         })
         .ok_or_else(|| OnlineError::Request("query RAM accounting overflow".to_owned()))?;
     Ok((
@@ -5074,14 +5179,73 @@ fn query_resource_envelope(
     ))
 }
 
+#[derive(Clone, Copy, Debug, Default)]
+struct CgroupResourceSample {
+    cpu_usage_micros: Option<u64>,
+    memory_peak_bytes: Option<u64>,
+}
+
+async fn cgroup_resource_sample() -> CgroupResourceSample {
+    tokio::task::spawn_blocking(|| {
+        let cpu_usage_micros = fs::read_to_string("/sys/fs/cgroup/cpu.stat")
+            .ok()
+            .and_then(|value| {
+                value.lines().find_map(|line| {
+                    let (name, value) = line.split_once(' ')?;
+                    (name == "usage_usec").then(|| value.parse::<u64>().ok()).flatten()
+                })
+            });
+        let memory_peak_bytes = fs::read_to_string("/sys/fs/cgroup/memory.peak")
+            .ok()
+            .and_then(|value| value.trim().parse::<u64>().ok());
+        CgroupResourceSample {
+            cpu_usage_micros,
+            memory_peak_bytes,
+        }
+    })
+    .await
+    .unwrap_or_default()
+}
+
+fn measured_resource_fields(
+    start: CgroupResourceSample,
+    end: CgroupResourceSample,
+) -> (Option<i64>, Option<i64>, String) {
+    let cpu_ms = start
+        .cpu_usage_micros
+        .zip(end.cpu_usage_micros)
+        .and_then(|(start, end)| i64::try_from(end.saturating_sub(start) / 1_000).ok());
+    let peak_rss = end
+        .memory_peak_bytes
+        .and_then(|value| i64::try_from(value).ok());
+    let scope = if cpu_ms.is_some() || peak_rss.is_some() {
+        "COORDINATOR_CGROUP_INTERVAL"
+    } else {
+        "UNAVAILABLE"
+    };
+    (cpu_ms, peak_rss, scope.to_owned())
+}
+
+fn kubernetes_resource_identities() -> (Vec<String>, Vec<String>) {
+    let pods = env::var("NGKG_POD_UID")
+        .ok()
+        .filter(|value| !value.is_empty())
+        .into_iter()
+        .collect();
+    let nodes = env::var("NGKG_NODE_UID")
+        .ok()
+        .filter(|value| !value.is_empty())
+        .into_iter()
+        .collect();
+    (pods, nodes)
+}
+
 fn human_duration(duration_ms: i64) -> String {
     let total_seconds = duration_ms.max(0) / 1000;
     format!("{}min {}s", total_seconds / 60, total_seconds % 60)
 }
 
 fn query_log_view(record: QueryExecutionLogRecord, identity: &Identity) -> QueryLogView {
-    let cpu_millicores = record.allocated_cpu_millis;
-    let ram_bytes = record.allocated_memory_bytes;
     let total_time = record.total_duration_ms.map(human_duration);
     QueryLogView {
         query_execution_id: record.query_execution_id,
@@ -5100,11 +5264,18 @@ fn query_log_view(record: QueryExecutionLogRecord, identity: &Identity) -> Query
         execution_mode: record.execution_mode,
         status: record.status,
         resources: QueryLogResources {
-            nodes_activated: record.participating_nodes,
-            cores_activated: cpu_millicores.map(|value| value / 1000),
-            cpu_millicores,
-            ram_bytes,
-            ram_gib: ram_bytes.map(|value| value / 1_073_741_824),
+            participating_pods: record.participating_pod_uids,
+            participating_nodes: record.participating_node_uids,
+            requested_cpu_millicores: record.requested_cpu_millis,
+            requested_ram_bytes: record.requested_memory_bytes,
+            allocated_cpu_millicores: record.allocated_cpu_millis,
+            allocated_ram_bytes: record.allocated_memory_bytes,
+            measured_cpu_time_ms: record.measured_cpu_time_millis,
+            measured_peak_rss_bytes: record.measured_peak_rss_bytes,
+            measured_gpu_time_ms: record.measured_gpu_time_millis,
+            measured_gpu_peak_memory_bytes: record.measured_gpu_peak_memory_bytes,
+            measurement_scope: record.measurement_scope,
+            autoscaling_events: record.autoscaling_events,
         },
         timing: QueryLogTiming {
             start_time_epoch: record.start_time_epoch_ms / 1000,
@@ -5138,8 +5309,12 @@ async fn list_query_logs(
         .user_id
         .as_ref()
         .is_some_and(|value| value.is_empty() || value.len() > 256)
-        || parameters.started_after_epoch_ms.is_some_and(|value| value < 0)
-        || parameters.started_before_epoch_ms.is_some_and(|value| value < 0)
+        || parameters
+            .started_after_epoch_ms
+            .is_some_and(|value| value < 0)
+        || parameters
+            .started_before_epoch_ms
+            .is_some_and(|value| value < 0)
         || parameters.min_duration_ms.is_some_and(|value| value < 0)
     {
         return Err(OnlineError::Request(
@@ -5240,6 +5415,7 @@ async fn query(
     }
     let query_execution_id = Uuid::new_v4();
     let start_time_epoch_ms = epoch_milliseconds()?;
+    let resource_start = cgroup_resource_sample().await;
     let request_id = request_id(&headers);
     let query_sha256: [u8; 32] = Sha256::digest(request.query.as_bytes()).into();
     state
@@ -5287,6 +5463,11 @@ async fn query(
                 })?;
             let completed: QueryResponse = serde_json::from_slice(&bytes)?;
             let end_time_epoch_ms = epoch_milliseconds()?;
+            let resource_end = cgroup_resource_sample().await;
+            let (measured_cpu_time_millis, measured_peak_rss_bytes, measurement_scope) =
+                measured_resource_fields(resource_start, resource_end);
+            let (participating_pod_uids, participating_node_uids) =
+                kubernetes_resource_identities();
             let (nodes, cpu_millis, memory_bytes) =
                 query_resource_envelope(&state.query_logs, &completed, cache_hit)?;
             let result_rows = match completed.query_form {
@@ -5308,6 +5489,16 @@ async fn query(
                         participating_nodes: Some(nodes),
                         allocated_cpu_millis: Some(cpu_millis),
                         allocated_memory_bytes: Some(memory_bytes),
+                        requested_cpu_millis: Some(cpu_millis),
+                        requested_memory_bytes: Some(memory_bytes),
+                        measured_cpu_time_millis,
+                        measured_peak_rss_bytes,
+                        measured_gpu_time_millis: None,
+                        measured_gpu_peak_memory_bytes: None,
+                        participating_pod_uids,
+                        participating_node_uids,
+                        autoscaling_events: json!([]),
+                        measurement_scope,
                         result_rows: Some(i64::try_from(result_rows).map_err(|_| {
                             OnlineError::SnapshotConflict(
                                 "query result row count exceeds the audit ledger".to_owned(),
@@ -5334,6 +5525,11 @@ async fn query(
         }
         Err(error) => {
             let end_time_epoch_ms = epoch_milliseconds()?;
+            let resource_end = cgroup_resource_sample().await;
+            let (measured_cpu_time_millis, measured_peak_rss_bytes, measurement_scope) =
+                measured_resource_fields(resource_start, resource_end);
+            let (participating_pod_uids, participating_node_uids) =
+                kubernetes_resource_identities();
             let status = if matches!(&error, OnlineError::GatewayTimeout(_)) {
                 "TIMED_OUT"
             } else {
@@ -5352,14 +5548,34 @@ async fn query(
                         execution_mode: None,
                         status: status.to_owned(),
                         participating_nodes: Some(1),
-                        allocated_cpu_millis: Some(i64::try_from(
-                            state.query_logs.coordinator_cpu_millis,
-                        )
-                        .map_err(|_| OnlineError::Request("CPU audit value overflow".to_owned()))?),
-                        allocated_memory_bytes: Some(i64::try_from(
-                            state.query_logs.coordinator_memory_bytes,
-                        )
-                        .map_err(|_| OnlineError::Request("RAM audit value overflow".to_owned()))?),
+                        allocated_cpu_millis: Some(
+                            i64::try_from(state.query_logs.coordinator_cpu_millis).map_err(
+                                |_| OnlineError::Request("CPU audit value overflow".to_owned()),
+                            )?,
+                        ),
+                        allocated_memory_bytes: Some(
+                            i64::try_from(state.query_logs.coordinator_memory_bytes).map_err(
+                                |_| OnlineError::Request("RAM audit value overflow".to_owned()),
+                            )?,
+                        ),
+                        requested_cpu_millis: Some(
+                            i64::try_from(state.query_logs.coordinator_cpu_millis).map_err(
+                                |_| OnlineError::Request("CPU audit value overflow".to_owned()),
+                            )?,
+                        ),
+                        requested_memory_bytes: Some(
+                            i64::try_from(state.query_logs.coordinator_memory_bytes).map_err(
+                                |_| OnlineError::Request("RAM audit value overflow".to_owned()),
+                            )?,
+                        ),
+                        measured_cpu_time_millis,
+                        measured_peak_rss_bytes,
+                        measured_gpu_time_millis: None,
+                        measured_gpu_peak_memory_bytes: None,
+                        participating_pod_uids,
+                        participating_node_uids,
+                        autoscaling_events: json!([]),
+                        measurement_scope,
                         result_rows: None,
                         result_bytes: None,
                         cache_hit: None,
@@ -5462,6 +5678,7 @@ async fn query_inner(
         max_graph_triples: state.max_query_graph_triples,
         max_graph_blank_nodes: state.max_query_graph_blank_nodes,
     };
+    require_native_cutover_admission(&state, &compiled_query, certificate.as_ref())?;
     if state.online_direct.is_some() {
         return execute_online_direct_query(
             state.clone(),
@@ -5491,6 +5708,7 @@ async fn query_inner(
             preauthorized_graphs,
             hydrate,
             deployment_limits,
+            None,
             None,
             None,
         )
@@ -5769,7 +5987,9 @@ async fn query_inner(
         let token = bearer(&headers)?;
         let hydration_request = HydrationRequest {
             snapshot_id: semantic.active.snapshot.snapshot_id,
-            serving_root_sha256: required_serving_root(&semantic.active)?.serving_root_sha256.clone(),
+            serving_root_sha256: required_serving_root(&semantic.active)?
+                .serving_root_sha256
+                .clone(),
             entities: qualified_entities.clone(),
         };
         let base = state
@@ -5794,7 +6014,8 @@ async fn query_inner(
         let hydrated = serde_json::from_slice::<HydrationResponse>(&bytes)?;
         if hydrated.dataset_id != dataset_id
             || hydrated.snapshot_id != semantic.active.snapshot.snapshot_id
-            || hydrated.serving_root_sha256 != required_serving_root(&semantic.active)?.serving_root_sha256
+            || hydrated.serving_root_sha256
+                != required_serving_root(&semantic.active)?.serving_root_sha256
         {
             return Err(OnlineError::Upstream(
                 "hydration response identity differs from the semantic request".to_owned(),
@@ -5918,9 +6139,9 @@ async fn execute_online_direct_query(
             max_output_rows: u64::try_from(state.max_distributed_intermediate_rows).map_err(
                 |_| OnlineError::Request("algebra output row ceiling overflow".to_owned()),
             )?,
-            max_exchange_bytes: u64::try_from(state.max_shuffle_exchange_bytes).map_err(
-                |_| OnlineError::Request("algebra exchange ceiling overflow".to_owned()),
-            )?,
+            max_exchange_bytes: u64::try_from(state.max_shuffle_exchange_bytes).map_err(|_| {
+                OnlineError::Request("algebra exchange ceiling overflow".to_owned())
+            })?,
             max_spill_bytes: state.max_shuffle_spill_bytes,
         })
         .map_err(|error| OnlineError::Request(error.to_string()))?;
@@ -5991,11 +6212,7 @@ async fn execute_online_direct_query(
     let classification = tokio::time::timeout(
         state.query_timeout,
         tokio::task::spawn_blocking(move || {
-            classify_direct_bgps(
-                &classify_query,
-                signature.as_ref(),
-                classification_limits,
-            )
+            classify_direct_bgps(&classify_query, signature.as_ref(), classification_limits)
         }),
     )
     .await
@@ -6090,9 +6307,7 @@ async fn execute_online_direct_query(
                 let mut scoped = Vec::new();
                 for graph_id in &direct_dataset.named_graph_ids {
                     let graph = semantic.graph_catalog.by_id(*graph_id).ok_or_else(|| {
-                        OnlineError::SnapshotConflict(
-                            "named Direct graph ID is absent".to_owned(),
-                        )
+                        OnlineError::SnapshotConflict("named Direct graph ID is absent".to_owned())
                     })?;
                     let LogicalGraphName::Named { iri } = &graph.name else {
                         return Err(OnlineError::SnapshotConflict(
@@ -6133,9 +6348,8 @@ async fn execute_online_direct_query(
     .map_err(|error| OnlineError::SnapshotConflict(error.to_string()))?;
     let evidence = ExactEntailmentEvidence {
         regime: EntailmentRegime::Owl2Direct,
-        bgp_count: u64::try_from(exact_relations.len()).map_err(|_| {
-            OnlineError::SnapshotConflict("Direct BGP count overflow".to_owned())
-        })?,
+        bgp_count: u64::try_from(exact_relations.len())
+            .map_err(|_| OnlineError::SnapshotConflict("Direct BGP count overflow".to_owned()))?,
         result_sha256s: evidence_executions
             .iter()
             .map(|execution| {
@@ -6159,13 +6373,12 @@ async fn execute_online_direct_query(
             .iter()
             .map(|execution| execution.proof_manifest.clone())
             .collect(),
-        distributed_algebra_plan_sha256: algebra_plan_sha256,
+        distributed_algebra_plan_sha256: algebra_plan_sha256.clone(),
         distributed_algebra_stage_count: algebra_stage_count,
         distributed_algebra_wave_count: algebra_wave_count,
         distributed_algebra_work_item_count: algebra_work_item_count,
         distributed_algebra_partition_count: state.shuffle_partition_count,
-        distributed_algebra_scalar_equivalence_required: algebra_plan
-            .require_scalar_equivalence,
+        distributed_algebra_scalar_equivalence_required: algebra_plan.require_scalar_equivalence,
         distributed_property_path_plan_sha256: property_path_plan_sha256,
         distributed_property_path_count: property_path_count,
         distributed_property_path_automaton_sha256s: property_path_automaton_sha256s,
@@ -6174,6 +6387,19 @@ async fn execute_online_direct_query(
             .iter()
             .all(|plan| plan.require_scalar_equivalence),
         complete: true,
+    };
+    let native_precomputed = if state.native_cutover_mode.requires_native() {
+        Some(finalize_native_exact_select(
+            &compiled_query,
+            &exact_relations,
+            &semantic,
+            &query_sha256,
+            deployment_limits,
+            &algebra_plan_sha256,
+            config.worker_base_urls.len(),
+        )?)
+    } else {
+        None
     };
     execute_uncertified_exact_query(
         state,
@@ -6189,8 +6415,260 @@ async fn execute_online_direct_query(
         deployment_limits,
         Some(rewritten),
         Some(evidence),
+        native_precomputed,
     )
     .await
+}
+
+/// Finalize an exact-HermiT SELECT with only standards-safe native bag operators. The routine
+/// consumes the same ordered BGP result vector used by the typed rewrite, expands multiplicities
+/// under the query ceiling, and never opens an Oxigraph store. Unsupported algebra fails closed.
+fn finalize_native_exact_select(
+    compiled: &CompiledSparqlQuery,
+    relations: &[DirectBgpResult],
+    semantic: &SemanticState,
+    query_sha256: &str,
+    limits: CertifiedQueryExecutionLimits,
+    plan_sha256: &str,
+    reasoner_worker_count: usize,
+) -> Result<(CertifiedSemanticResult, ExecutionResponse), OnlineError> {
+    let SparqlQuery::Select { pattern, .. } = compiled.query() else {
+        return Err(OnlineError::NativeCutoverUnavailable(
+            "native exact finalization currently requires SELECT algebra".to_owned(),
+        ));
+    };
+    let mut cursor = 0_usize;
+    let (head, bindings) = evaluate_native_exact_pattern(
+        pattern,
+        relations,
+        &mut cursor,
+        limits.max_solution_rows,
+    )?;
+    if cursor != relations.len() {
+        return Err(OnlineError::SnapshotConflict(
+            "native exact finalizer did not consume the complete BGP relation set".to_owned(),
+        ));
+    }
+    let qualified_entity_iris = bindings
+        .iter()
+        .filter_map(serde_json::Value::as_object)
+        .flat_map(|binding| binding.values())
+        .filter_map(|term| {
+            let object = term.as_object()?;
+            (object.get("type")?.as_str()? == "uri")
+                .then(|| object.get("value")?.as_str().map(ToOwned::to_owned))
+                .flatten()
+        })
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    let result = CertifiedSemanticResult {
+        dataset_id: semantic.active.snapshot.dataset_id,
+        snapshot_id: semantic.active.snapshot.snapshot_id,
+        query_sha256: query_sha256.to_owned(),
+        query_form: QueryForm::Select,
+        head,
+        bindings,
+        boolean_result: None,
+        graph_ntriples: Vec::new(),
+        qualified_entity_iris,
+        coverage_scope: "authorized active */semkg dataset; exact OWL 2 Direct BGPs; native Rust multiset algebra".to_owned(),
+    };
+    let fragment_count = u32::try_from(relations.len()).map_err(|_| {
+        OnlineError::NativeCutoverUnavailable("exact BGP count exceeds u32".to_owned())
+    })?;
+    let worker_count = u32::try_from(reasoner_worker_count).map_err(|_| {
+        OnlineError::NativeCutoverUnavailable("reasoner worker count exceeds u32".to_owned())
+    })?;
+    let binding_count = u64::try_from(result.bindings.len()).map_err(|_| {
+        OnlineError::NativeCutoverUnavailable("native result row count overflow".to_owned())
+    })?;
+    Ok((
+        result,
+        ExecutionResponse {
+            mode: "native_distributed_exact_bgp_algebra_v1".to_owned(),
+            exchange_format: "checksum_bound_direct_bgp_relations_v1".to_owned(),
+            fragment_ingress_mode: "exact_reasoner_partition_barrier_v1".to_owned(),
+            fragment_ingress_bytes: 0,
+            fragment_materialization_mode: "native_rust_binding_multiset_v1".to_owned(),
+            fragment_owned_rows: binding_count,
+            shuffle_result_ingress_mode: "none".to_owned(),
+            shuffle_result_ingress_bytes: 0,
+            intermediate_result_mode: "bounded_complete_relations_v1".to_owned(),
+            assembled_intermediate_owned_rows: binding_count,
+            fragment_count,
+            worker_count,
+            shuffle_partition_count: 0,
+            shuffle_worker_count: 0,
+            shuffle_spill_mode: "bounded_native_operator_v1".to_owned(),
+            shuffle_spill_bytes: 0,
+            shuffle_cache_mode: "none".to_owned(),
+            shuffle_cache_hits: 0,
+            worker_join_mode: "native_rust_exact_bag_v1".to_owned(),
+            worker_join_spill_bytes: 0,
+            worker_join_grace_partitions: 0,
+            worker_join_max_build_rows: 0,
+            worker_input_mode: "proof_verified_exact_relations_v1".to_owned(),
+            worker_input_bytes: 0,
+            coordinator_request_mode: "native_cutover_required_v1".to_owned(),
+            coordinator_request_bytes: 0,
+            plan_sha256: Some(plan_sha256.to_owned()),
+        },
+    ))
+}
+
+fn evaluate_native_exact_pattern(
+    pattern: &GraphPattern,
+    relations: &[DirectBgpResult],
+    cursor: &mut usize,
+    max_rows: usize,
+) -> Result<(Vec<String>, Vec<serde_json::Value>), OnlineError> {
+    match pattern {
+        GraphPattern::Bgp { .. } => {
+            let relation = relations.get(*cursor).ok_or_else(|| {
+                OnlineError::SnapshotConflict(
+                    "native exact algebra has no result for a BGP leaf".to_owned(),
+                )
+            })?;
+            *cursor = cursor.checked_add(1).ok_or_else(|| {
+                OnlineError::NativeCutoverUnavailable("BGP cursor overflow".to_owned())
+            })?;
+            direct_result_bindings(relation, max_rows)
+        }
+        GraphPattern::Join { left, right } => {
+            let (left_head, left_rows) =
+                evaluate_native_exact_pattern(left, relations, cursor, max_rows)?;
+            let (right_head, right_rows) =
+                evaluate_native_exact_pattern(right, relations, cursor, max_rows)?;
+            Ok((
+                union_binding_heads(&left_head, &right_head),
+                inner_join_sparql_json(&left_rows, &right_rows, max_rows)
+                    .map_err(distributed_execution_error)?,
+            ))
+        }
+        GraphPattern::Union { left, right } => {
+            let (left_head, left_rows) =
+                evaluate_native_exact_pattern(left, relations, cursor, max_rows)?;
+            let (right_head, right_rows) =
+                evaluate_native_exact_pattern(right, relations, cursor, max_rows)?;
+            Ok((
+                union_binding_heads(&left_head, &right_head),
+                union_sparql_json(&left_rows, &right_rows, max_rows)
+                    .map_err(distributed_execution_error)?,
+            ))
+        }
+        GraphPattern::Minus { left, right } => {
+            let (head, left_rows) =
+                evaluate_native_exact_pattern(left, relations, cursor, max_rows)?;
+            let (_, right_rows) =
+                evaluate_native_exact_pattern(right, relations, cursor, max_rows)?;
+            Ok((
+                head,
+                minus_sparql_json(&left_rows, &right_rows, max_rows)
+                    .map_err(distributed_execution_error)?,
+            ))
+        }
+        GraphPattern::Project { inner, variables } => {
+            let (_, rows) = evaluate_native_exact_pattern(inner, relations, cursor, max_rows)?;
+            let head = variables
+                .iter()
+                .map(|variable| variable.as_str().to_owned())
+                .collect::<Vec<_>>();
+            let rows = project_sparql_json(&rows, &head).map_err(distributed_execution_error)?;
+            Ok((head, rows))
+        }
+        GraphPattern::Distinct { inner } => {
+            let (head, rows) = evaluate_native_exact_pattern(inner, relations, cursor, max_rows)?;
+            Ok((
+                head,
+                distinct_sparql_json(&rows, max_rows).map_err(distributed_execution_error)?,
+            ))
+        }
+        GraphPattern::Reduced { inner } => {
+            evaluate_native_exact_pattern(inner, relations, cursor, max_rows)
+        }
+        GraphPattern::Slice {
+            inner,
+            start,
+            length,
+        } => {
+            let (head, rows) = evaluate_native_exact_pattern(inner, relations, cursor, max_rows)?;
+            Ok((
+                head,
+                global_slice_sparql_json(std::slice::from_ref(&rows), *start, *length, max_rows)
+                    .map_err(distributed_execution_error)?,
+            ))
+        }
+        _ => Err(OnlineError::NativeCutoverUnavailable(
+            "typed algebra reached an operator without a native exact finalizer".to_owned(),
+        )),
+    }
+}
+
+fn direct_result_bindings(
+    result: &DirectBgpResult,
+    max_rows: usize,
+) -> Result<(Vec<String>, Vec<serde_json::Value>), OnlineError> {
+    if result.outcome.status != DirectBgpStatus::Complete
+        || result.outcome.exactness != DirectBgpExactness::Exact
+        || result.outcome.completeness != DirectBgpCompleteness::Complete
+    {
+        return Err(OnlineError::SnapshotConflict(
+            "native finalization received an incomplete exact-BGP relation".to_owned(),
+        ));
+    }
+    let mut rows = Vec::new();
+    for solution in &result.solutions {
+        let multiplicity = usize::try_from(solution.multiplicity).map_err(|_| {
+            OnlineError::NativeCutoverUnavailable("BGP multiplicity exceeds this platform".to_owned())
+        })?;
+        if rows
+            .len()
+            .checked_add(multiplicity)
+            .is_none_or(|total| total > max_rows)
+        {
+            return Err(OnlineError::Request(
+                "exact BGP expansion exceeds the native row ceiling".to_owned(),
+            ));
+        }
+        let binding = solution
+            .bindings
+            .iter()
+            .map(|(variable, term)| Ok((variable.clone(), direct_term_json(term)?)))
+            .collect::<Result<serde_json::Map<_, _>, OnlineError>>()?;
+        rows.extend(std::iter::repeat_n(
+            serde_json::Value::Object(binding),
+            multiplicity,
+        ));
+    }
+    Ok((result.variables.clone(), rows))
+}
+
+fn direct_term_json(term: &DirectBgpRdfTerm) -> Result<serde_json::Value, OnlineError> {
+    let value = match term {
+        DirectBgpRdfTerm::Iri { value } => {
+            serde_json::json!({"type": "uri", "value": value})
+        }
+        DirectBgpRdfTerm::BlankNode { value } => {
+            serde_json::json!({"type": "bnode", "value": value})
+        }
+        DirectBgpRdfTerm::Literal {
+            lexical_form,
+            datatype_iri,
+            language,
+        } => {
+            let mut object = serde_json::Map::from_iter([
+                ("type".to_owned(), serde_json::Value::String("literal".to_owned())),
+                ("value".to_owned(), serde_json::Value::String(lexical_form.clone())),
+                ("datatype".to_owned(), serde_json::Value::String(datatype_iri.clone())),
+            ]);
+            if let Some(language) = language {
+                object.insert("xml:lang".to_owned(), serde_json::Value::String(language.clone()));
+            }
+            serde_json::Value::Object(object)
+        }
+    };
+    Ok(value)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -6245,9 +6723,7 @@ async fn execute_one_online_direct_bgp(
         owl_signature_sha256: semantic.owl_signature_sha256.clone(),
         datatype_policy_sha256: semantic.datatype_policy_sha256.clone(),
         owl_profile_qualification_sha256: semantic.owl_profile_qualification_sha256.clone(),
-        owl_consistency_qualification_sha256: semantic
-            .owl_consistency_qualification_sha256
-            .clone(),
+        owl_consistency_qualification_sha256: semantic.owl_consistency_qualification_sha256.clone(),
         graph_context: bundle.graph_context.clone(),
     };
     let prepared = prepare_exact_direct_bgp_requests(
@@ -6547,10 +7023,14 @@ async fn execute_partition_native_path_set(
                 worker_ids.insert(response.worker_id);
                 scanned_adjacency_rows = scanned_adjacency_rows
                     .checked_add(response.batch.adjacency_rows_read)
-                    .ok_or_else(|| OnlineError::Request("path scan evidence overflow".to_owned()))?;
+                    .ok_or_else(|| {
+                        OnlineError::Request("path scan evidence overflow".to_owned())
+                    })?;
                 hot_split_work_items = hot_split_work_items
                     .checked_add(response.batch.hot_split_count)
-                    .ok_or_else(|| OnlineError::Request("hot-split evidence overflow".to_owned()))?;
+                    .ok_or_else(|| {
+                        OnlineError::Request("hot-split evidence overflow".to_owned())
+                    })?;
                 expected.extend(response.batch.work);
                 results.extend(response.batch.results);
             }
@@ -6577,7 +7057,7 @@ async fn execute_partition_native_path_set(
             })
             .await?
             .map_err(partition_path_error)?;
-            let checkpoint_sha256 = sha256_path(&checkpoint_path)?;
+            let checkpoint_sha256 = sha256_path_off_thread(checkpoint_path.clone()).await?;
             state
                 .manager
                 .store
@@ -6589,16 +7069,21 @@ async fn execute_partition_native_path_set(
                         semantic.active.snapshot.snapshot_id,
                         query_sha256,
                         plan.path_id,
-                        checkpoint_path.file_name().and_then(|value| value.to_str()).ok_or_else(|| {
-                            OnlineError::SnapshotConflict("checkpoint path is not UTF-8".to_owned())
-                        })?
+                        checkpoint_path
+                            .file_name()
+                            .and_then(|value| value.to_str())
+                            .ok_or_else(|| {
+                                OnlineError::SnapshotConflict(
+                                    "checkpoint path is not UTF-8".to_owned(),
+                                )
+                            })?
                     ),
                     &checkpoint_sha256,
                     &checkpoint_path,
                     plan.max_checkpoint_bytes,
-                    usize::try_from(plan.max_checkpoint_bytes.min(8 * 1024 * 1024)).map_err(|_| {
-                        OnlineError::Request("checkpoint buffer ceiling overflow".to_owned())
-                    })?,
+                    usize::try_from(plan.max_checkpoint_bytes.min(8 * 1024 * 1024)).map_err(
+                        |_| OnlineError::Request("checkpoint buffer ceiling overflow".to_owned()),
+                    )?,
                     1,
                 )
                 .await?;
@@ -6613,9 +7098,9 @@ async fn execute_partition_native_path_set(
                     )
                 })?;
             path_metrics.add_checkpoint(persisted_checkpoint_bytes)?;
-            completed_iterations = completed_iterations
-                .checked_add(1)
-                .ok_or_else(|| OnlineError::Request("path iteration evidence overflow".to_owned()))?;
+            completed_iterations = completed_iterations.checked_add(1).ok_or_else(|| {
+                OnlineError::Request("path iteration evidence overflow".to_owned())
+            })?;
             visited = outcome.visited;
             endpoints = outcome.endpoints;
             frontier = outcome.next_frontier;
@@ -6672,48 +7157,58 @@ async fn dispatch_partition_path_wave(
     action: PartitionPathAction,
     frontier: Vec<PathFrontierKey>,
 ) -> Result<Vec<PartitionPathExecutionResponse>, OnlineError> {
-    let activation = semantic.active.cloud_activation.as_ref().ok_or_else(|| {
-        OnlineError::SnapshotConflict("cloud activation disappeared".to_owned())
-    })?;
-    let requests = (0..plan.partition_count).map(|partition| {
-        let worker = workers
-            .get(usize::try_from(partition).unwrap_or(usize::MAX) % workers.len())
-            .ok_or_else(|| OnlineError::Upstream("path worker assignment is empty".to_owned()))?;
-        let request = PartitionPathExecutionRequest {
-            snapshot_id: semantic.active.snapshot.snapshot_id,
-            manifest_sha256: semantic.active.snapshot.manifest_sha256.clone(),
-            semantic_root_sha256: activation.semantic_root_sha256.clone(),
-            active_dataset: active_dataset.clone(),
-            plan_sha256: plan_sha256.to_owned(),
-            plan: plan.clone(),
-            iteration,
-            storage_partition: partition,
-            action,
-            frontier: frontier.clone(),
-        };
-        let client = state.fragment_http.clone();
-        let token = token.to_owned();
-        let url = format!(
-            "http://{worker}/v1/datasets/{}/paths/{}/{}/{iteration}/{partition}/expand",
-            semantic.active.snapshot.dataset_id, query_sha256, plan.path_id
-        );
-        let max_bytes = state.max_fragment_response_bytes;
-        Ok::<_, OnlineError>(async move {
-            let response = client
-                .post(url)
-                .bearer_auth(token)
-                .json(&request)
-                .send()
-                .await
-                .map_err(|error| upstream_transport_error("property-path worker request", error))?;
-            if !response.status().is_success() {
-                return Err(upstream_status_error("property-path worker", response.status()));
-            }
-            let bytes = read_bounded_response(response, max_bytes).await?;
-            serde_json::from_slice::<PartitionPathExecutionResponse>(&bytes)
-                .map_err(OnlineError::Json)
+    let activation =
+        semantic.active.cloud_activation.as_ref().ok_or_else(|| {
+            OnlineError::SnapshotConflict("cloud activation disappeared".to_owned())
+        })?;
+    let requests = (0..plan.partition_count)
+        .map(|partition| {
+            let worker = workers
+                .get(usize::try_from(partition).unwrap_or(usize::MAX) % workers.len())
+                .ok_or_else(|| {
+                    OnlineError::Upstream("path worker assignment is empty".to_owned())
+                })?;
+            let request = PartitionPathExecutionRequest {
+                snapshot_id: semantic.active.snapshot.snapshot_id,
+                manifest_sha256: semantic.active.snapshot.manifest_sha256.clone(),
+                semantic_root_sha256: activation.semantic_root_sha256.clone(),
+                active_dataset: active_dataset.clone(),
+                plan_sha256: plan_sha256.to_owned(),
+                plan: plan.clone(),
+                iteration,
+                storage_partition: partition,
+                action,
+                frontier: frontier.clone(),
+            };
+            let client = state.fragment_http.clone();
+            let token = token.to_owned();
+            let url = format!(
+                "http://{worker}/v1/datasets/{}/paths/{}/{}/{iteration}/{partition}/expand",
+                semantic.active.snapshot.dataset_id, query_sha256, plan.path_id
+            );
+            let max_bytes = state.max_fragment_response_bytes;
+            Ok::<_, OnlineError>(async move {
+                let response = client
+                    .post(url)
+                    .bearer_auth(token)
+                    .json(&request)
+                    .send()
+                    .await
+                    .map_err(|error| {
+                        upstream_transport_error("property-path worker request", error)
+                    })?;
+                if !response.status().is_success() {
+                    return Err(upstream_status_error(
+                        "property-path worker",
+                        response.status(),
+                    ));
+                }
+                let bytes = read_bounded_response(response, max_bytes).await?;
+                serde_json::from_slice::<PartitionPathExecutionResponse>(&bytes)
+                    .map_err(OnlineError::Json)
+            })
         })
-    }).collect::<Result<Vec<_>, _>>()?;
+        .collect::<Result<Vec<_>, _>>()?;
     let mut responses = stream::iter(requests)
         .buffer_unordered(state.fragment_exchange_concurrency)
         .try_collect::<Vec<_>>()
@@ -6783,9 +7278,7 @@ fn validate_partition_path_response(
         let entry = splits
             .entry(work.identity.frontier)
             .or_insert_with(|| (work.identity.split_count, BTreeSet::new()));
-        if entry.0 != work.identity.split_count
-            || !entry.1.insert(work.identity.split_index)
-        {
+        if entry.0 != work.identity.split_count || !entry.1.insert(work.identity.split_index) {
             return Err(OnlineError::SnapshotConflict(
                 "property-path worker returned a duplicate or inconsistent hot split".to_owned(),
             ));
@@ -6975,9 +7468,8 @@ async fn execute_distributed_scalar_oracle(
                 OnlineError::Request("rewritten query byte count overflow".to_owned())
             })?,
             coordinator_request_mode: "bounded_concurrent_distinct_workers_v1".to_owned(),
-            coordinator_request_bytes: u64::try_from(query_text.len()).map_err(|_| {
-                OnlineError::Request("query byte count overflow".to_owned())
-            })?,
+            coordinator_request_bytes: u64::try_from(query_text.len())
+                .map_err(|_| OnlineError::Request("query byte count overflow".to_owned()))?,
             plan_sha256: Some(compiled_query.canonical_sse_sha256().to_owned()),
         },
     ))
@@ -6998,6 +7490,7 @@ async fn execute_uncertified_exact_query(
     deployment_limits: CertifiedQueryExecutionLimits,
     rewritten_query: Option<spargebra::Query>,
     entailment: Option<ExactEntailmentEvidence>,
+    native_precomputed: Option<(CertifiedSemanticResult, ExecutionResponse)>,
 ) -> Result<Response, OnlineError> {
     let query_sha256 = hex::encode(Sha256::digest(query_text.as_bytes()));
     let is_exact_entailment = entailment.is_some();
@@ -7035,7 +7528,9 @@ async fn execute_uncertified_exact_query(
     // query scope), so those legal queries retain the bounded uncached scalar lane.
     let replica_safe = compiled_query.execution_analysis().is_snapshot_cacheable()
         && !compiled_query.execution_analysis().has_remote_service;
-    let (result, execution) = if state.distributed_algebra_enabled && replica_safe {
+    let (result, execution) = if let Some(native) = native_precomputed {
+        native
+    } else if state.distributed_algebra_enabled && replica_safe {
         execute_distributed_scalar_oracle(
             &state,
             &headers,
@@ -7060,8 +7555,8 @@ async fn execute_uncertified_exact_query(
         let cancellation = CancellationToken::new();
         let cancellation_for_runtime = cancellation.clone();
         let has_rewritten_query = rewritten_query.is_some();
-        let mut execution_task = tokio::task::spawn_blocking(move || {
-            match (has_rewritten_query, federation_handler) {
+        let mut execution_task =
+            tokio::task::spawn_blocking(move || match (has_rewritten_query, federation_handler) {
                 (true, Some(handler)) => runtime
                     .execute_exact_entailment_rewritten_federated_with_dataset_bounded_cancellable(
                         &query_for_runtime,
@@ -7102,8 +7597,7 @@ async fn execute_uncertified_exact_query(
                         deployment_limits,
                         Some(cancellation_for_runtime),
                     ),
-            }
-        });
+            });
         let result = match tokio::time::timeout(state.query_timeout, &mut execution_task).await {
             Ok(joined) => joined??,
             Err(_) => {
@@ -7169,7 +7663,9 @@ async fn execute_uncertified_exact_query(
         let token = bearer(&headers)?;
         let hydration_request = HydrationRequest {
             snapshot_id: semantic.active.snapshot.snapshot_id,
-            serving_root_sha256: required_serving_root(&semantic.active)?.serving_root_sha256.clone(),
+            serving_root_sha256: required_serving_root(&semantic.active)?
+                .serving_root_sha256
+                .clone(),
             entities: qualified_entities.clone(),
         };
         let base = state
@@ -7194,7 +7690,8 @@ async fn execute_uncertified_exact_query(
         let hydrated = serde_json::from_slice::<HydrationResponse>(&bytes)?;
         if hydrated.dataset_id != dataset_id
             || hydrated.snapshot_id != semantic.active.snapshot.snapshot_id
-            || hydrated.serving_root_sha256 != required_serving_root(&semantic.active)?.serving_root_sha256
+            || hydrated.serving_root_sha256
+                != required_serving_root(&semantic.active)?.serving_root_sha256
         {
             return Err(OnlineError::Upstream(
                 "hydration response identity differs from the semantic request".to_owned(),
@@ -7270,6 +7767,89 @@ async fn execute_uncertified_exact_query(
         OnlineError::Request("serialized query response exceeds its byte ceiling".to_owned())
     })?;
     Ok(query_json_response(Bytes::from(body.into_bytes()), false))
+}
+
+/// Enforce the Phase 5 public-runtime boundary before a query can materialize a local scalar
+/// store, invoke an oracle replica, populate a result cache, or consume distributed workers.
+/// Shadow mode leaves existing service behavior intact for differential qualification. Required
+/// mode accepts only algebra plans composed of native kernels and explicitly covered exact-BGP
+/// stages. Any scalar-oracle stage or missing executable route fails closed with 503.
+fn require_native_cutover_admission(
+    state: &AppState,
+    compiled: &CompiledSparqlQuery,
+    certificate: Option<&ngkg_reference::CertifiedQueryRecord>,
+) -> Result<(), OnlineError> {
+    if !state.native_cutover_mode.requires_native() {
+        return Ok(());
+    }
+    if compiled.execution_analysis().has_remote_service {
+        return Err(OnlineError::NativeCutoverUnavailable(
+            "federated SERVICE remains outside the immutable native snapshot boundary".to_owned(),
+        ));
+    }
+    let plan = compiled
+        .distributed_algebra_plan(DistributedAlgebraLimits {
+            partition_count: state.shuffle_partition_count,
+            max_input_rows: u64::try_from(state.max_distributed_intermediate_rows).map_err(
+                |_| OnlineError::NativeCutoverUnavailable("native input ceiling overflow".to_owned()),
+            )?,
+            max_output_rows: u64::try_from(state.max_distributed_intermediate_rows).map_err(
+                |_| OnlineError::NativeCutoverUnavailable("native output ceiling overflow".to_owned()),
+            )?,
+            max_exchange_bytes: u64::try_from(state.max_distributed_exchange_bytes).map_err(
+                |_| OnlineError::NativeCutoverUnavailable("native exchange ceiling overflow".to_owned()),
+            )?,
+            max_spill_bytes: state.max_shuffle_spill_bytes,
+        })
+        .map_err(|error| OnlineError::NativeCutoverUnavailable(error.to_string()))?;
+    if let Some(stage) = plan
+        .stages
+        .iter()
+        .find(|stage| stage.lane == AlgebraExecutionLane::ScalarOraclePartitioned)
+    {
+        return Err(OnlineError::NativeCutoverUnavailable(format!(
+            "algebra stage {} has no production-native kernel",
+            stage.stage_id
+        )));
+    }
+    if let Some(stage) = plan.stages.iter().find(|stage| {
+        stage.lane == AlgebraExecutionLane::NativePartitioned
+            && !matches!(
+                stage.operator,
+                DistributedAlgebraOperator::Join
+                    | DistributedAlgebraOperator::Union
+                    | DistributedAlgebraOperator::Minus
+                    | DistributedAlgebraOperator::Project
+                    | DistributedAlgebraOperator::Distinct
+                    | DistributedAlgebraOperator::Reduced
+                    | DistributedAlgebraOperator::Slice
+            )
+    }) {
+        return Err(OnlineError::NativeCutoverUnavailable(format!(
+            "native operator {:?} is not enabled on the public cutover path",
+            stage.operator
+        )));
+    }
+    let has_exact_stage = plan
+        .stages
+        .iter()
+        .any(|stage| stage.lane == AlgebraExecutionLane::ExactReasonerPartitioned);
+    if has_exact_stage && state.online_direct.is_none() {
+        return Err(OnlineError::NativeCutoverUnavailable(
+            "an uncovered OWL BGP requires the exact reasoner worker pool".to_owned(),
+        ));
+    }
+    let has_certified_distributed_route = certificate
+        .and_then(|record| record.routing.as_ref())
+        .and_then(|routing| routing.distributed.as_ref())
+        .is_some();
+    if !has_exact_stage && !has_certified_distributed_route {
+        return Err(OnlineError::NativeCutoverUnavailable(
+            "the active snapshot has no executable distributed plan for this query hash"
+                .to_owned(),
+        ));
+    }
+    Ok(())
 }
 
 async fn execute_distributed_query(
@@ -8266,21 +8846,6 @@ fn worker_join_evidence(
     })
 }
 
-fn fragment_for_join_ordinal(
-    plan: &DistributedQueryPlanFile,
-    ordinal: usize,
-) -> Result<&ngkg_reference::DistributedQueryFragment, OnlineError> {
-    let fragment_id = plan.join_order.get(ordinal).ok_or_else(|| {
-        OnlineError::SnapshotConflict("join ordinal is outside the plan".to_owned())
-    })?;
-    plan.fragments
-        .iter()
-        .find(|fragment| &fragment.fragment_id == fragment_id)
-        .ok_or_else(|| {
-            OnlineError::SnapshotConflict("join order references an unknown fragment".to_owned())
-        })
-}
-
 fn reserve_exchange_bytes(
     total: &AtomicUsize,
     bytes: usize,
@@ -8398,8 +8963,10 @@ async fn execute_distributed_algebra_replica(
             "distributed algebra identity or replica set is invalid".to_owned(),
         ));
     }
-    let compiled = CompiledSparqlQuery::parse(&request.original_query)?;
-    let rewritten = CompiledSparqlQuery::parse(&request.rewritten_query)?;
+    let compiled = CompiledSparqlQuery::parse(&request.original_query)
+        .map_err(|error| OnlineError::MalformedSparql(error.to_string()))?;
+    let rewritten = CompiledSparqlQuery::parse(&request.rewritten_query)
+        .map_err(|error| OnlineError::MalformedSparql(error.to_string()))?;
     if compiled.form() != rewritten.form()
         || compiled.solution_order_is_significant() != request.ordered
     {
@@ -8437,7 +9004,11 @@ async fn execute_distributed_algebra_replica(
             .max_graph_blank_nodes
             .min(state.max_query_graph_blank_nodes),
     };
-    let runtime = state.manager.clone().full_runtime(Arc::clone(&semantic)).await?;
+    let runtime = state
+        .manager
+        .clone()
+        .full_runtime(Arc::clone(&semantic))
+        .await?;
     let active_dataset = request.active_dataset.clone();
     let graph_catalog = Arc::clone(&semantic.graph_catalog);
     let original_query = request.original_query.clone();
@@ -8507,6 +9078,146 @@ async fn execute_distributed_algebra_replica(
     let mut body = BoundedBuffer::new(state.max_query_response_bytes);
     serde_json::to_writer(&mut body, &response).map_err(|_| {
         OnlineError::Request("distributed algebra response exceeds its byte ceiling".to_owned())
+    })?;
+    Ok(query_json_response(Bytes::from(body.into_bytes()), false))
+}
+
+async fn execute_native_leaf_scan(
+    State(state): State<AppState>,
+    AxumPath((dataset_id, query_sha256, partition)): AxumPath<(Uuid, String, u32)>,
+    headers: HeaderMap,
+    Json(request): Json<NativeLeafScanRequest>,
+) -> Result<Response, OnlineError> {
+    if state.role != Role::Fragment || !is_sha256(&query_sha256) {
+        return Err(OnlineError::Request(
+            "native leaf route identity is invalid".to_owned(),
+        ));
+    }
+    let identity = state.authorizer.authorize(&headers)?;
+    let authorization = state
+        .manager
+        .clone()
+        .authorization_state(identity.tenant_id, dataset_id)
+        .await?;
+    let preauthorized = authorized_service_graphs(&identity, &authorization.graph_catalog)?;
+    let semantic = state
+        .manager
+        .clone()
+        .semantic_state(identity.tenant_id, dataset_id)
+        .await?;
+    if request.snapshot_id != semantic.active.snapshot.snapshot_id
+        || request.manifest_sha256 != semantic.active.snapshot.manifest_sha256
+        || request.active_dataset.authorized_graph_set_sha256 != preauthorized.graph_set_sha256
+        || validate_resolved_dataset(&semantic.graph_catalog, &request.active_dataset).is_err()
+        || !resolved_dataset_is_authorized(
+            &request.active_dataset,
+            &semantic.graph_catalog,
+            &preauthorized.graph_iris,
+        )
+        || request.limits.max_rows == 0
+        || request.limits.max_rows > state.max_distributed_intermediate_rows
+        || request.limits.max_decoded_bytes == 0
+        || usize::try_from(request.limits.max_decoded_bytes)
+            .ok()
+            .is_none_or(|bytes| bytes > state.max_distributed_exchange_bytes)
+        || request.limits.batch_rows == 0
+        || request.limits.batch_rows > state.fragment_arrow_batch_rows
+    {
+        return Err(OnlineError::GraphForbidden);
+    }
+    let files = state
+        .manager
+        .clone()
+        .semantic_partition_files(&semantic.active, partition)
+        .await?;
+    if request.semantic_root_sha256 != files.semantic_root_sha256
+        || request
+            .predicate
+            .graph_id
+            .is_some_and(|_| request.active_dataset.default_graph_ids.is_empty()
+                && request.active_dataset.named_graph_ids.is_empty())
+    {
+        return Err(OnlineError::SnapshotConflict(
+            "native leaf request differs from the active semantic root".to_owned(),
+        ));
+    }
+    let active_graph_iris = graph_iris_for_ids(
+        &semantic.graph_catalog,
+        &request
+            .active_dataset
+            .default_graph_ids
+            .iter()
+            .chain(request.active_dataset.named_graph_ids.iter())
+            .copied()
+            .collect::<Vec<_>>(),
+    )?;
+    let dictionary_terms = active_graph_iris
+        .iter()
+        .map(|iri| format!("N\t{iri}"))
+        .collect::<BTreeSet<_>>();
+    let dictionary_path = files.dictionary_path.clone();
+    let allowed_graph_ids = tokio::task::spawn_blocking(move || {
+        lookup_dictionary_ids_available(&dictionary_path, &dictionary_terms)
+            .map(|ids| ids.into_values().collect::<BTreeSet<_>>())
+    })
+    .await?
+    .map_err(partition_path_error)?;
+    if allowed_graph_ids.is_empty() {
+        return Err(OnlineError::GraphForbidden);
+    }
+    let mut predicate = request.predicate;
+    predicate.allowed_graph_ids = allowed_graph_ids;
+    if predicate
+        .graph_id
+        .is_some_and(|graph| !predicate.allowed_graph_ids.contains(&graph))
+    {
+        return Err(OnlineError::GraphForbidden);
+    }
+    let limits = request.limits;
+    let path = files.facts_path.clone();
+    let sha256 = files.facts_sha256.clone();
+    let bytes = files.facts_bytes;
+    let expected_rows = files.facts_rows;
+    let cancelled = Arc::new(AtomicBool::new(false));
+    let cancelled_for_scan = Arc::clone(&cancelled);
+    let mut task = tokio::task::spawn_blocking(move || {
+        scan_verified_parquet_leaf(
+            &path,
+            &sha256,
+            bytes,
+            partition,
+            predicate,
+            limits,
+            &cancelled_for_scan,
+        )
+    });
+    let result = match tokio::time::timeout(state.query_timeout, &mut task).await {
+        Ok(joined) => joined?
+            .map_err(|error| OnlineError::SnapshotConflict(error.to_string()))?,
+        Err(_) => {
+            cancelled.store(true, Ordering::Release);
+            return Err(OnlineError::GatewayTimeout(
+                "native Parquet leaf scan exceeded the query deadline".to_owned(),
+            ));
+        }
+    };
+    if result.scanned_rows != expected_rows {
+        return Err(OnlineError::SnapshotConflict(
+            "native Parquet scan did not cover the complete certified partition".to_owned(),
+        ));
+    }
+    let response = NativeLeafScanResponse {
+        dataset_id,
+        snapshot_id: request.snapshot_id,
+        query_sha256,
+        partition,
+        partition_manifest_sha256: files.partition_manifest_sha256,
+        worker_id: state.worker_id.clone(),
+        result,
+    };
+    let mut body = BoundedBuffer::new(state.max_fragment_response_bytes);
+    serde_json::to_writer(&mut body, &response).map_err(|_| {
+        OnlineError::Request("native leaf response exceeds its byte ceiling".to_owned())
     })?;
     Ok(query_json_response(Bytes::from(body.into_bytes()), false))
 }
@@ -8601,9 +9312,12 @@ async fn execute_partition_path(
     let worker_id = state.worker_id.clone();
     let worker_threads = state.property_path_worker_threads;
     let max_rows = state.property_path_max_scan_rows;
-    let max_work_items = state.max_fragment_response_bytes.checked_div(512).ok_or_else(|| {
-        OnlineError::Request("property-path response work ceiling is invalid".to_owned())
-    })?;
+    let max_work_items = state
+        .max_fragment_response_bytes
+        .checked_div(512)
+        .ok_or_else(|| {
+            OnlineError::Request("property-path response work ceiling is invalid".to_owned())
+        })?;
     let action = request.action;
     let frontier = request.frontier.clone();
     let query_sha = query_sha256.clone();
@@ -8628,8 +9342,8 @@ async fn execute_partition_path(
         OnlineError::Request("property-path worker frontier metric overflow".to_owned())
     })?);
     let batch = tokio::task::spawn_blocking(move || {
-        let index = PartitionAdjacencyIndex::open(forward, reverse)
-            .map_err(partition_path_error)?;
+        let index =
+            PartitionAdjacencyIndex::open(forward, reverse).map_err(partition_path_error)?;
         let (authorized_graphs, default_graphs, named_graphs, named_graph_iris) =
             dense_path_graph_sets(&dictionary_path, &graph_catalog, &active_dataset)?;
         let scope = resolve_path_graph_scope(
@@ -8672,13 +9386,7 @@ async fn execute_partition_path(
                     });
                 }
                 let (seed_frontier, adjacency_rows_read) = index
-                    .seed_frontier(
-                        &plan,
-                        &scope,
-                        subject_filter,
-                        &scan_graphs,
-                        max_rows,
-                    )
+                    .seed_frontier(&plan, &scope, subject_filter, &scan_graphs, max_rows)
                     .map_err(partition_path_error)?;
                 Ok(PartitionPathBatch {
                     storage_partition: partition,
@@ -8761,7 +9469,15 @@ fn dense_path_graph_sets(
     dictionary_path: &Path,
     catalog: &GraphCatalog,
     dataset: &ResolvedDataset,
-) -> Result<(BTreeSet<u64>, BTreeSet<u64>, BTreeSet<u64>, BTreeSet<String>), OnlineError> {
+) -> Result<
+    (
+        BTreeSet<u64>,
+        BTreeSet<u64>,
+        BTreeSet<u64>,
+        BTreeSet<String>,
+    ),
+    OnlineError,
+> {
     let default_iris = graph_iris_for_ids(catalog, &dataset.default_graph_ids)?;
     let named_iris = graph_iris_for_ids(catalog, &dataset.named_graph_ids)?;
     let keys = default_iris
@@ -8769,8 +9485,8 @@ fn dense_path_graph_sets(
         .chain(&named_iris)
         .map(|iri| format!("N\t{iri}"))
         .collect::<BTreeSet<_>>();
-    let ids = lookup_dictionary_ids_available(dictionary_path, &keys)
-        .map_err(partition_path_error)?;
+    let ids =
+        lookup_dictionary_ids_available(dictionary_path, &keys).map_err(partition_path_error)?;
     let default_graphs = default_iris
         .iter()
         .filter_map(|iri| ids.get(&format!("N\t{iri}")).copied())
@@ -8830,10 +9546,12 @@ fn resolved_dataset_is_authorized(
         .chain(&dataset.named_graph_ids)
         .chain(&dataset.authorized_graph_ids)
         .all(|graph_id| {
-            graph_catalog.by_id(*graph_id).is_some_and(|graph| match &graph.name {
-                LogicalGraphName::Named { iri } => authorized_graph_iris.contains(iri),
-                LogicalGraphName::Default => false,
-            })
+            graph_catalog
+                .by_id(*graph_id)
+                .is_some_and(|graph| match &graph.name {
+                    LogicalGraphName::Named { iri } => authorized_graph_iris.contains(iri),
+                    LogicalGraphName::Default => false,
+                })
         })
 }
 
@@ -8856,6 +9574,16 @@ async fn execute_fragment(
             "fragment query hash or identifier is invalid".to_owned(),
         ));
     }
+    // Internal fragment endpoints receive the same end-user identity as the
+    // coordinator. Resolve authorization before loading any semantic state so
+    // a forged fragment request cannot probe a graph outside that principal's
+    // authorized union/named dataset.
+    let authorization = state
+        .manager
+        .clone()
+        .authorization_state(identity.tenant_id, dataset_id)
+        .await?;
+    let preauthorized = authorized_service_graphs(&identity, &authorization.graph_catalog)?;
     let semantic = state
         .manager
         .clone()
@@ -8880,6 +9608,9 @@ async fn execute_fragment(
         .ok_or_else(|| {
             OnlineError::SnapshotConflict("fragment is absent from its plan".to_owned())
         })?;
+    if !preauthorized.graph_iris.contains(&fragment.graph_iri) {
+        return Err(OnlineError::GraphForbidden);
+    }
     if usize::try_from(fragment.row_count)
         .ok()
         .is_none_or(|rows| rows > state.max_distributed_intermediate_rows)
@@ -10077,7 +10808,9 @@ async fn locate(
     let response = LocatorResponse {
         dataset_id,
         snapshot_id: physical.active.snapshot.snapshot_id,
-        serving_root_sha256: required_serving_root(&physical.active)?.serving_root_sha256.clone(),
+        serving_root_sha256: required_serving_root(&physical.active)?
+            .serving_root_sha256
+            .clone(),
         entities,
     };
     let mut body = BoundedBuffer::new(state.max_hydration_response_bytes);
@@ -10177,7 +10910,9 @@ async fn hydrate(
     let response = HydrationResponse {
         dataset_id,
         snapshot_id,
-        serving_root_sha256: required_serving_root(&physical.active)?.serving_root_sha256.clone(),
+        serving_root_sha256: required_serving_root(&physical.active)?
+            .serving_root_sha256
+            .clone(),
         rows,
     };
     let mut body = BoundedBuffer::new(state.max_hydration_response_bytes);
@@ -10364,7 +11099,7 @@ impl ServingStateManager {
         let owl_signature_sha256 = manifest.owl_signature_sha256.clone().ok_or_else(|| {
             OnlineError::SnapshotConflict("Phase 40.7 requires owlSignatureSha256".to_owned())
         })?;
-        if sha256_path(&owl_signature_path)? != owl_signature_sha256 {
+        if sha256_path_off_thread(owl_signature_path.clone()).await? != owl_signature_sha256 {
             return Err(OnlineError::SnapshotConflict(
                 "OWL signature bytes differ from the snapshot manifest binding".to_owned(),
             ));
@@ -10392,12 +11127,16 @@ impl ServingStateManager {
             classes: owl_signature.classes.iter().cloned().collect(),
             object_properties: owl_signature.object_properties.iter().cloned().collect(),
             data_properties: owl_signature.data_properties.iter().cloned().collect(),
-            annotation_properties: owl_signature.annotation_properties.iter().cloned().collect(),
+            annotation_properties: owl_signature
+                .annotation_properties
+                .iter()
+                .cloned()
+                .collect(),
             named_individuals: owl_signature.named_individuals.iter().cloned().collect(),
             datatypes: owl_signature.datatypes.iter().cloned().collect(),
         }
         .with_builtins();
-        let capability_sha256 = sha256_path(&capability_path)?;
+        let capability_sha256 = sha256_path_off_thread(capability_path.clone()).await?;
         validate_capability_index(
             &active,
             &manifest,
@@ -10539,7 +11278,7 @@ impl ServingStateManager {
                 route_path.clone(),
             )
             .await?;
-        if sha256_path(&route_path)? != routing.route_artifact_sha256
+        if sha256_path_off_thread(route_path.clone()).await? != routing.route_artifact_sha256
             || route_path.metadata()?.len() != routing.route_artifact_bytes
         {
             return Err(OnlineError::SnapshotConflict(
@@ -10627,7 +11366,7 @@ impl ServingStateManager {
                 plan_path.clone(),
             )
             .await?;
-        if sha256_path(&plan_path)? != distributed.plan_artifact_sha256
+        if sha256_path_off_thread(plan_path.clone()).await? != distributed.plan_artifact_sha256
             || plan_path.metadata()?.len() != distributed.plan_artifact_bytes
         {
             return Err(OnlineError::SnapshotConflict(
@@ -10856,7 +11595,9 @@ impl ServingStateManager {
         let serving_path = root.join("serving-root.json");
         Arc::clone(&self)
             .materialize_cached(
-                required_serving_root(&active)?.serving_root_object_key.clone(),
+                required_serving_root(&active)?
+                    .serving_root_object_key
+                    .clone(),
                 required_serving_root(&active)?.serving_root_sha256.clone(),
                 serving_path.clone(),
             )
@@ -11094,10 +11835,21 @@ impl ServingStateManager {
             ));
         }
         let manifest_prefix = object_parent(&reference.manifest_path)?;
-        let forward_artifact = required_semantic_artifact(&manifest.artifacts, "adjacency-forward.tsv")?;
-        let reverse_artifact = required_semantic_artifact(&manifest.artifacts, "adjacency-reverse.tsv")?;
+        let facts_artifact = required_semantic_artifact(&manifest.artifacts, "facts.parquet")?;
+        let forward_artifact =
+            required_semantic_artifact(&manifest.artifacts, "adjacency-forward.tsv")?;
+        let reverse_artifact =
+            required_semantic_artifact(&manifest.artifacts, "adjacency-reverse.tsv")?;
+        let facts_path = partition_root.join("facts.parquet");
         let forward_path = partition_root.join("adjacency-forward.tsv");
         let reverse_path = partition_root.join("adjacency-reverse.tsv");
+        Arc::clone(&self)
+            .materialize_cached(
+                format!("{manifest_prefix}/{}", facts_artifact.relative_path),
+                facts_artifact.sha256.clone(),
+                facts_path.clone(),
+            )
+            .await?;
         Arc::clone(&self)
             .materialize_cached(
                 format!("{manifest_prefix}/{}", forward_artifact.relative_path),
@@ -11144,6 +11896,10 @@ impl ServingStateManager {
         Ok(SemanticPartitionFiles {
             semantic_root_sha256: activation.semantic_root_sha256.clone(),
             partition_manifest_sha256: reference.manifest_sha256.clone(),
+            facts_path,
+            facts_sha256: facts_artifact.sha256.clone(),
+            facts_bytes: facts_artifact.bytes,
+            facts_rows: facts_artifact.row_count,
             forward: adjacency_identity(forward_path, forward_artifact),
             reverse: adjacency_identity(reverse_path, reverse_artifact),
             dictionary_path,
@@ -11159,7 +11915,7 @@ impl ServingStateManager {
     ) -> Result<(), OnlineError> {
         if destination.exists() {
             if destination.metadata()?.len() <= self.max_object_bytes
-                && sha256_path(&destination)? == sha256
+                && sha256_path_off_thread(destination.clone()).await? == sha256
             {
                 return Ok(());
             }
@@ -11181,6 +11937,13 @@ impl ServingStateManager {
             .join(active.snapshot.dataset_id.to_string())
             .join(active.snapshot.snapshot_id.to_string())
     }
+}
+
+/// Hash a potentially multi-gigabyte artifact outside Tokio's cooperative runtime.
+/// The bounded blocking pool prevents one cache validation from stalling unrelated
+/// API, MCP, heartbeat, or cancellation futures on the same query replica.
+async fn sha256_path_off_thread(path: PathBuf) -> Result<String, OnlineError> {
+    Ok(tokio::task::spawn_blocking(move || sha256_path(&path)).await??)
 }
 
 fn qualify_entities(
@@ -11458,9 +12221,7 @@ fn required_semantic_artifact<'a>(
         .iter()
         .find(|artifact| artifact.relative_path == relative_path)
         .ok_or_else(|| {
-            OnlineError::SnapshotConflict(format!(
-                "semantic partition omits {relative_path}"
-            ))
+            OnlineError::SnapshotConflict(format!("semantic partition omits {relative_path}"))
         })
 }
 
@@ -11479,12 +12240,30 @@ fn adjacency_identity(
 fn same_active(left: &ActiveServingSnapshot, right: &ActiveServingSnapshot) -> bool {
     left.snapshot.snapshot_id == right.snapshot.snapshot_id
         && left.snapshot.manifest_sha256 == right.snapshot.manifest_sha256
-        && left.serving_root.as_ref().map(|root| &root.serving_root_sha256)
-            == right.serving_root.as_ref().map(|root| &root.serving_root_sha256)
-        && left.serving_certification.as_ref().map(|certificate| &certificate.report_sha256)
-            == right.serving_certification.as_ref().map(|certificate| &certificate.report_sha256)
-        && left.cloud_activation.as_ref().map(|activation| &activation.activation_manifest_sha256)
-            == right.cloud_activation.as_ref().map(|activation| &activation.activation_manifest_sha256)
+        && left
+            .serving_root
+            .as_ref()
+            .map(|root| &root.serving_root_sha256)
+            == right
+                .serving_root
+                .as_ref()
+                .map(|root| &root.serving_root_sha256)
+        && left
+            .serving_certification
+            .as_ref()
+            .map(|certificate| &certificate.report_sha256)
+            == right
+                .serving_certification
+                .as_ref()
+                .map(|certificate| &certificate.report_sha256)
+        && left
+            .cloud_activation
+            .as_ref()
+            .map(|activation| &activation.activation_manifest_sha256)
+            == right
+                .cloud_activation
+                .as_ref()
+                .map(|activation| &activation.activation_manifest_sha256)
 }
 
 fn validate_capability_index(
@@ -11844,8 +12623,7 @@ fn validate_serving_manifest(
         || manifest.binary_locator_sha256 != serving_root.binary_locator_sha256
         || manifest.source_locator_sha256 != serving_root.source_locator_sha256
         || manifest.semantic_content_sha256 != serving_root.semantic_content_sha256
-        || i32::try_from(manifest.partitions.len()).ok()
-            != Some(serving_root.partition_count)
+        || i32::try_from(manifest.partitions.len()).ok() != Some(serving_root.partition_count)
         || i32::try_from(manifest.row_group_rows).ok() != Some(serving_root.row_group_rows)
         || i64::try_from(manifest.locator_record_count).ok()
             != Some(serving_root.locator_record_count)
@@ -12014,8 +12792,8 @@ fn load_federation_registry(role: Role) -> Result<Option<Arc<FederationRegistry>
             if !path.is_absolute() {
                 anyhow::bail!("NGKG_FEDERATION_REGISTRY_FILE must be an absolute path");
             }
-            let registry = FederationRegistry::load(&path, &expected_sha256)
-                .map_err(anyhow::Error::new)?;
+            let registry =
+                FederationRegistry::load(&path, &expected_sha256).map_err(anyhow::Error::new)?;
             tracing::info!(
                 registry_sha256 = registry.sha256(),
                 "checksum-bound SPARQL federation endpoint registry loaded"
@@ -12058,9 +12836,7 @@ fn load_online_direct_config(role: Role) -> Result<Option<Arc<OnlineDirectConfig
         work_root: absolute_path("NGKG_REASONER_WORK_ROOT")?,
         dispatch_concurrency: positive_usize("NGKG_REASONER_DISPATCH_CONCURRENCY")?,
         dispatch_attempts: positive_usize("NGKG_REASONER_DISPATCH_ATTEMPTS")?,
-        max_partition_response_bytes: positive_usize(
-            "NGKG_REASONER_MAX_PARTITION_RESPONSE_BYTES",
-        )?,
+        max_partition_response_bytes: positive_usize("NGKG_REASONER_MAX_PARTITION_RESPONSE_BYTES")?,
         limits: DirectExactLimits {
             max_candidate_bindings: positive_u64("NGKG_DIRECT_MAX_CANDIDATE_BINDINGS")?,
             max_partition_candidates: positive_u64("NGKG_DIRECT_MAX_PARTITION_CANDIDATES")?,
@@ -12179,19 +12955,19 @@ mod tests {
         ARROW_STREAM_EOS, AdmissionClass, AdmissionController, AdmissionFailure, AdmissionScope,
         ArrowBodyWriter, ArrowRequestWriter, BoundedBuffer, BoundedLruCache, ExecutionResponse,
         FragmentResponseLease, FragmentResponseSpool, OnlineError, OnlinePayloadRow,
-        QualifiedEntity, QueryForm, QueryResponse, Role, RoutingResponse, ShuffleSpillStage,
-        SparqlGraphFormat, SparqlSolutionFormat, SpillIdentity, StandardsFeatureGates,
-        StreamingRequestSpool, ValidatedFragmentSpool, ValidatedFragmentSpoolSequence,
-        admission_rejection, compile_certified_query, compute_shuffle_result,
-        decode_form_component, filtered_openapi_document, finish_protocol_request,
-        hold_admission_through_body, parse_protocol_parameters, prepare_shuffle_spill_root,
-        render_service_description, require_supported_result_hash_version, reserve_exchange_bytes,
-        select_sparql_graph_format, select_sparql_solution_format, serialize_sparql_boolean,
-        serialize_sparql_graph, serialize_sparql_solutions, sparql_request_media_type,
-        swagger_ui_response, union_binding_heads, upstream_status_error,
-        validate_cached_query_response, validate_cached_shuffle_result, validate_hydrated_rows,
-        validate_shuffle_response_spool, validate_standards_feature_implications,
-        worker_join_evidence,
+        ParsedProtocolParameters, QualifiedEntity, QueryForm, QueryResponse, Role, RoutingResponse,
+        ShuffleSpillStage, SparqlGraphFormat, SparqlSolutionFormat, SpillIdentity,
+        StandardsFeatureGates, StreamingRequestSpool, ValidatedFragmentSpool,
+        ValidatedFragmentSpoolSequence, admission_rejection, compile_certified_query,
+        compute_shuffle_result, decode_form_component, filtered_openapi_document,
+        finish_protocol_request, hold_admission_through_body, parse_protocol_parameters,
+        prepare_shuffle_spill_root, render_service_description,
+        require_supported_result_hash_version, reserve_exchange_bytes, select_sparql_graph_format,
+        select_sparql_solution_format, serialize_sparql_boolean, serialize_sparql_graph,
+        serialize_sparql_solutions, sparql_request_media_type, swagger_ui_response,
+        union_binding_heads, upstream_status_error, validate_cached_query_response,
+        validate_cached_shuffle_result, validate_hydrated_rows, validate_shuffle_response_spool,
+        validate_standards_feature_implications, worker_join_evidence,
     };
     use crate::tenant_admission::TenantAdmissionRegistry;
     use uuid::Uuid;
@@ -12243,7 +13019,7 @@ mod tests {
         assert!(parse_protocol_parameters("query=%FF", true).is_err());
         assert!(parse_protocol_parameters("unknown=value", true).is_err());
         assert!(parse_protocol_parameters("query=SELECT", false).is_err());
-        assert!(finish_protocol_request(Default::default(), None).is_err());
+        assert!(finish_protocol_request(ParsedProtocolParameters::default(), None).is_err());
         assert_eq!(decode_form_component("a%2Bb+c")?, "a+b c");
         Ok(())
     }
@@ -12342,12 +13118,12 @@ mod tests {
                 .as_ref()
                 .is_ok_and(|query| { !query.execution_analysis().is_snapshot_cacheable() })
         );
-        assert!(
-            compile_certified_query(
-                "SELECT * WHERE { SERVICE <https://example.test/sparql> { ?s ?p ?o } }"
-            )
-            .is_err()
+        let federated = compile_certified_query(
+            "SELECT * WHERE { SERVICE <https://example.test/sparql> { ?s ?p ?o } }",
         );
+        assert!(federated.as_ref().is_ok_and(|query| {
+            query.execution_analysis().has_remote_service && query.require_certifiable().is_err()
+        }));
         assert!(compile_certified_query("SELECT WHERE { ?s ?p }").is_err());
     }
 
@@ -12468,12 +13244,15 @@ mod tests {
         assert!(!closed.contains("owl-profile/DL"));
         assert!(closed.contains("certifiedQueryOnly true"));
 
-        let open = render_service_description(StandardsFeatureGates {
-            sparql_11_query: true,
-            union_default_graph: true,
-            owl_direct: true,
-            owl_dl: true,
-        }, true);
+        let open = render_service_description(
+            StandardsFeatureGates {
+                sparql_11_query: true,
+                union_default_graph: true,
+                owl_direct: true,
+                owl_dl: true,
+            },
+            true,
+        );
         assert!(open.contains("sd:supportedLanguage sd:SPARQL11Query"));
         assert!(open.contains("sd:feature sd:UnionDefaultGraph"));
         assert!(open.contains("entailment/OWL-Direct"));
@@ -12548,6 +13327,12 @@ mod tests {
             OnlineError::QueryTooLarge.into_response().status(),
             StatusCode::PAYLOAD_TOO_LARGE
         );
+        assert_eq!(
+            OnlineError::NativeCutoverUnavailable("missing native plan".to_owned())
+                .into_response()
+                .status(),
+            StatusCode::SERVICE_UNAVAILABLE
+        );
     }
 
     #[test]
@@ -12602,6 +13387,7 @@ mod tests {
                     "/v1/datasets/{datasetId}/shuffles/{querySha256}/{stage}/{partition}/join",
                     "/v1/datasets/{datasetId}/algebra/{querySha256}/{replica}/execute",
                     "/v1/datasets/{datasetId}/paths/{querySha256}/{pathId}/{iteration}/{partition}/expand",
+                    "/v1/datasets/{datasetId}/native/leaves/{querySha256}/{partition}/scan",
                 ]),
             ),
             (

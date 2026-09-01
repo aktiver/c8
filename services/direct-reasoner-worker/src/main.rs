@@ -25,9 +25,7 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{get, post},
 };
-use ngkg_direct_reasoner::{
-    DirectExactAdapter, DirectExactLimits, execute_exact_direct_partition,
-};
+use ngkg_direct_reasoner::{DirectExactAdapter, DirectExactLimits, execute_exact_direct_partition};
 use ngkg_hpc_runtime::{ThreadBudget, capability_report};
 use ngkg_types::{DirectExactPartitionResult, DirectExactRequest};
 use serde::Serialize;
@@ -118,7 +116,8 @@ impl IntoResponse for WorkerError {
 impl Drop for PendingGuard {
     fn drop(&mut self) {
         if self.active {
-            let previous = self.metrics
+            let previous = self
+                .metrics
                 .queued_partitions
                 .fetch_sub(1, Ordering::AcqRel);
             if previous == 1 {
@@ -171,16 +170,21 @@ fn main() -> Result<()> {
     }
     tokio::runtime::Builder::new_multi_thread()
         .worker_threads(control_threads)
-        .max_blocking_threads(reasoner_lanes.checked_add(blocking_io).context(
-            "reasoner blocking-thread budget overflow",
-        )?)
+        .max_blocking_threads(
+            reasoner_lanes
+                .checked_add(blocking_io)
+                .context("reasoner blocking-thread budget overflow")?,
+        )
         .enable_all()
         .build()?
         .block_on(async_main(max_in_flight, capabilities.cpuset_cores))
 }
 
 async fn async_main(max_in_flight: usize, cpuset_cores: usize) -> Result<()> {
-    tracing_subscriber::fmt().json().with_env_filter("info").init();
+    tracing_subscriber::fmt()
+        .json()
+        .with_env_filter("info")
+        .init();
     let bind = required("NGKG_BIND_ADDR")?
         .parse::<SocketAddr>()
         .context("NGKG_BIND_ADDR must be a socket address")?;
@@ -271,10 +275,10 @@ async fn execute_partition(
         .estimated_axioms
         .fetch_add(estimated_axioms, Ordering::AcqRel);
     if queued == 1 {
-        state.metrics.oldest_queue_epoch_milliseconds.store(
-            epoch_milliseconds(),
-            Ordering::Release,
-        );
+        state
+            .metrics
+            .oldest_queue_epoch_milliseconds
+            .store(epoch_milliseconds(), Ordering::Release);
     }
     let mut pending = PendingGuard {
         metrics: Arc::clone(&state.metrics),
@@ -339,10 +343,10 @@ fn existing_partition_result(
         .map_err(|_| WorkerError::Invalid("cached partition result is malformed".to_owned()))?;
     ngkg_types::validate_direct_exact_partition_result(&result)
         .map_err(|_| WorkerError::Invalid("cached partition result is invalid".to_owned()))?;
-    let request_sha256 = hex::encode(Sha256::digest(
-        serde_json::to_vec_pretty(request)
-            .map_err(|_| WorkerError::Invalid("partition request is not serializable".to_owned()))?,
-    ));
+    let request_sha256 =
+        hex::encode(Sha256::digest(serde_json::to_vec_pretty(request).map_err(
+            |_| WorkerError::Invalid("partition request is not serializable".to_owned()),
+        )?));
     if result.dataset_id != request.dataset_id
         || result.snapshot_id != request.snapshot_id
         || result.query_sha256 != request.query_sha256
@@ -360,7 +364,9 @@ fn existing_partition_result(
 
 async fn metrics(State(state): State<AppState>) -> impl IntoResponse {
     let metrics = &state.metrics;
-    let oldest = metrics.oldest_queue_epoch_milliseconds.load(Ordering::Acquire);
+    let oldest = metrics
+        .oldest_queue_epoch_milliseconds
+        .load(Ordering::Acquire);
     let oldest_age = if oldest == 0 {
         0
     } else {
@@ -395,9 +401,10 @@ async fn metrics(State(state): State<AppState>) -> impl IntoResponse {
         service_count,
         mean_latency_milliseconds,
     );
-    ([
-        ("content-type", "text/plain; version=0.0.4; charset=utf-8")
-    ], body)
+    (
+        [("content-type", "text/plain; version=0.0.4; charset=utf-8")],
+        body,
+    )
 }
 
 fn validate_partition_paths(
@@ -459,7 +466,9 @@ fn authorize(headers: &HeaderMap, expected: &[u8; 32]) -> Result<(), WorkerError
     let different = observed
         .iter()
         .zip(expected)
-        .fold(0_u8, |difference, (left, right)| difference | (left ^ right));
+        .fold(0_u8, |difference, (left, right)| {
+            difference | (left ^ right)
+        });
     if different != 0 {
         return Err(WorkerError::Unauthorized);
     }
@@ -475,8 +484,8 @@ fn canonical_dir(path: &Path) -> Result<PathBuf> {
 }
 
 fn canonical_file(path: &Path) -> Result<PathBuf, WorkerError> {
-    let metadata = fs::symlink_metadata(path)
-        .map_err(|error| WorkerError::Invalid(error.to_string()))?;
+    let metadata =
+        fs::symlink_metadata(path).map_err(|error| WorkerError::Invalid(error.to_string()))?;
     if metadata.file_type().is_symlink() || !metadata.is_file() {
         return Err(WorkerError::Invalid(
             "ontology inputs must be non-symlink regular files".to_owned(),
@@ -489,7 +498,7 @@ fn sha256_path(path: &Path) -> Result<String, WorkerError> {
     use std::io::Read;
     let mut file = fs::File::open(path).map_err(|error| WorkerError::Invalid(error.to_string()))?;
     let mut hash = Sha256::new();
-    let mut buffer = [0_u8; 1024 * 1024];
+    let mut buffer = vec![0_u8; 1024 * 1024].into_boxed_slice();
     loop {
         let read = file
             .read(&mut buffer)

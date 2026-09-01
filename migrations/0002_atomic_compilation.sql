@@ -89,6 +89,7 @@ BEGIN
     OR NEW.idempotency_key <> OLD.idempotency_key
     OR NEW.request_hash <> OLD.request_hash
     OR NEW.target_snapshot_id IS DISTINCT FROM OLD.target_snapshot_id
+    OR NEW.created_at IS DISTINCT FROM OLD.created_at
   THEN
     RAISE EXCEPTION 'operation identity and request fields are immutable'
       USING ERRCODE = 'check_violation';
@@ -136,7 +137,7 @@ END;
 $$;
 
 CREATE TRIGGER operation_transition_guard
-BEFORE UPDATE OF state ON operation
+BEFORE UPDATE ON operation
 FOR EACH ROW
 EXECUTE FUNCTION ngkg_operation_transition_guard();
 

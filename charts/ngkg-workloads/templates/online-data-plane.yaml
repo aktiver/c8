@@ -29,7 +29,7 @@ kind: StatefulSet
 metadata: {name: ngkg-query-shard}
 spec:
   serviceName: ngkg-query-shards
-  replicas: {{ mul .Values.hpcNodeGroups.sparql_query_processing_num_of_nodes .Values.queryPlane.workersPerNode }}
+  replicas: {{ if eq .Values.autoscaling.sparqlQueryProcessing.owner "hpa" }}{{ .Values.autoscaling.sparqlQueryProcessing.minNodes }}{{ else }}{{ mul .Values.hpcNodeGroups.sparql_query_processing_num_of_nodes .Values.queryPlane.workersPerNode }}{{ end }}
   podManagementPolicy: Parallel
   selector:
     matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: query-shard}
@@ -97,6 +97,8 @@ spec:
             - {name: NGKG_QUERY_LOG_FRAGMENT_MEMORY_BYTES, value: '{{ .Values.onlineServing.queryLogs.fragmentMemoryBytes }}'}
             - {name: NGKG_QUERY_LOG_HYDRATION_CPU_MILLIS, value: '{{ .Values.onlineServing.queryLogs.hydrationCpuMillis }}'}
             - {name: NGKG_QUERY_LOG_HYDRATION_MEMORY_BYTES, value: '{{ .Values.onlineServing.queryLogs.hydrationMemoryBytes }}'}
+            - name: NGKG_POD_UID
+              valueFrom: {fieldRef: {fieldPath: metadata.uid}}
             - {name: NGKG_QUERY_RESULT_CACHE_ROOT, value: /var/lib/ngkg/query-result-cache}
             - {name: NGKG_MAX_QUERY_RESULT_CACHE_BYTES, value: '{{ .Values.onlineServing.maxQueryResultCacheBytes }}'}
             - {name: NGKG_MAX_QUERY_RESULT_CACHE_ENTRIES, value: '{{ .Values.onlineServing.maxQueryResultCacheEntries }}'}
@@ -151,6 +153,7 @@ spec:
             - {name: NGKG_FRAGMENT_EXCHANGE_CONCURRENCY, value: '{{ .Values.onlineServing.fragmentExchangeConcurrency }}'}
             - {name: NGKG_DISTRIBUTED_ALGEBRA_ENABLED, value: '{{ .Values.onlineServing.distributedAlgebraEnabled }}'}
             - {name: NGKG_DISTRIBUTED_ALGEBRA_REPLICAS, value: '{{ .Values.onlineServing.distributedAlgebraReplicas }}'}
+            - {name: NGKG_NATIVE_CUTOVER_MODE, value: '{{ .Values.onlineServing.nativeCutoverMode }}'}
             - {name: NGKG_PARTITION_NATIVE_PATHS_ENABLED, value: '{{ .Values.onlineServing.partitionNativePathsEnabled }}'}
             - {name: NGKG_PROPERTY_PATH_WORKER_THREADS, value: '{{ .Values.onlineServing.propertyPathWorkerThreads }}'}
             - {name: NGKG_PROPERTY_PATH_MAX_SCAN_ROWS, value: '{{ .Values.onlineServing.propertyPathMaxScanRows }}'}
@@ -186,7 +189,7 @@ spec:
             - {name: NGKG_FRAGMENT_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.fragmentTimeoutSeconds }}'}
             - {name: NGKG_HYDRATION_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.hydrationTimeoutSeconds }}'}
           envFrom:
-            - configMapRef: {name: ngkg-phase40-online-ceilings}
+            - configMapRef: {name: ngkg-phase40-online-ceilings-{{ toJson .Values.phase40.directAdmission | sha256sum | trunc 12 }}}
           {{- if .Values.onlineServing.objectStoreCredentialsSecret }}
             - secretRef: {name: '{{ .Values.onlineServing.objectStoreCredentialsSecret }}'}
           {{- end }}
@@ -261,7 +264,7 @@ kind: StatefulSet
 metadata: {name: ngkg-fragment-worker}
 spec:
   serviceName: ngkg-fragments
-  replicas: {{ .Values.hpcNodeGroups.sparql_fragment_processing_num_of_nodes }}
+  replicas: {{ if eq .Values.autoscaling.sparqlFragmentProcessing.owner "hpa" }}{{ .Values.autoscaling.sparqlFragmentProcessing.minNodes }}{{ else }}{{ .Values.hpcNodeGroups.sparql_fragment_processing_num_of_nodes }}{{ end }}
   podManagementPolicy: Parallel
   selector:
     matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: fragment-worker}
@@ -337,6 +340,7 @@ spec:
             - {name: NGKG_FRAGMENT_EXCHANGE_CONCURRENCY, value: '{{ .Values.onlineServing.fragmentExchangeConcurrency }}'}
             - {name: NGKG_DISTRIBUTED_ALGEBRA_ENABLED, value: '{{ .Values.onlineServing.distributedAlgebraEnabled }}'}
             - {name: NGKG_DISTRIBUTED_ALGEBRA_REPLICAS, value: '{{ .Values.onlineServing.distributedAlgebraReplicas }}'}
+            - {name: NGKG_NATIVE_CUTOVER_MODE, value: '{{ .Values.onlineServing.nativeCutoverMode }}'}
             - {name: NGKG_PARTITION_NATIVE_PATHS_ENABLED, value: '{{ .Values.onlineServing.partitionNativePathsEnabled }}'}
             - {name: NGKG_PROPERTY_PATH_WORKER_THREADS, value: '{{ .Values.onlineServing.propertyPathWorkerThreads }}'}
             - {name: NGKG_PROPERTY_PATH_MAX_SCAN_ROWS, value: '{{ .Values.onlineServing.propertyPathMaxScanRows }}'}
@@ -384,7 +388,7 @@ spec:
             - {name: NGKG_FRAGMENT_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.fragmentTimeoutSeconds }}'}
             - {name: NGKG_HYDRATION_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.hydrationTimeoutSeconds }}'}
           envFrom:
-            - configMapRef: {name: ngkg-phase40-online-ceilings}
+            - configMapRef: {name: ngkg-phase40-online-ceilings-{{ toJson .Values.phase40.directAdmission | sha256sum | trunc 12 }}}
           {{- if .Values.onlineServing.objectStoreCredentialsSecret }}
             - secretRef: {name: '{{ .Values.onlineServing.objectStoreCredentialsSecret }}'}
           {{- end }}
@@ -500,6 +504,7 @@ spec:
             - {name: NGKG_FRAGMENT_EXCHANGE_CONCURRENCY, value: '{{ .Values.onlineServing.fragmentExchangeConcurrency }}'}
             - {name: NGKG_DISTRIBUTED_ALGEBRA_ENABLED, value: '{{ .Values.onlineServing.distributedAlgebraEnabled }}'}
             - {name: NGKG_DISTRIBUTED_ALGEBRA_REPLICAS, value: '{{ .Values.onlineServing.distributedAlgebraReplicas }}'}
+            - {name: NGKG_NATIVE_CUTOVER_MODE, value: '{{ .Values.onlineServing.nativeCutoverMode }}'}
             - {name: NGKG_PARTITION_NATIVE_PATHS_ENABLED, value: '{{ .Values.onlineServing.partitionNativePathsEnabled }}'}
             - {name: NGKG_PROPERTY_PATH_WORKER_THREADS, value: '{{ .Values.onlineServing.propertyPathWorkerThreads }}'}
             - {name: NGKG_PROPERTY_PATH_MAX_SCAN_ROWS, value: '{{ .Values.onlineServing.propertyPathMaxScanRows }}'}
@@ -532,7 +537,7 @@ spec:
             - {name: NGKG_FRAGMENT_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.fragmentTimeoutSeconds }}'}
             - {name: NGKG_HYDRATION_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.hydrationTimeoutSeconds }}'}
           envFrom:
-            - configMapRef: {name: ngkg-phase40-online-ceilings}
+            - configMapRef: {name: ngkg-phase40-online-ceilings-{{ toJson .Values.phase40.directAdmission | sha256sum | trunc 12 }}}
           {{- if .Values.onlineServing.objectStoreCredentialsSecret }}
             - secretRef: {name: '{{ .Values.onlineServing.objectStoreCredentialsSecret }}'}
           {{- end }}
@@ -571,7 +576,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata: {name: ngkg-hydration}
 spec:
-  replicas: {{ .Values.hpcNodeGroups.parquet_hydration_num_of_nodes }}
+  replicas: {{ if eq .Values.autoscaling.parquetHydration.owner "hpa" }}{{ .Values.autoscaling.parquetHydration.minNodes }}{{ else }}{{ .Values.hpcNodeGroups.parquet_hydration_num_of_nodes }}{{ end }}
   selector:
     matchLabels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: hydration}
   template:
@@ -642,6 +647,7 @@ spec:
             - {name: NGKG_FRAGMENT_EXCHANGE_CONCURRENCY, value: '{{ .Values.onlineServing.fragmentExchangeConcurrency }}'}
             - {name: NGKG_DISTRIBUTED_ALGEBRA_ENABLED, value: '{{ .Values.onlineServing.distributedAlgebraEnabled }}'}
             - {name: NGKG_DISTRIBUTED_ALGEBRA_REPLICAS, value: '{{ .Values.onlineServing.distributedAlgebraReplicas }}'}
+            - {name: NGKG_NATIVE_CUTOVER_MODE, value: '{{ .Values.onlineServing.nativeCutoverMode }}'}
             - {name: NGKG_PARTITION_NATIVE_PATHS_ENABLED, value: '{{ .Values.onlineServing.partitionNativePathsEnabled }}'}
             - {name: NGKG_PROPERTY_PATH_WORKER_THREADS, value: '{{ .Values.onlineServing.propertyPathWorkerThreads }}'}
             - {name: NGKG_PROPERTY_PATH_MAX_SCAN_ROWS, value: '{{ .Values.onlineServing.propertyPathMaxScanRows }}'}
@@ -674,7 +680,7 @@ spec:
             - {name: NGKG_FRAGMENT_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.fragmentTimeoutSeconds }}'}
             - {name: NGKG_HYDRATION_TIMEOUT_SECONDS, value: '{{ .Values.onlineServing.hydrationTimeoutSeconds }}'}
           envFrom:
-            - configMapRef: {name: ngkg-phase40-online-ceilings}
+            - configMapRef: {name: ngkg-phase40-online-ceilings-{{ toJson .Values.phase40.directAdmission | sha256sum | trunc 12 }}}
           {{- if .Values.onlineServing.objectStoreCredentialsSecret }}
             - secretRef: {name: '{{ .Values.onlineServing.objectStoreCredentialsSecret }}'}
           {{- end }}

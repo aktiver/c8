@@ -150,7 +150,10 @@ impl Drop for BlockingPermit<'_> {
 impl BlockingLimiter {
     fn acquire(&self, timeout: Duration) -> Result<BlockingPermit<'_>, FederationError> {
         let deadline = Instant::now() + timeout;
-        let mut active = self.state.lock().map_err(|_| FederationError::LimiterPoisoned)?;
+        let mut active = self
+            .state
+            .lock()
+            .map_err(|_| FederationError::LimiterPoisoned)?;
         while *active >= self.maximum {
             let remaining = deadline.saturating_duration_since(Instant::now());
             if remaining.is_zero() {
@@ -178,6 +181,7 @@ pub struct FederationRegistry {
     endpoints: Arc<BTreeMap<String, RuntimeEndpoint>>,
     limiter: Arc<BlockingLimiter>,
     metrics: Arc<FederationMetrics>,
+    clients: Arc<Mutex<BTreeMap<(String, SocketAddr), Client>>>,
 }
 
 impl FederationRegistry {
@@ -236,6 +240,7 @@ impl FederationRegistry {
                 available: Condvar::new(),
             }),
             metrics: Arc::new(FederationMetrics::default()),
+            clients: Arc::new(Mutex::new(BTreeMap::new())),
         })
     }
 
@@ -269,7 +274,7 @@ impl FederationRegistry {
 }
 
 /// Complete audit for one federated query execution.
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FederationQueryEvidence {
     /// Checksum-bound registry used by the query.
@@ -302,7 +307,10 @@ pub struct FederationServiceHandler {
 impl FederationServiceHandler {
     /// Produce deterministic successful-query evidence after evaluation completes.
     pub fn evidence(&self) -> Result<FederationQueryEvidence, FederationError> {
-        let audit = self.audit.lock().map_err(|_| FederationError::AuditPoisoned)?;
+        let audit = self
+            .audit
+            .lock()
+            .map_err(|_| FederationError::AuditPoisoned)?;
         let mut digest = Sha256::new();
         digest.update(b"ngkg-federation-endpoint-set-v1\0");
         for endpoint in &audit.endpoints {
@@ -327,7 +335,10 @@ impl FederationServiceHandler {
         use std::sync::atomic::Ordering;
         let endpoint_iri = service_name.as_str();
         {
-            let mut audit = self.audit.lock().map_err(|_| FederationError::AuditPoisoned)?;
+            let mut audit = self
+                .audit
+                .lock()
+                .map_err(|_| FederationError::AuditPoisoned)?;
             if usize::try_from(audit.calls).unwrap_or(usize::MAX)
                 >= self.registry.limits.max_calls_per_query
             {
@@ -345,18 +356,27 @@ impl FederationServiceHandler {
             self.registry.metrics.failed.fetch_add(1, Ordering::Relaxed);
             return Err(FederationError::EndpointDenied(endpoint_iri.to_owned()));
         }
-        let pending = self.registry.metrics.pending.fetch_add(1, Ordering::Relaxed) + 1;
-        if usize::try_from(pending).unwrap_or(usize::MAX)
-            > self.registry.limits.max_pending_calls
-        {
-            self.registry.metrics.pending.fetch_sub(1, Ordering::Relaxed);
+        let pending = self
+            .registry
+            .metrics
+            .pending
+            .fetch_add(1, Ordering::Relaxed)
+            + 1;
+        if usize::try_from(pending).unwrap_or(usize::MAX) > self.registry.limits.max_pending_calls {
+            self.registry
+                .metrics
+                .pending
+                .fetch_sub(1, Ordering::Relaxed);
             self.registry.metrics.failed.fetch_add(1, Ordering::Relaxed);
             return Err(FederationError::PendingLimit);
         }
         let permit = self.registry.limiter.acquire(Duration::from_millis(
             self.registry.limits.queue_timeout_millis,
         ));
-        self.registry.metrics.pending.fetch_sub(1, Ordering::Relaxed);
+        self.registry
+            .metrics
+            .pending
+            .fetch_sub(1, Ordering::Relaxed);
         let _permit = match permit {
             Ok(permit) => permit,
             Err(error) => {
@@ -369,8 +389,14 @@ impl FederationServiceHandler {
         self.registry.metrics.active.fetch_sub(1, Ordering::Relaxed);
         match &result {
             Ok((_, bytes)) => {
-                self.registry.metrics.completed.fetch_add(1, Ordering::Relaxed);
-                self.registry.metrics.response_bytes.fetch_add(*bytes, Ordering::Relaxed);
+                self.registry
+                    .metrics
+                    .completed
+                    .fetch_add(1, Ordering::Relaxed);
+                self.registry
+                    .metrics
+                    .response_bytes
+                    .fetch_add(*bytes, Ordering::Relaxed);
                 if let Ok(mut audit) = self.audit.lock() {
                     audit.response_bytes = audit.response_bytes.saturating_add(*bytes);
                 }
@@ -392,19 +418,36 @@ impl FederationServiceHandler {
             .url
             .host_str()
             .ok_or(FederationError::EndpointHasNoHost)?;
-        let port = endpoint.url.port_or_known_default().ok_or(FederationError::EndpointHasNoPort)?;
+        let port = endpoint
+            .url
+            .port_or_known_default()
+            .ok_or(FederationError::EndpointHasNoPort)?;
         let addresses = resolve_public_addresses(host, port)?;
         let pinned = *addresses.first().ok_or(FederationError::DnsEmpty)?;
-        let client = Client::builder()
-            .connect_timeout(Duration::from_millis(
-                self.registry.limits.connect_timeout_millis,
-            ))
-            .timeout(Duration::from_millis(
-                self.registry.limits.request_timeout_millis,
-            ))
-            .redirect(Policy::none())
-            .resolve(host, pinned)
-            .build()?;
+        let cache_key = (endpoint.url.to_string(), pinned);
+        let client = {
+            let mut clients = self
+                .registry
+                .clients
+                .lock()
+                .map_err(|_| FederationError::ClientCachePoisoned)?;
+            if let Some(client) = clients.get(&cache_key) {
+                client.clone()
+            } else {
+                let client = Client::builder()
+                    .connect_timeout(Duration::from_millis(
+                        self.registry.limits.connect_timeout_millis,
+                    ))
+                    .timeout(Duration::from_millis(
+                        self.registry.limits.request_timeout_millis,
+                    ))
+                    .redirect(Policy::none())
+                    .resolve(host, pinned)
+                    .build()?;
+                clients.insert(cache_key, client.clone());
+                client
+            }
+        };
         let query = Query::Select {
             dataset: None,
             pattern: pattern.clone(),
@@ -444,11 +487,15 @@ impl FederationServiceHandler {
             .and_then(QueryResultsFormat::from_media_type)
             .ok_or(FederationError::UnsupportedResultFormat)?;
         let mut body = Vec::new();
-        response.by_ref().take(limit.saturating_add(1)).read_to_end(&mut body)?;
+        response
+            .by_ref()
+            .take(limit.saturating_add(1))
+            .read_to_end(&mut body)?;
         if body.len() > self.registry.limits.max_response_bytes {
             return Err(FederationError::ResponseTooLarge);
         }
-        let byte_count = u64::try_from(body.len()).map_err(|_| FederationError::ResponseTooLarge)?;
+        let byte_count =
+            u64::try_from(body.len()).map_err(|_| FederationError::ResponseTooLarge)?;
         let ReaderQueryResultsParserOutput::Solutions(reader) =
             QueryResultsParser::from_format(content_type)
                 .for_reader(Cursor::new(body))
@@ -462,7 +509,7 @@ impl FederationServiceHandler {
                 solution.map_err(|error| QueryEvaluationError::Service(Box::new(error)))
             })
             .collect::<Vec<_>>();
-        Ok((QuerySolutionIter::new(variables, solutions.into_iter()), byte_count))
+        Ok((QuerySolutionIter::new(variables, solutions), byte_count))
     }
 }
 
@@ -539,6 +586,9 @@ pub enum FederationError {
     /// Audit synchronization was poisoned.
     #[error("federation query audit is unavailable")]
     AuditPoisoned,
+    /// Pinned HTTP-client cache synchronization was poisoned.
+    #[error("federation pinned-client cache is unavailable")]
+    ClientCachePoisoned,
     /// Endpoint host absent.
     #[error("federation endpoint has no host")]
     EndpointHasNoHost,
@@ -549,7 +599,9 @@ pub enum FederationError {
     #[error("federation endpoint DNS returned no addresses")]
     DnsEmpty,
     /// DNS resolved to a forbidden network.
-    #[error("federation endpoint resolved to a private, local, multicast, or reserved address: {0}")]
+    #[error(
+        "federation endpoint resolved to a private, local, multicast, or reserved address: {0}"
+    )]
     ForbiddenAddress(IpAddr),
     /// Remote HTTP status.
     #[error("federation endpoint returned HTTP status {0}")]
@@ -601,8 +653,8 @@ fn load_bearer_token(variable: &str) -> Result<HeaderValue, FederationError> {
     {
         return Err(FederationError::SecretReference(variable.to_owned()));
     }
-    let token = env::var(variable)
-        .map_err(|_| FederationError::SecretReference(variable.to_owned()))?;
+    let token =
+        env::var(variable).map_err(|_| FederationError::SecretReference(variable.to_owned()))?;
     HeaderValue::from_str(&format!("Bearer {token}"))
         .map_err(|_| FederationError::SecretReference(variable.to_owned()))
 }
@@ -642,6 +694,9 @@ fn forbidden_ip(ip: IpAddr) -> bool {
                 || (octets[0] == 203 && octets[1] == 0 && octets[2] == 113)
         }
         IpAddr::V6(ip) => {
+            if let Some(mapped) = ip.to_ipv4_mapped() {
+                return forbidden_ip(IpAddr::V4(mapped));
+            }
             let segments = ip.segments();
             ip.is_loopback()
                 || ip.is_unspecified()
@@ -649,21 +704,37 @@ fn forbidden_ip(ip: IpAddr) -> bool {
                 || (segments[0] & 0xfe00) == 0xfc00
                 || (segments[0] & 0xffc0) == 0xfe80
                 || (segments[0] == 0x2001 && segments[1] == 0x0db8)
+                // Reject IPv4 transition mechanisms rather than allowing a
+                // second address family to escape the pinned public-address check.
+                || segments[0] == 0x2002
+                || (segments[0] == 0x2001 && segments[1] == 0)
+                || (segments[0] == 0x0064
+                    && segments[1] == 0xff9b
+                    && segments[2..6] == [0, 0, 0, 0])
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{FederationEndpointConfig, FederationLimits, FederationRegistryFile, forbidden_ip, validate_endpoint_url, validate_limits};
+    use super::{
+        FederationEndpointConfig, FederationLimits, FederationRegistryFile, forbidden_ip,
+        validate_endpoint_url, validate_limits,
+    };
     use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
     #[test]
     fn private_and_reserved_networks_are_rejected() {
-        assert!(forbidden_ip(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))));
+        assert!(forbidden_ip(IpAddr::V4(Ipv4Addr::LOCALHOST)));
         assert!(forbidden_ip(IpAddr::V4(Ipv4Addr::new(169, 254, 169, 254))));
         assert!(forbidden_ip(IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1))));
         assert!(forbidden_ip(IpAddr::V6(Ipv6Addr::LOCALHOST)));
+        assert!(forbidden_ip(IpAddr::V6(Ipv6Addr::new(
+            0, 0, 0, 0, 0, 0xffff, 0x0a00, 0x0001,
+        ))));
+        assert!(forbidden_ip(IpAddr::V6(Ipv6Addr::new(
+            0x64, 0xff9b, 0, 0, 0, 0, 0x0808, 0x0808,
+        ))));
         assert!(!forbidden_ip(IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8))));
     }
 

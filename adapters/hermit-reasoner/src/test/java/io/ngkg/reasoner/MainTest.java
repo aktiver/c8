@@ -260,7 +260,7 @@ final class MainTest {
     private static String minimalDatatypePolicy(String iri, String lexicalSpace) throws Exception {
         Map<String, Object> policy = new LinkedHashMap<>();
         policy.put("formatVersion", 1);
-        policy.put("policyId", "test-policy");
+        policy.put("policyId", "ngkg-owl2-direct-datatype-policy-v1");
         policy.put("unsupportedDatatypeBehavior", "reject_snapshot");
         policy.put("illTypedLiteralBehavior", "reject_snapshot");
         policy.put("canonicalization", "preserve_source_lexical_form");

@@ -24,6 +24,7 @@ ngkg-semantic-compiler = { path = "../../crates/ngkg-semantic-compiler" }
 ngkg-ontology-qualifier = { path = "../../crates/ngkg-ontology-qualifier" }
 ngkg-offline-reasoner = { path = "../../crates/ngkg-offline-reasoner" }
 ngkg-snapshot-activation = { path = "../../crates/ngkg-snapshot-activation" }
+ngkg-source-planner = { path = "../../crates/ngkg-source-planner" }
 oxigraph.workspace = true
 kube.workspace = true
 serde.workspace = true

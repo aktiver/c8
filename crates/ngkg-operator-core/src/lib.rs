@@ -51,7 +51,8 @@ pub fn next_action(observed: &StageObservation) -> Result<StageAction, Reconcile
     if observed.failed_partitions > 0 {
         return Err(ReconcileError::DeterministicPartitionFailure);
     }
-    let complete = observed.expected_partitions > 0 && observed.succeeded_partitions == observed.expected_partitions;
+    let complete = observed.expected_partitions > 0
+        && observed.succeeded_partitions == observed.expected_partitions;
     use JobState::{
         Cancelled, Certified, Failed, Identified, Indexed, MappingValidated, Partitioned,
         Projected, Published, Reasoned, Registered, SourcePlanned, SpineWritten,
@@ -64,7 +65,9 @@ pub fn next_action(observed: &StageObservation) -> Result<StageAction, Reconcile
         Partitioned => Ok(StageAction::CreateProjectionJob),
         Projected if observed.reducer_manifests_valid => Ok(StageAction::CreateIdentityReducers),
         Projected => Err(ReconcileError::InvalidReducers),
-        Identified | SpineWritten if observed.reducer_manifests_valid => Ok(StageAction::CreateIndexReducers),
+        Identified | SpineWritten if observed.reducer_manifests_valid => {
+            Ok(StageAction::CreateIndexReducers)
+        }
         Identified | SpineWritten => Err(ReconcileError::InvalidReducers),
         Indexed => Ok(StageAction::CreateReasoningJob),
         Reasoned => Ok(StageAction::CreateCertificationJob),
@@ -75,11 +78,10 @@ pub fn next_action(observed: &StageObservation) -> Result<StageAction, Reconcile
     }
 }
 
-
-
 /// Environment variable names for the immutable Phase 40 exact-reasoner ceiling bundle.
 pub const PHASE40_ENV_MAX_CANDIDATE_BINDINGS: &str = "NGKG_PHASE40_DIRECT_MAX_CANDIDATE_BINDINGS";
-pub const PHASE40_ENV_MAX_PARTITION_CANDIDATES: &str = "NGKG_PHASE40_DIRECT_MAX_PARTITION_CANDIDATES";
+pub const PHASE40_ENV_MAX_PARTITION_CANDIDATES: &str =
+    "NGKG_PHASE40_DIRECT_MAX_PARTITION_CANDIDATES";
 pub const PHASE40_ENV_MAX_EXACT_PARTITIONS: &str = "NGKG_PHASE40_DIRECT_MAX_EXACT_PARTITIONS";
 pub const PHASE40_ENV_MAX_GROUNDED_AXIOMS_PER_CANDIDATE: &str =
     "NGKG_PHASE40_DIRECT_MAX_GROUNDED_AXIOMS_PER_CANDIDATE";
@@ -153,9 +155,7 @@ impl Phase40DirectCeilings {
             reasoner_heap_mib_per_lane: phase40_required_u64(
                 PHASE40_ENV_REASONER_HEAP_MIB_PER_LANE,
             )?,
-            reasoner_timeout_seconds: phase40_required_u64(
-                PHASE40_ENV_REASONER_TIMEOUT_SECONDS,
-            )?,
+            reasoner_timeout_seconds: phase40_required_u64(PHASE40_ENV_REASONER_TIMEOUT_SECONDS)?,
             max_certificate_bytes: phase40_required_u64(PHASE40_ENV_MAX_CERTIFICATE_BYTES)?,
             max_proof_support_ids: phase40_required_u64(PHASE40_ENV_MAX_PROOF_SUPPORT_IDS)?,
         };
@@ -168,7 +168,9 @@ impl Phase40DirectCeilings {
         if self.max_partition_candidates > self.max_candidate_bindings {
             return Err(Phase40CeilingError::PartitionExceedsCandidateSpace);
         }
-        if self.max_candidate_bindings.div_ceil(self.max_partition_candidates)
+        if self
+            .max_candidate_bindings
+            .div_ceil(self.max_partition_candidates)
             > self.max_exact_partitions
         {
             return Err(Phase40CeilingError::PartitionCoverage);
@@ -188,9 +190,18 @@ impl Phase40DirectCeilings {
     /// Ordered environment pairs copied verbatim into generated reference/reasoner Jobs.
     pub fn env_pairs(&self) -> Vec<(&'static str, String)> {
         vec![
-            (PHASE40_ENV_MAX_CANDIDATE_BINDINGS, self.max_candidate_bindings.to_string()),
-            (PHASE40_ENV_MAX_PARTITION_CANDIDATES, self.max_partition_candidates.to_string()),
-            (PHASE40_ENV_MAX_EXACT_PARTITIONS, self.max_exact_partitions.to_string()),
+            (
+                PHASE40_ENV_MAX_CANDIDATE_BINDINGS,
+                self.max_candidate_bindings.to_string(),
+            ),
+            (
+                PHASE40_ENV_MAX_PARTITION_CANDIDATES,
+                self.max_partition_candidates.to_string(),
+            ),
+            (
+                PHASE40_ENV_MAX_EXACT_PARTITIONS,
+                self.max_exact_partitions.to_string(),
+            ),
             (
                 PHASE40_ENV_MAX_GROUNDED_AXIOMS_PER_CANDIDATE,
                 self.max_grounded_axioms_per_candidate.to_string(),
@@ -199,7 +210,10 @@ impl Phase40DirectCeilings {
                 PHASE40_ENV_MAX_GROUNDED_RDF_BYTES_PER_CANDIDATE,
                 self.max_grounded_rdf_bytes_per_candidate.to_string(),
             ),
-            (PHASE40_ENV_REASONER_CONCURRENCY, self.reasoner_concurrency.to_string()),
+            (
+                PHASE40_ENV_REASONER_CONCURRENCY,
+                self.reasoner_concurrency.to_string(),
+            ),
             (
                 PHASE40_ENV_REASONER_HEAP_MIB_PER_LANE,
                 self.reasoner_heap_mib_per_lane.to_string(),
@@ -208,8 +222,14 @@ impl Phase40DirectCeilings {
                 PHASE40_ENV_REASONER_TIMEOUT_SECONDS,
                 self.reasoner_timeout_seconds.to_string(),
             ),
-            (PHASE40_ENV_MAX_CERTIFICATE_BYTES, self.max_certificate_bytes.to_string()),
-            (PHASE40_ENV_MAX_PROOF_SUPPORT_IDS, self.max_proof_support_ids.to_string()),
+            (
+                PHASE40_ENV_MAX_CERTIFICATE_BYTES,
+                self.max_certificate_bytes.to_string(),
+            ),
+            (
+                PHASE40_ENV_MAX_PROOF_SUPPORT_IDS,
+                self.max_proof_support_ids.to_string(),
+            ),
         ]
     }
 
@@ -270,6 +290,9 @@ mod phase40_13_tests {
     fn impossible_partition_coverage_is_rejected() {
         let mut value = ceilings();
         value.max_exact_partitions = 1;
-        assert_eq!(value.validate(), Err(Phase40CeilingError::PartitionCoverage));
+        assert_eq!(
+            value.validate(),
+            Err(Phase40CeilingError::PartitionCoverage)
+        );
     }
 }

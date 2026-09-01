@@ -32,9 +32,7 @@ pub struct NativeAlgebraTask {
 ///
 /// Any scalar-oracle operator fails closed instead of being approximated. `REDUCED` preserves all
 /// duplicates, which is one of the result multiplicities explicitly permitted by SPARQL.
-pub fn execute_native_algebra_task(
-    task: &NativeAlgebraTask,
-) -> Result<Vec<Value>, ExecutionError> {
+pub fn execute_native_algebra_task(task: &NativeAlgebraTask) -> Result<Vec<Value>, ExecutionError> {
     if task.max_output_rows == 0 {
         return Err(ExecutionError::IntermediateRowLimit);
     }
@@ -42,21 +40,9 @@ pub fn execute_native_algebra_task(
         Distinct, Join, Minus, Project, Reduced, Slice, Union, Values,
     };
     match task.operator {
-        Join => inner_join_sparql_json(
-            &task.left_rows,
-            &task.right_rows,
-            task.max_output_rows,
-        ),
-        Union => union_sparql_json(
-            &task.left_rows,
-            &task.right_rows,
-            task.max_output_rows,
-        ),
-        Minus => minus_sparql_json(
-            &task.left_rows,
-            &task.right_rows,
-            task.max_output_rows,
-        ),
+        Join => inner_join_sparql_json(&task.left_rows, &task.right_rows, task.max_output_rows),
+        Union => union_sparql_json(&task.left_rows, &task.right_rows, task.max_output_rows),
+        Minus => minus_sparql_json(&task.left_rows, &task.right_rows, task.max_output_rows),
         Project => project_sparql_json(&task.left_rows, &task.projection).and_then(|rows| {
             if rows.len() > task.max_output_rows {
                 Err(ExecutionError::IntermediateRowLimit)
@@ -186,9 +172,7 @@ pub fn minus_sparql_json(
             let right_object = right_row
                 .as_object()
                 .ok_or(ExecutionError::InvalidSparqlBinding)?;
-            let shared = left_object
-                .keys()
-                .any(|key| right_object.contains_key(key));
+            let shared = left_object.keys().any(|key| right_object.contains_key(key));
             Ok(shared && compatible(left_object, right_object))
         })?;
         if !excluded {
@@ -200,10 +184,7 @@ pub fn minus_sparql_json(
 }
 
 /// Exact `DISTINCT` over complete RDF-term solution mappings.
-pub fn distinct_sparql_json(
-    rows: &[Value],
-    max_rows: usize,
-) -> Result<Vec<Value>, ExecutionError> {
+pub fn distinct_sparql_json(rows: &[Value], max_rows: usize) -> Result<Vec<Value>, ExecutionError> {
     validate_rows(rows)?;
     let mut seen = BTreeSet::new();
     let mut output = Vec::new();
@@ -234,8 +215,8 @@ pub fn group_owned_partitions(
     if rows.len() > max_rows {
         return Err(ExecutionError::IntermediateRowLimit);
     }
-    let partition_len = usize::try_from(partition_count)
-        .map_err(|_| ExecutionError::InvalidPartitionCount)?;
+    let partition_len =
+        usize::try_from(partition_count).map_err(|_| ExecutionError::InvalidPartitionCount)?;
     let mut partitions = vec![Vec::new(); partition_len];
     for row in rows {
         let object = row
@@ -352,7 +333,9 @@ pub fn complete_algebra_partition_set(
     mut results: Vec<AlgebraPartitionResult>,
     max_rows: usize,
 ) -> Result<Vec<Value>, ExecutionError> {
-    let first = results.first().ok_or(ExecutionError::InvalidPartitionCount)?;
+    let first = results
+        .first()
+        .ok_or(ExecutionError::InvalidPartitionCount)?;
     validate_identity(&first.identity)?;
     let expected_count = first.identity.partition_count;
     let expected_query = first.identity.query_sha256.clone();
@@ -424,10 +407,17 @@ fn merge(
 ) -> Result<Map<String, Value>, ExecutionError> {
     let mut output = left.clone();
     for (variable, term) in right {
-        if output.get(variable).is_some_and(|existing| existing != term) {
-            return Err(ExecutionError::IncompatibleBinding(stable_variable_id(variable)));
+        if output
+            .get(variable)
+            .is_some_and(|existing| existing != term)
+        {
+            return Err(ExecutionError::IncompatibleBinding(stable_variable_id(
+                variable,
+            )));
         }
-        output.entry(variable.clone()).or_insert_with(|| term.clone());
+        output
+            .entry(variable.clone())
+            .or_insert_with(|| term.clone());
     }
     Ok(output)
 }
@@ -530,8 +520,8 @@ mod tests {
     use serde_json::{Value, json};
 
     use super::{
-        distinct_sparql_json, group_owned_partitions, left_join_sparql_json,
-        minus_sparql_json, union_sparql_json,
+        distinct_sparql_json, group_owned_partitions, left_join_sparql_json, minus_sparql_json,
+        union_sparql_json,
     };
 
     fn uri(value: &str) -> Value {
@@ -554,7 +544,10 @@ mod tests {
     fn minus_with_disjoint_domains_keeps_the_left_solution() {
         let left = vec![json!({"s": uri("urn:a")})];
         let right = vec![json!({"o": uri("urn:a")})];
-        assert_eq!(minus_sparql_json(&left, &right, 10).unwrap_or_default(), left);
+        assert_eq!(
+            minus_sparql_json(&left, &right, 10).unwrap_or_default(),
+            left
+        );
     }
 
     #[test]
@@ -563,14 +556,17 @@ mod tests {
         let bag = union_sparql_json(std::slice::from_ref(&row), std::slice::from_ref(&row), 10)
             .unwrap_or_default();
         assert_eq!(bag.len(), 2);
-        assert_eq!(distinct_sparql_json(&bag, 10).unwrap_or_default(), vec![row]);
+        assert_eq!(
+            distinct_sparql_json(&bag, 10).unwrap_or_default(),
+            vec![row]
+        );
     }
 
     #[test]
     fn equal_group_keys_have_one_owner_even_when_unbound() {
         let rows = vec![json!({}), json!({}), json!({"g": uri("urn:g")})];
-        let partitions = group_owned_partitions(&rows, &["g".to_owned()], 8, 10)
-            .unwrap_or_default();
+        let partitions =
+            group_owned_partitions(&rows, &["g".to_owned()], 8, 10).unwrap_or_default();
         assert_eq!(partitions.iter().map(Vec::len).sum::<usize>(), 3);
         assert!(partitions.iter().any(|partition| partition.len() == 2));
     }

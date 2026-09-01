@@ -12,7 +12,8 @@ use bytes::Bytes;
 use futures::StreamExt;
 use object_store::{
     Error as ObjectStoreError, ObjectStore, ObjectStoreExt, PutMode, PutOptions,
-    aws::AmazonS3Builder, buffered::BufWriter, local::LocalFileSystem, path::Path,
+    aws::AmazonS3Builder, azure::MicrosoftAzureBuilder, buffered::BufWriter,
+    gcp::GoogleCloudStorageBuilder, local::LocalFileSystem, path::Path,
 };
 use sha2::{Digest, Sha256};
 use thiserror::Error;
@@ -60,38 +61,96 @@ pub struct ArtifactStore {
 }
 
 impl ArtifactStore {
-    /// Open `file:///absolute/root[/prefix]` or `s3://bucket[/prefix]`.
+    /// Open `file:///absolute/root[/prefix]`, `s3://bucket[/prefix]`,
+    /// `az://container[/prefix]`, or `gs://bucket[/prefix]`.
     ///
     /// S3 credentials, region, workload identity and an optional compatible endpoint
     /// are read by `AmazonS3Builder::from_env`; uploaded manifests cannot change them.
     pub fn from_base_url(value: &str) -> Result<Self, ArtifactStoreError> {
-        let url = Url::parse(value).map_err(|error| ArtifactStoreError::BaseUrl(error.to_string()))?;
-        if url.query().is_some() || url.fragment().is_some() || !url.username().is_empty() || url.password().is_some() {
+        let url =
+            Url::parse(value).map_err(|error| ArtifactStoreError::BaseUrl(error.to_string()))?;
+        if url.query().is_some()
+            || url.fragment().is_some()
+            || !url.username().is_empty()
+            || url.password().is_some()
+        {
             return Err(ArtifactStoreError::BaseUrl(
                 "credentials, query strings and fragments are forbidden".to_owned(),
             ));
         }
         match url.scheme() {
             "file" => {
-                let root = url
-                    .to_file_path()
-                    .map_err(|()| ArtifactStoreError::BaseUrl("file URL must contain an absolute local path".to_owned()))?;
-                let store = LocalFileSystem::new_with_prefix(root)
-                    .map_err(ArtifactStoreError::Store)?;
-                Ok(Self { store: Arc::new(store), prefix: String::new(), base_url: url })
+                let root = url.to_file_path().map_err(|()| {
+                    ArtifactStoreError::BaseUrl(
+                        "file URL must contain an absolute local path".to_owned(),
+                    )
+                })?;
+                let store =
+                    LocalFileSystem::new_with_prefix(root).map_err(ArtifactStoreError::Store)?;
+                Ok(Self {
+                    store: Arc::new(store),
+                    prefix: String::new(),
+                    base_url: url,
+                })
             }
             "s3" => {
                 let bucket = url
                     .host_str()
                     .filter(|bucket| !bucket.is_empty())
-                    .ok_or_else(|| ArtifactStoreError::BaseUrl("S3 URL requires a bucket".to_owned()))?;
+                    .ok_or_else(|| {
+                        ArtifactStoreError::BaseUrl("S3 URL requires a bucket".to_owned())
+                    })?;
                 let prefix = url.path().trim_matches('/').to_owned();
                 validate_optional_prefix(&prefix)?;
-                let store = AmazonS3Builder::from_env().with_bucket_name(bucket).build()?;
-                Ok(Self { store: Arc::new(store), prefix, base_url: url })
+                let store = AmazonS3Builder::from_env()
+                    .with_bucket_name(bucket)
+                    .build()?;
+                Ok(Self {
+                    store: Arc::new(store),
+                    prefix,
+                    base_url: url,
+                })
+            }
+            "az" | "azure" => {
+                let container = url
+                    .host_str()
+                    .filter(|container| !container.is_empty())
+                    .ok_or_else(|| {
+                        ArtifactStoreError::BaseUrl(
+                            "Azure URL requires a container name".to_owned(),
+                        )
+                    })?;
+                let prefix = url.path().trim_matches('/').to_owned();
+                validate_optional_prefix(&prefix)?;
+                let store = MicrosoftAzureBuilder::from_env()
+                    .with_container_name(container)
+                    .build()?;
+                Ok(Self {
+                    store: Arc::new(store),
+                    prefix,
+                    base_url: url,
+                })
+            }
+            "gs" | "gcs" => {
+                let bucket = url
+                    .host_str()
+                    .filter(|bucket| !bucket.is_empty())
+                    .ok_or_else(|| {
+                        ArtifactStoreError::BaseUrl("GCS URL requires a bucket".to_owned())
+                    })?;
+                let prefix = url.path().trim_matches('/').to_owned();
+                validate_optional_prefix(&prefix)?;
+                let store = GoogleCloudStorageBuilder::from_env()
+                    .with_bucket_name(bucket)
+                    .build()?;
+                Ok(Self {
+                    store: Arc::new(store),
+                    prefix,
+                    base_url: url,
+                })
             }
             scheme => Err(ArtifactStoreError::BaseUrl(format!(
-                "unsupported scheme {scheme}; only file and s3 are accepted"
+                "unsupported scheme {scheme}; only file, s3, az/azure, and gs/gcs are accepted"
             ))),
         }
     }
@@ -233,7 +292,10 @@ impl ArtifactStore {
         let location = self.location(key)?;
         let metadata = self.store.head(&location).await?;
         if metadata.size > max_bytes {
-            return Err(ArtifactStoreError::SizeLimit { key: key.to_owned(), limit: max_bytes });
+            return Err(ArtifactStoreError::SizeLimit {
+                key: key.to_owned(),
+                limit: max_bytes,
+            });
         }
         if let Some((observed, limit)) = aggregate_budget {
             observed
@@ -251,9 +313,17 @@ impl ArtifactStore {
         let file_name = destination
             .file_name()
             .and_then(|name| name.to_str())
-            .ok_or_else(|| ArtifactStoreError::Io(std::io::Error::other("artifact destination has no UTF-8 name")))?;
+            .ok_or_else(|| {
+                ArtifactStoreError::Io(std::io::Error::other(
+                    "artifact destination has no UTF-8 name",
+                ))
+            })?;
         let temporary = parent.join(format!(".{file_name}.partial"));
-        let file = tokio::fs::OpenOptions::new().create_new(true).write(true).open(&temporary).await?;
+        let file = tokio::fs::OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(&temporary)
+            .await?;
         let mut writer = TokioBufWriter::new(file);
         let mut stream = self.store.get(&location).await?.into_stream();
         let mut observed_bytes = 0_u64;
@@ -262,11 +332,20 @@ impl ArtifactStore {
             let chunk = chunk?;
             observed_bytes = observed_bytes
                 .checked_add(u64::try_from(chunk.len()).map_err(|_| {
-                    ArtifactStoreError::SizeLimit { key: key.to_owned(), limit: max_bytes }
+                    ArtifactStoreError::SizeLimit {
+                        key: key.to_owned(),
+                        limit: max_bytes,
+                    }
                 })?)
-                .ok_or_else(|| ArtifactStoreError::SizeLimit { key: key.to_owned(), limit: max_bytes })?;
+                .ok_or_else(|| ArtifactStoreError::SizeLimit {
+                    key: key.to_owned(),
+                    limit: max_bytes,
+                })?;
             if observed_bytes > max_bytes {
-                return Err(ArtifactStoreError::SizeLimit { key: key.to_owned(), limit: max_bytes });
+                return Err(ArtifactStoreError::SizeLimit {
+                    key: key.to_owned(),
+                    limit: max_bytes,
+                });
             }
             hasher.update(&chunk);
             writer.write_all(&chunk).await?;
@@ -276,7 +355,9 @@ impl ArtifactStore {
         drop(writer);
         if observed_bytes != metadata.size || hasher.finalize().as_slice() != expected {
             let _ = tokio::fs::remove_file(&temporary).await;
-            return Err(ArtifactStoreError::ChecksumMismatch { key: key.to_owned() });
+            return Err(ArtifactStoreError::ChecksumMismatch {
+                key: key.to_owned(),
+            });
         }
         tokio::fs::rename(&temporary, destination).await?;
         sync_directory(parent)?;
@@ -316,7 +397,10 @@ impl ArtifactStore {
                 .put_opts(
                     &location,
                     Bytes::from(content).into(),
-                    PutOptions { mode: PutMode::Create, ..PutOptions::default() },
+                    PutOptions {
+                        mode: PutMode::Create,
+                        ..PutOptions::default()
+                    },
                 )
                 .await
             {
@@ -329,15 +413,44 @@ impl ArtifactStore {
                     "multipart buffer and concurrency must be positive".to_owned(),
                 ));
             }
+            // Multipart APIs generally cannot express create-only semantics on
+            // their final target. Stream into a checksum-derived staging key,
+            // verify it, then use the backend's atomic copy-if-absent primitive.
+            // Concurrent identical publishers converge; different bytes can
+            // never replace an admitted immutable key.
+            let staging_key = format!(
+                "phase4-staging/{}/{}",
+                expected_sha256,
+                hex::encode(Sha256::digest(key.as_bytes()))
+            );
+            let staging = self.location(&staging_key)?;
             let mut source_file = tokio::fs::File::open(source).await?;
-            let mut writer = BufWriter::with_capacity(Arc::clone(&self.store), location.clone(), multipart_buffer_bytes)
-                .with_max_concurrency(multipart_concurrency);
+            let mut writer = BufWriter::with_capacity(
+                Arc::clone(&self.store),
+                staging.clone(),
+                multipart_buffer_bytes,
+            )
+            .with_max_concurrency(multipart_concurrency);
             tokio::io::copy(&mut source_file, &mut writer).await?;
             writer.shutdown().await?;
+            if self.hash_remote(&staging).await? != expected {
+                let _ = self.store.delete(&staging).await;
+                return Err(ArtifactStoreError::ChecksumMismatch {
+                    key: staging_key,
+                });
+            }
+            let copied = self.store.copy_if_not_exists(&staging, &location).await;
+            let _ = self.store.delete(&staging).await;
+            match copied {
+                Ok(()) | Err(ObjectStoreError::AlreadyExists { .. }) => {}
+                Err(error) => return Err(error.into()),
+            }
         }
         let metadata = self.store.head(&location).await?;
         if metadata.size != source_size || self.hash_remote(&location).await? != expected {
-            return Err(ArtifactStoreError::ChecksumMismatch { key: key.to_owned() });
+            return Err(ArtifactStoreError::ChecksumMismatch {
+                key: key.to_owned(),
+            });
         }
         Ok(source_size)
     }
@@ -435,7 +548,10 @@ mod tests {
             assert!(validate_key(key).is_err(), "accepted unsafe key {key}");
         }
         for key in [".hidden", "a/.hidden", "a space/b", "a/@b"] {
-            assert!(validate_key(key).is_err(), "accepted non-normalized key {key}");
+            assert!(
+                validate_key(key).is_err(),
+                "accepted non-normalized key {key}"
+            );
         }
         assert!(validate_key("bundles/sha256/example.json").is_ok());
     }
@@ -450,12 +566,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn local_store_round_trip_is_checksum_bound_and_budgeted(
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let nonce = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            ?
-            .as_nanos();
+    async fn local_store_round_trip_is_checksum_bound_and_budgeted()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let nonce = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
         let root = std::env::temp_dir().join(format!(
             "ngkg-artifact-store-test-{}-{nonce}",
             std::process::id()
@@ -466,12 +579,9 @@ mod tests {
         let bytes = b"immutable-ngkg-artifact";
         std::fs::write(&source, bytes)?;
         let checksum = hex::encode(Sha256::digest(bytes));
-        let store = ArtifactStore::from_base_url(
-            &url::Url::from_directory_path(&object_root)
-                .map_err(|()| std::io::Error::other("temporary path is not absolute"))?
-                .to_string(),
-        )
-        ?;
+        let object_root_url = url::Url::from_directory_path(&object_root)
+            .map_err(|()| std::io::Error::other("temporary path is not absolute"))?;
+        let store = ArtifactStore::from_base_url(object_root_url.as_ref())?;
         store
             .put_file_immutable("inputs/source.bin", &checksum, &source, 1024, 1024, 1)
             .await?;

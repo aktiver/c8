@@ -4,7 +4,7 @@ ARG RUNTIME_IMAGE
 FROM ${RUST_BUILDER_IMAGE} AS builder
 WORKDIR /source
 COPY . .
-RUN cargo build --locked --release --package ngkg-operator
+RUN cargo build --locked --offline --release --package ngkg-operator
 
 FROM ${RUNTIME_IMAGE}
 COPY --from=builder /source/target/release/ngkg-operator /usr/local/bin/ngkg-operator

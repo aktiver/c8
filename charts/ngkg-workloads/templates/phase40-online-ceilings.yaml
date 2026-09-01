@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ngkg-phase40-online-ceilings
+  name: ngkg-phase40-online-ceilings-{{ toJson .Values.phase40.directAdmission | sha256sum | trunc 12 }}
   labels:
     app.kubernetes.io/name: ngkg
     app.kubernetes.io/component: phase40-online-ceilings

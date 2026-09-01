@@ -9,12 +9,15 @@ use std::{
 };
 
 use futures::{StreamExt, TryStreamExt, stream};
-use kube::{Api, Client, api::{Patch, PatchParams}};
-use ngkg_artifact_store::ArtifactStore;
-use ngkg_kube::{NgkgSourceImport, NgkgSourceImportStatus};
-use ngkg_source_planner::{
-    FrozenCloudSourceManifest, FrozenCloudSourceObject, plan_cloud_decode,
+use kube::{
+    Api, Client,
+    api::{Patch, PatchParams},
 };
+use ngkg_artifact_store::ArtifactStore;
+use ngkg_kube::{
+    NgkgSourceImport, NgkgSourceImportStatus, source_import_status_apply_document,
+};
+use ngkg_source_planner::{FrozenCloudSourceManifest, FrozenCloudSourceObject, plan_cloud_decode};
 use oxigraph::{
     io::{RdfFormat, RdfParser},
     model::GraphName,
@@ -75,9 +78,7 @@ impl<R: Read> Read for HashingReader<R> {
     }
 }
 
-pub async fn execute(
-    options: &BTreeMap<String, String>,
-) -> Result<String, CloudImportError> {
+pub async fn execute(options: &BTreeMap<String, String>) -> Result<String, CloudImportError> {
     let namespace = required_value(options, "namespace").map_err(CloudImportError::Config)?;
     let import_name = required_value(options, "import-name").map_err(CloudImportError::Config)?;
     let source_root = required_path(options, "source-root").map_err(CloudImportError::Config)?;
@@ -91,9 +92,7 @@ pub async fn execute(
     let client = Client::try_default().await?;
     let imports: Api<NgkgSourceImport> = Api::namespaced(client, &namespace);
     let import = imports.get(&import_name).await?;
-    if import.spec.version_policy
-        != ngkg_kube::CloudObjectVersionPolicy::RequireImmutableChecksum
-    {
+    if import.spec.version_policy != ngkg_kube::CloudObjectVersionPolicy::RequireImmutableChecksum {
         return Err(CloudImportError::Config(
             "provider-version proof is not implemented; require-immutable-checksum is mandatory"
                 .to_owned(),
@@ -109,7 +108,9 @@ pub async fn execute(
         async move {
             tokio::task::spawn_blocking(move || scan_trig(&root, ordinal, relative))
                 .await
-                .map_err(|error| CloudImportError::Config(format!("TriG scan worker failed: {error}")))?
+                .map_err(|error| {
+                    CloudImportError::Config(format!("TriG scan worker failed: {error}"))
+                })?
         }
     }))
     .buffer_unordered(concurrency)
@@ -161,9 +162,8 @@ pub async fn execute(
         source_mount: SOURCE_MOUNT.to_owned(),
         version_policy,
         logical_partitions: import.spec.logical_partitions,
-        total_objects: u32::try_from(objects.len()).map_err(|_| {
-            CloudImportError::Config("selected object count overflow".to_owned())
-        })?,
+        total_objects: u32::try_from(objects.len())
+            .map_err(|_| CloudImportError::Config("selected object count overflow".to_owned()))?,
         total_bytes,
         total_quads,
         aggregate_source_sha256: hex::encode(aggregate.finalize()),
@@ -186,10 +186,8 @@ pub async fn execute(
             &manifest_sha256,
             &manifest_path,
             required_u64(options, "single-put-max-bytes").map_err(CloudImportError::Config)?,
-            required_usize(options, "multipart-buffer-bytes")
-                .map_err(CloudImportError::Config)?,
-            required_usize(options, "multipart-concurrency")
-                .map_err(CloudImportError::Config)?,
+            required_usize(options, "multipart-buffer-bytes").map_err(CloudImportError::Config)?,
+            required_usize(options, "multipart-concurrency").map_err(CloudImportError::Config)?,
         )
         .await?;
     let decode_plan = plan_cloud_decode(
@@ -204,8 +202,8 @@ pub async fn execute(
     )
     .map_err(|error| CloudImportError::Config(error.to_string()))?;
     let decode_plan_bytes = serde_json::to_vec_pretty(&decode_plan)?;
-    let max_plan_bytes = required_u64(options, "decode-max-plan-bytes")
-        .map_err(CloudImportError::Config)?;
+    let max_plan_bytes =
+        required_u64(options, "decode-max-plan-bytes").map_err(CloudImportError::Config)?;
     if u64::try_from(decode_plan_bytes.len()).unwrap_or(u64::MAX) > max_plan_bytes {
         return Err(CloudImportError::Config(
             "cloud decode plan exceeds decode-max-plan-bytes".to_owned(),
@@ -224,17 +222,18 @@ pub async fn execute(
             &decode_plan_sha256,
             &decode_plan_path,
             required_u64(options, "single-put-max-bytes").map_err(CloudImportError::Config)?,
-            required_usize(options, "multipart-buffer-bytes")
-                .map_err(CloudImportError::Config)?,
-            required_usize(options, "multipart-concurrency")
-                .map_err(CloudImportError::Config)?,
+            required_usize(options, "multipart-buffer-bytes").map_err(CloudImportError::Config)?,
+            required_usize(options, "multipart-concurrency").map_err(CloudImportError::Config)?,
         )
         .await?;
     // Phase 40.13.10's SourceManifestPublished barrier remains satisfied; Phase 40.13.11
     // advances the externally observed condition only after its derived plan is immutable.
     let status = NgkgSourceImportStatus {
         observed_generation: import.metadata.generation,
-        job_name: import.status.as_ref().and_then(|value| value.job_name.clone()),
+        job_name: import
+            .status
+            .as_ref()
+            .and_then(|value| value.job_name.clone()),
         source_manifest_object_key: Some(manifest_key.clone()),
         source_manifest_sha256: Some(manifest_sha256.clone()),
         decode_plan_object_key: Some(decode_plan_key.clone()),
@@ -246,11 +245,20 @@ pub async fn execute(
         condition: Some("SourceDecodePlanPublished".to_owned()),
         ..NgkgSourceImportStatus::default()
     };
+    let document = source_import_status_apply_document(
+        &import_name,
+        &status,
+        &[
+            "observedGeneration", "sourceManifestObjectKey", "sourceManifestSha256",
+            "decodePlanObjectKey", "decodePlanSha256", "decodeWorkItemCount",
+            "selectedObjectCount", "selectedSourceBytes", "parsedQuadCount",
+        ],
+    )?;
     imports
         .patch_status(
             &import_name,
-            &PatchParams::default(),
-            &Patch::Merge(serde_json::json!({"status": status})),
+            &PatchParams::apply("ngkg-source-discovery-worker"),
+            &Patch::Apply(document),
         )
         .await?;
     Ok(serde_json::json!({
@@ -345,9 +353,9 @@ fn safe_relative_path(value: &str) -> Result<PathBuf, CloudImportError> {
         || value.contains('\\')
         || value.split('/').any(str::is_empty)
         || path.is_absolute()
-        || path.components().any(|component| {
-            !matches!(component, Component::Normal(_))
-        })
+        || path
+            .components()
+            .any(|component| !matches!(component, Component::Normal(_)))
     {
         return Err(CloudImportError::Config(format!(
             "unsafe source object key: {value}"
@@ -368,10 +376,7 @@ fn is_selected_trig(path: &Path, excluded: &BTreeSet<String>) -> bool {
         })
 }
 
-fn require_selected_trig(
-    path: &Path,
-    excluded: &BTreeSet<String>,
-) -> Result<(), CloudImportError> {
+fn require_selected_trig(path: &Path, excluded: &BTreeSet<String>) -> Result<(), CloudImportError> {
     if !is_selected_trig(path, excluded) {
         return Err(CloudImportError::Config(format!(
             "object is not an allowed TriG source: {}",
@@ -404,10 +409,7 @@ fn scan_trig(
         hash: Sha256::new(),
         bytes: 0,
     }));
-    let reader = HashingReader::new(
-        BufReader::new(File::open(&path)?),
-        Arc::clone(&hash_state),
-    );
+    let reader = HashingReader::new(BufReader::new(File::open(&path)?), Arc::clone(&hash_state));
     let mut parser = RdfParser::from_format(RdfFormat::TriG).for_reader(reader);
     let mut parsed_quad_count = 0_u64;
     let mut default_graph_quad_count = 0_u64;
@@ -417,17 +419,20 @@ fn scan_trig(
             object_key: relative.display().to_string(),
             detail: error.to_string(),
         })?;
-        parsed_quad_count = parsed_quad_count.checked_add(1).ok_or_else(|| {
-            CloudImportError::Config("source quad count overflow".to_owned())
-        })?;
+        parsed_quad_count = parsed_quad_count
+            .checked_add(1)
+            .ok_or_else(|| CloudImportError::Config("source quad count overflow".to_owned()))?;
         match quad.graph_name {
             GraphName::DefaultGraph => {
-                default_graph_quad_count = default_graph_quad_count.checked_add(1).ok_or_else(|| {
-                    CloudImportError::Config("default graph quad count overflow".to_owned())
-                })?;
+                default_graph_quad_count =
+                    default_graph_quad_count.checked_add(1).ok_or_else(|| {
+                        CloudImportError::Config("default graph quad count overflow".to_owned())
+                    })?;
             }
             GraphName::NamedNode(graph) => {
-                let count = named_graph_quad_counts.entry(graph.into_string()).or_default();
+                let count = named_graph_quad_counts
+                    .entry(graph.into_string())
+                    .or_default();
                 *count = count.checked_add(1).ok_or_else(|| {
                     CloudImportError::Config("named graph quad count overflow".to_owned())
                 })?;

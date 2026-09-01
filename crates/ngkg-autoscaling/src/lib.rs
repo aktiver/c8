@@ -167,19 +167,22 @@ pub fn evaluate_pool(
 ) -> Result<ScalingDecision, AutoscalingError> {
     validate_policy(policy)?;
     validate_observation(observation)?;
-    if observation.current_nodes != u32::try_from(observation.nodes.len()).map_err(|_| {
-        AutoscalingError::InvalidContract("node count exceeds u32".to_owned())
-    })? {
+    if observation.current_nodes
+        != u32::try_from(observation.nodes.len())
+            .map_err(|_| AutoscalingError::InvalidContract("node count exceeds u32".to_owned()))?
+    {
         return Err(AutoscalingError::InvalidContract(
             "declared and observed node counts differ".to_owned(),
         ));
     }
     let ready_nodes = u32::try_from(observation.nodes.iter().filter(|node| node.ready).count())
-        .map_err(|_| AutoscalingError::InvalidContract("ready node count exceeds u32".to_owned()))?;
+        .map_err(|_| {
+            AutoscalingError::InvalidContract("ready node count exceeds u32".to_owned())
+        })?;
     let (cpu_percent, memory_percent) = maximum_node_saturation(observation)?;
     let pending = observation.pending_pods > 0;
-    let saturated = cpu_percent >= policy.cpu_target_percent
-        || memory_percent >= policy.memory_target_percent;
+    let saturated =
+        cpu_percent >= policy.cpu_target_percent || memory_percent >= policy.memory_target_percent;
     let (action, desired_nodes, trigger) = if observation.current_nodes == 0 {
         if pending || observation.active_work_items > 0 {
             if !policy.scale_from_zero {
@@ -200,7 +203,11 @@ pub fn evaluate_pool(
             .current_nodes
             .saturating_add(policy.scale_up_step)
             .min(policy.max_nodes);
-        let reason = match (cpu_percent >= policy.cpu_target_percent, memory_percent >= policy.memory_target_percent, pending) {
+        let reason = match (
+            cpu_percent >= policy.cpu_target_percent,
+            memory_percent >= policy.memory_target_percent,
+            pending,
+        ) {
             (true, true, _) => "cpu-and-memory-at-80-percent",
             (true, false, _) => "cpu-at-80-percent",
             (false, true, _) => "memory-at-80-percent",
@@ -208,13 +215,15 @@ pub fn evaluate_pool(
             _ => "capacity-demand",
         };
         if desired == observation.current_nodes {
-            (ScalingAction::Hold, desired, format!("maximum-nodes:{reason}"))
+            (
+                ScalingAction::Hold,
+                desired,
+                format!("maximum-nodes:{reason}"),
+            )
         } else {
             (ScalingAction::ScaleOut, desired, reason.to_owned())
         }
-    } else if observation.current_nodes > policy.min_nodes
-        && observation.active_work_items == 0
-    {
+    } else if observation.current_nodes > policy.min_nodes && observation.active_work_items == 0 {
         let unsafe_to_drain = observation.active_spill_bytes > 0
             || (policy.drain_requires_checkpoint && observation.active_checkpoint_bytes > 0);
         if unsafe_to_drain {
@@ -234,7 +243,11 @@ pub fn evaluate_pool(
             )
         }
     } else {
-        (ScalingAction::Hold, observation.current_nodes, "below-target".to_owned())
+        (
+            ScalingAction::Hold,
+            observation.current_nodes,
+            "below-target".to_owned(),
+        )
     };
     let observation_sha256 = canonical_sha256(observation)?;
     Ok(ScalingDecision {
@@ -272,9 +285,18 @@ pub fn certify_autoscaling(
     for policy in policies {
         validate_policy(policy)?;
     }
-    let policy_workloads = policies.iter().map(|value| value.workload).collect::<BTreeSet<_>>();
-    let decision_workloads = decisions.iter().map(|value| value.workload).collect::<BTreeSet<_>>();
-    let deterministic_workloads = determinism.iter().map(|value| value.workload).collect::<BTreeSet<_>>();
+    let policy_workloads = policies
+        .iter()
+        .map(|value| value.workload)
+        .collect::<BTreeSet<_>>();
+    let decision_workloads = decisions
+        .iter()
+        .map(|value| value.workload)
+        .collect::<BTreeSet<_>>();
+    let deterministic_workloads = determinism
+        .iter()
+        .map(|value| value.workload)
+        .collect::<BTreeSet<_>>();
     if policy_workloads != decision_workloads || policy_workloads != deterministic_workloads {
         return Err(AutoscalingError::Incomplete(
             "qualification does not cover the exact policy workload set".to_owned(),
@@ -356,10 +378,16 @@ fn maximum_node_saturation(observation: &PoolObservation) -> Result<(u8, u8), Au
 
 fn percent(used: u64, capacity: u64) -> Result<u8, AutoscalingError> {
     if capacity == 0 {
-        return Err(AutoscalingError::InvalidContract("ready capacity is zero".to_owned()));
+        return Err(AutoscalingError::InvalidContract(
+            "ready capacity is zero".to_owned(),
+        ));
     }
-    let value = u128::from(used).saturating_mul(100).div_ceil(u128::from(capacity)).min(100);
-    u8::try_from(value).map_err(|_| AutoscalingError::InvalidContract("percent exceeds u8".to_owned()))
+    let value = u128::from(used)
+        .saturating_mul(100)
+        .div_ceil(u128::from(capacity))
+        .min(100);
+    u8::try_from(value)
+        .map_err(|_| AutoscalingError::InvalidContract("percent exceeds u8".to_owned()))
 }
 
 fn validate_policy(policy: &PoolPolicy) -> Result<(), AutoscalingError> {
@@ -421,7 +449,10 @@ fn canonical_sha256<T: Serialize + ?Sized>(value: &T) -> Result<String, Autoscal
 }
 
 fn valid_sha256(value: &str) -> bool {
-    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
 }
 
 #[cfg(test)]
@@ -468,7 +499,10 @@ mod tests {
 
     #[test]
     fn seventy_nine_percent_holds() -> Result<(), AutoscalingError> {
-        assert_eq!(evaluate_pool(&policy(), &observation(7_900, 7_900))?.action, ScalingAction::Hold);
+        assert_eq!(
+            evaluate_pool(&policy(), &observation(7_900, 7_900))?.action,
+            ScalingAction::Hold
+        );
         Ok(())
     }
 
@@ -482,7 +516,10 @@ mod tests {
 
     #[test]
     fn memory_alone_triggers_scale_out() -> Result<(), AutoscalingError> {
-        assert_eq!(evaluate_pool(&policy(), &observation(1_000, 8_000))?.trigger, "memory-at-80-percent");
+        assert_eq!(
+            evaluate_pool(&policy(), &observation(1_000, 8_000))?.trigger,
+            "memory-at-80-percent"
+        );
         Ok(())
     }
 
@@ -500,7 +537,10 @@ mod tests {
             used_memory_bytes: 0,
         });
         value.current_nodes = 2;
-        assert_eq!(evaluate_pool(&policy(), &value)?.action, ScalingAction::ScaleOut);
+        assert_eq!(
+            evaluate_pool(&policy(), &value)?.action,
+            ScalingAction::ScaleOut
+        );
         Ok(())
     }
 
@@ -510,7 +550,10 @@ mod tests {
         value.current_nodes = 0;
         value.nodes.clear();
         value.pending_pods = 1;
-        assert_eq!(evaluate_pool(&policy(), &value)?.action, ScalingAction::ScaleFromZero);
+        assert_eq!(
+            evaluate_pool(&policy(), &value)?.action,
+            ScalingAction::ScaleFromZero
+        );
         Ok(())
     }
 
@@ -521,7 +564,10 @@ mod tests {
         value.active_checkpoint_bytes = 42;
         let mut reviewed = policy();
         reviewed.min_nodes = 0;
-        assert_eq!(evaluate_pool(&reviewed, &value)?.action, ScalingAction::ScaleInBlocked);
+        assert_eq!(
+            evaluate_pool(&reviewed, &value)?.action,
+            ScalingAction::ScaleInBlocked
+        );
         Ok(())
     }
 }

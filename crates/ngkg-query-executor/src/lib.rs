@@ -5,24 +5,22 @@ mod distributed_path;
 mod partition_path;
 
 pub use distributed_algebra::{
-    AlgebraPartitionIdentity, AlgebraPartitionResult, complete_algebra_partition_set,
-    distinct_sparql_json, execute_native_algebra_task, global_slice_sparql_json,
-    group_owned_partitions, left_join_sparql_json, merge_ordered_partitions_by,
-    minus_sparql_json, NativeAlgebraTask, union_sparql_json,
+    AlgebraPartitionIdentity, AlgebraPartitionResult, NativeAlgebraTask,
+    complete_algebra_partition_set, distinct_sparql_json, execute_native_algebra_task,
+    global_slice_sparql_json, group_owned_partitions, left_join_sparql_json,
+    merge_ordered_partitions_by, minus_sparql_json, union_sparql_json,
 };
 pub use distributed_path::{
     PathCheckpoint, PathCheckpointState, PathEdge, PathEndpoint, PathExpansionResult,
     PathExpansionTask, PathExpansionWorkItem, PathFrontierKey, PathIterationOutcome,
     PathWorkIdentity, build_path_checkpoint, complete_path_iteration, expand_path_work_item,
-    expand_path_work_item_borrowed, path_expansion_work_items,
-    path_partition_expansion_work_items, path_partition_owner, seed_path_frontier,
-    seed_scoped_path_frontier, validate_path_checkpoint,
+    expand_path_work_item_borrowed, path_expansion_work_items, path_partition_expansion_work_items,
+    path_partition_owner, seed_path_frontier, seed_scoped_path_frontier, validate_path_checkpoint,
 };
 pub use partition_path::{
-    AdjacencyArtifactIdentity, PartitionAdjacencyIndex, PartitionPathBatch,
-    PartitionPathError, PathGraphScope, execute_partition_path_batch,
-    lookup_dictionary_id_optional, lookup_dictionary_ids, lookup_dictionary_ids_available,
-    lookup_dictionary_terms,
+    AdjacencyArtifactIdentity, PartitionAdjacencyIndex, PartitionPathBatch, PartitionPathError,
+    PathGraphScope, execute_partition_path_batch, lookup_dictionary_id_optional,
+    lookup_dictionary_ids, lookup_dictionary_ids_available, lookup_dictionary_terms,
     write_checkpoint_atomic,
 };
 

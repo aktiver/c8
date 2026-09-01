@@ -58,7 +58,9 @@ pub enum ThreadBudgetError {
     InvalidSaturationTarget,
     #[error("cgroup memory limit or usage is unavailable or malformed: {0}")]
     CgroupMemory(String),
-    #[error("bounded worker buffers require {requested} bytes but only {available} bytes remain inside the 80-percent envelope")]
+    #[error(
+        "bounded worker buffers require {requested} bytes but only {available} bytes remain inside the 80-percent envelope"
+    )]
     MemoryBudget { requested: u64, available: u64 },
 }
 
@@ -92,9 +94,15 @@ pub fn validate_thread_budget(
         .and_then(|value| value.checked_add(budget.openmp))
         .and_then(|value| value.checked_add(budget.blas))
         .and_then(|value| value.checked_add(budget.control))
-        .ok_or(ThreadBudgetError::Oversubscribed { requested: usize::MAX, available: cpuset_cores })?;
+        .ok_or(ThreadBudgetError::Oversubscribed {
+            requested: usize::MAX,
+            available: cpuset_cores,
+        })?;
     if requested > cpuset_cores {
-        return Err(ThreadBudgetError::Oversubscribed { requested, available: cpuset_cores });
+        return Err(ThreadBudgetError::Oversubscribed {
+            requested,
+            available: cpuset_cores,
+        });
     }
     Ok(())
 }
@@ -134,9 +142,7 @@ pub fn resource_envelope_report() -> Result<ResourceEnvelopeReport, ThreadBudget
             "usage exceeds the configured finite limit".to_owned(),
         ));
     }
-    let usable_u128 = u128::from(memory_limit_bytes)
-        .saturating_mul(u128::from(target))
-        / 100;
+    let usable_u128 = u128::from(memory_limit_bytes).saturating_mul(u128::from(target)) / 100;
     let usable_memory_bytes = u64::try_from(usable_u128)
         .map_err(|_| ThreadBudgetError::CgroupMemory("usable memory exceeds u64".to_owned()))?;
     let memory_headroom_bytes = usable_memory_bytes.saturating_sub(memory_current_bytes);
@@ -177,15 +183,22 @@ pub fn validate_buffer_budget(
 fn detect_cpuset() -> Result<(usize, String), ThreadBudgetError> {
     let cgroup_path = Path::new("/sys/fs/cgroup/cpuset.cpus.effective");
     if let Ok(value) = fs::read_to_string(cgroup_path) {
-        return Ok((parse_cpu_list(value.trim())?, cgroup_path.display().to_string()));
+        return Ok((
+            parse_cpu_list(value.trim())?,
+            cgroup_path.display().to_string(),
+        ));
     }
-    let status = fs::read_to_string("/proc/self/status").map_err(|error| ThreadBudgetError::CpuSet(error.to_string()))?;
+    let status = fs::read_to_string("/proc/self/status")
+        .map_err(|error| ThreadBudgetError::CpuSet(error.to_string()))?;
     let value = status
         .lines()
         .find_map(|line| line.strip_prefix("Cpus_allowed_list:"))
         .map(str::trim)
         .ok_or_else(|| ThreadBudgetError::CpuSet("Cpus_allowed_list is absent".to_owned()))?;
-    Ok((parse_cpu_list(value)?, "/proc/self/status:Cpus_allowed_list".to_owned()))
+    Ok((
+        parse_cpu_list(value)?,
+        "/proc/self/status:Cpus_allowed_list".to_owned(),
+    ))
 }
 
 fn parse_cpu_list(value: &str) -> Result<usize, ThreadBudgetError> {
@@ -195,15 +208,25 @@ fn parse_cpu_list(value: &str) -> Result<usize, ThreadBudgetError> {
     let mut total = 0_usize;
     for component in value.split(',') {
         if let Some((start, end)) = component.split_once('-') {
-            let start = start.parse::<usize>().map_err(|_| ThreadBudgetError::CpuSet(component.to_owned()))?;
-            let end = end.parse::<usize>().map_err(|_| ThreadBudgetError::CpuSet(component.to_owned()))?;
+            let start = start
+                .parse::<usize>()
+                .map_err(|_| ThreadBudgetError::CpuSet(component.to_owned()))?;
+            let end = end
+                .parse::<usize>()
+                .map_err(|_| ThreadBudgetError::CpuSet(component.to_owned()))?;
             if end < start {
                 return Err(ThreadBudgetError::CpuSet(component.to_owned()));
             }
-            total = total.checked_add(end - start + 1).ok_or_else(|| ThreadBudgetError::CpuSet(component.to_owned()))?;
+            total = total
+                .checked_add(end - start + 1)
+                .ok_or_else(|| ThreadBudgetError::CpuSet(component.to_owned()))?;
         } else {
-            component.parse::<usize>().map_err(|_| ThreadBudgetError::CpuSet(component.to_owned()))?;
-            total = total.checked_add(1).ok_or_else(|| ThreadBudgetError::CpuSet(component.to_owned()))?;
+            component
+                .parse::<usize>()
+                .map_err(|_| ThreadBudgetError::CpuSet(component.to_owned()))?;
+            total = total
+                .checked_add(1)
+                .ok_or_else(|| ThreadBudgetError::CpuSet(component.to_owned()))?;
         }
     }
     Ok(total)
@@ -211,7 +234,9 @@ fn parse_cpu_list(value: &str) -> Result<usize, ThreadBudgetError> {
 
 fn positive_env(name: &'static str) -> Result<usize, ThreadBudgetError> {
     let value = env::var(name).map_err(|_| ThreadBudgetError::InvalidEnvironment { name })?;
-    let value = value.parse::<usize>().map_err(|_| ThreadBudgetError::InvalidEnvironment { name })?;
+    let value = value
+        .parse::<usize>()
+        .map_err(|_| ThreadBudgetError::InvalidEnvironment { name })?;
     if value == 0 {
         return Err(ThreadBudgetError::InvalidEnvironment { name });
     }
@@ -235,8 +260,8 @@ fn read_cgroup_u64(path: &str) -> Result<u64, ThreadBudgetError> {
 #[cfg(test)]
 mod tests {
     use super::{
-        MAX_NODE_SATURATION_PERCENT, ResourceEnvelopeReport, ThreadBudget,
-        parse_cpu_list, validate_buffer_budget, validate_thread_budget,
+        MAX_NODE_SATURATION_PERCENT, ResourceEnvelopeReport, ThreadBudget, parse_cpu_list,
+        validate_buffer_budget, validate_thread_budget,
     };
 
     #[test]
@@ -246,7 +271,13 @@ mod tests {
 
     #[test]
     fn nested_pool_sum_cannot_exceed_cpuset() {
-        let budget = ThreadBudget { rust_compute: 16, blocking_io: 4, openmp: 8, blas: 8, control: 1 };
+        let budget = ThreadBudget {
+            rust_compute: 16,
+            blocking_io: 4,
+            openmp: 8,
+            blas: 8,
+            control: 1,
+        };
         assert!(validate_thread_budget(&budget, 32, false).is_err());
     }
 

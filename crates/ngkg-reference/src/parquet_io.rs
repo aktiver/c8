@@ -509,7 +509,7 @@ fn write_batch(
         return Err(ParquetIoError::InvalidPayloadRow);
     }
     let properties = WriterProperties::builder()
-        .set_max_row_group_size(row_group_rows)
+        .set_max_row_group_row_count(Some(row_group_rows))
         .build();
     let mut writer = ArrowWriter::try_new(File::create(path)?, batch.schema(), Some(properties))?;
     writer.write(&batch)?;

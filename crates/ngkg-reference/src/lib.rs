@@ -67,10 +67,10 @@ pub use crate::query::{
     DefaultDatasetPolicy, ExecutedQueryResult, ExpectedQueryResult,
     QUERY_RESULT_HASH_VERSION as CERTIFIED_QUERY_RESULT_HASH_VERSION,
     QueryExecutionLimits as CertifiedQueryExecutionLimits, canonical_query_payload_sha256,
-    canonical_sparql_multiset_sha256, execute_compiled_query_with_default_policy, load_rdf_fixture,
-    load_rdf_fixture_with_base_iri, parse_expected, query_dataset_specification, verify_expected,
+    canonical_sparql_multiset_sha256, execute_compiled_query_with_default_policy,
     execute_entailment_rewritten_query_with_dataset_cancellable,
-    execute_entailment_rewritten_query_with_dataset_federated_cancellable,
+    execute_entailment_rewritten_query_with_dataset_federated_cancellable, load_rdf_fixture,
+    load_rdf_fixture_with_base_iri, parse_expected, query_dataset_specification, verify_expected,
 };
 
 #[derive(Debug, Error)]

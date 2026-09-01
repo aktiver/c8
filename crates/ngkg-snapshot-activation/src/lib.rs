@@ -11,9 +11,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use ngkg_dataset::{
-    GraphCatalog, GraphRecord, LogicalGraphName, SOURCE_DEFAULT_GRAPH_ROLE,
-};
+use ngkg_dataset::{GraphCatalog, GraphRecord, LogicalGraphName, SOURCE_DEFAULT_GRAPH_ROLE};
 use ngkg_offline_reasoner::OfflineReasoningRoot;
 use ngkg_ontology_qualifier::{OntologyQualificationRequest, OntologyQualificationRoot};
 use ngkg_reference::{
@@ -144,8 +142,7 @@ pub fn validate_inputs(inputs: &ActivationInputs<'_>) -> Result<(), ActivationEr
         || offline.snapshot_id != request.snapshot_id
         || request.semantic_compilation_root_sha256 != inputs.semantic_root_ref.sha256
         || qualification.semantic_compilation_root_sha256 != inputs.semantic_root_ref.sha256
-        || qualification.qualification_request_sha256
-            != inputs.qualification_request_ref.sha256
+        || qualification.qualification_request_sha256 != inputs.qualification_request_ref.sha256
         || offline.ontology_qualification_root_sha256 != inputs.qualification_root_ref.sha256
         || offline.finite_closure_sha256 != qualification.finite_closure_sha256
     {
@@ -193,7 +190,9 @@ pub fn validate_inputs(inputs: &ActivationInputs<'_>) -> Result<(), ActivationEr
         ));
     }
     for graph in &request.authorized_asserted_graphs {
-        if !graph.graph_iri.starts_with("https://c8-next-generation.io/")
+        if !graph
+            .graph_iri
+            .starts_with("https://c8-next-generation.io/")
             || !graph.graph_iri.ends_with("/semkg")
             || graph.graph_iri.contains("/alignment")
             || graph.graph_iri.contains("/closure")
@@ -235,10 +234,22 @@ pub fn build_serving_artifacts(
     }
     let query_dataset = output_root.join("data/query-dataset.nq");
     concatenate_lines(semantic_fact_partitions, &query_dataset)?;
-    copy_new(finite_closure_path, &output_root.join("reasoner/closure.nt"))?;
-    copy_new(owl_signature_path, &output_root.join("reasoner/owl-signature.json"))?;
-    copy_new(datatype_policy_path, &output_root.join("reasoner/datatype-policy.json"))?;
-    copy_new(owl_profile_path, &output_root.join("reasoner/owl-profile-qualification.json"))?;
+    copy_new(
+        finite_closure_path,
+        &output_root.join("reasoner/closure.nt"),
+    )?;
+    copy_new(
+        owl_signature_path,
+        &output_root.join("reasoner/owl-signature.json"),
+    )?;
+    copy_new(
+        datatype_policy_path,
+        &output_root.join("reasoner/datatype-policy.json"),
+    )?;
+    copy_new(
+        owl_profile_path,
+        &output_root.join("reasoner/owl-profile-qualification.json"),
+    )?;
     copy_new(
         owl_consistency_path,
         &output_root.join("reasoner/owl-consistency-qualification.json"),
@@ -289,7 +300,10 @@ pub fn build_serving_artifacts(
         owl_signature_sha256: Some(inputs.qualification_root.owl_signature_sha256.clone()),
         datatype_policy_sha256: Some(inputs.qualification_root.datatype_policy_sha256.clone()),
         owl_profile_qualification_sha256: Some(
-            inputs.qualification_root.owl_profile_qualification_sha256.clone(),
+            inputs
+                .qualification_root
+                .owl_profile_qualification_sha256
+                .clone(),
         ),
         owl_consistency_qualification_sha256: Some(
             inputs
@@ -412,7 +426,10 @@ fn build_graph_catalog(inputs: &ActivationInputs<'_>) -> Result<GraphCatalog, Ac
         reasoning_visible: false,
         asserted_quad_count: 0,
     }];
-    let mut authorized = inputs.qualification_request.authorized_asserted_graphs.clone();
+    let mut authorized = inputs
+        .qualification_request
+        .authorized_asserted_graphs
+        .clone();
     authorized.sort_by(|left, right| left.graph_iri.cmp(&right.graph_iri));
     for (ordinal, graph) in authorized.into_iter().enumerate() {
         graphs.push(GraphRecord {
@@ -471,7 +488,10 @@ fn build_capability_index(
 }
 
 fn concatenate_lines(inputs: &[PathBuf], output: &Path) -> Result<(), ActivationError> {
-    let file = OpenOptions::new().create_new(true).write(true).open(output)?;
+    let file = OpenOptions::new()
+        .create_new(true)
+        .write(true)
+        .open(output)?;
     let mut writer = BufWriter::new(file);
     for input in inputs {
         let mut reader = BufReader::new(File::open(input)?);
@@ -491,7 +511,10 @@ fn concatenate_lines(inputs: &[PathBuf], output: &Path) -> Result<(), Activation
 
 fn copy_new(source: &Path, target: &Path) -> Result<(), ActivationError> {
     let mut reader = BufReader::new(File::open(source)?);
-    let file = OpenOptions::new().create_new(true).write(true).open(target)?;
+    let file = OpenOptions::new()
+        .create_new(true)
+        .write(true)
+        .open(target)?;
     let mut writer = BufWriter::new(file);
     std::io::copy(&mut reader, &mut writer)?;
     writer.flush()?;
@@ -572,9 +595,9 @@ fn validate_object_key(value: &str) -> Result<(), ActivationError> {
                 || segment == "."
                 || segment == ".."
                 || segment.len() > 255
-                || !segment.bytes().all(|byte| {
-                    byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-')
-                })
+                || !segment
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-'))
         })
     {
         return Err(ActivationError::Contract(

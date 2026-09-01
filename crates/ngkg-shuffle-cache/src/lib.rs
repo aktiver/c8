@@ -134,10 +134,7 @@ impl ShuffleResultCache {
         max_entries: usize,
         max_entry_bytes: u64,
     ) -> Result<Self, ShuffleCacheError> {
-        if max_bytes == 0
-            || max_entries == 0
-            || max_entry_bytes == 0
-            || max_entry_bytes > max_bytes
+        if max_bytes == 0 || max_entries == 0 || max_entry_bytes == 0 || max_entry_bytes > max_bytes
         {
             return Err(ShuffleCacheError::CapacityTooSmall);
         }
@@ -149,9 +146,9 @@ impl ShuffleResultCache {
         for entry in fs::read_dir(root)? {
             let entry = entry?;
             let name = entry.file_name();
-            let name = name.to_str().ok_or_else(|| {
-                ShuffleCacheError::UnsafeRoot("non-UTF-8 entry".to_owned())
-            })?;
+            let name = name
+                .to_str()
+                .ok_or_else(|| ShuffleCacheError::UnsafeRoot("non-UTF-8 entry".to_owned()))?;
             if name == CACHE_ROOT_MARKER {
                 continue;
             }
@@ -241,26 +238,21 @@ impl ShuffleResultCache {
     }
 
     /// Atomically publish verified logical result bytes under their immutable key.
-    pub fn insert(
-        &self,
-        key: &ShuffleCacheKey,
-        payload: &[u8],
-    ) -> Result<(), ShuffleCacheError> {
-        let payload_bytes = u64::try_from(payload.len())
-            .map_err(|_| ShuffleCacheError::EntryTooLarge)?;
+    pub fn insert(&self, key: &ShuffleCacheKey, payload: &[u8]) -> Result<(), ShuffleCacheError> {
+        let payload_bytes =
+            u64::try_from(payload.len()).map_err(|_| ShuffleCacheError::EntryTooLarge)?;
         let total_bytes = payload_bytes
-            .checked_add(u64::try_from(CACHE_HEADER_BYTES).map_err(|_| {
-                ShuffleCacheError::AccountingOverflow
-            })?)
+            .checked_add(
+                u64::try_from(CACHE_HEADER_BYTES)
+                    .map_err(|_| ShuffleCacheError::AccountingOverflow)?,
+            )
             .ok_or(ShuffleCacheError::AccountingOverflow)?;
         if total_bytes > self.max_entry_bytes {
             return Err(ShuffleCacheError::EntryTooLarge);
         }
         let digest = key.digest()?;
         let final_path = self.root.join(format!("{digest}.cache"));
-        let temp_path = self
-            .root
-            .join(format!(".{digest}.{}.tmp", Uuid::new_v4()));
+        let temp_path = self.root.join(format!(".{digest}.{}.tmp", Uuid::new_v4()));
         let write_result = (|| {
             let payload_sha256: [u8; 32] = Sha256::digest(payload).into();
             let digest_bytes = decode_digest(&digest)?;
@@ -286,12 +278,9 @@ impl ShuffleResultCache {
             touch(&mut state.least_to_most_recent, &digest);
             return Ok(());
         }
-        if let Err(error) = evict_for_insert(
-            &mut state,
-            total_bytes,
-            self.max_bytes,
-            self.max_entries,
-        ) {
+        if let Err(error) =
+            evict_for_insert(&mut state, total_bytes, self.max_bytes, self.max_entries)
+        {
             let _cleanup = fs::remove_file(&temp_path);
             return Err(error);
         }
@@ -450,9 +439,9 @@ fn validate_header(
     max_entry_bytes: u64,
 ) -> Result<[u8; CACHE_HEADER_BYTES], ShuffleCacheError> {
     if expected_bytes > max_entry_bytes
-        || expected_bytes < u64::try_from(CACHE_HEADER_BYTES).map_err(|_| {
-            ShuffleCacheError::AccountingOverflow
-        })?
+        || expected_bytes
+            < u64::try_from(CACHE_HEADER_BYTES)
+                .map_err(|_| ShuffleCacheError::AccountingOverflow)?
     {
         return Err(ShuffleCacheError::EntryTooLarge);
     }
@@ -468,9 +457,9 @@ fn validate_header(
             .map_err(|_| ShuffleCacheError::InvalidKey)?,
     );
     let total = payload_bytes
-        .checked_add(u64::try_from(CACHE_HEADER_BYTES).map_err(|_| {
-            ShuffleCacheError::AccountingOverflow
-        })?)
+        .checked_add(
+            u64::try_from(CACHE_HEADER_BYTES).map_err(|_| ShuffleCacheError::AccountingOverflow)?,
+        )
         .ok_or(ShuffleCacheError::AccountingOverflow)?;
     if total != expected_bytes {
         return Err(ShuffleCacheError::InvalidKey);
@@ -490,7 +479,8 @@ fn read_verified(
             .try_into()
             .map_err(|_| ShuffleCacheError::InvalidKey)?,
     );
-    let payload_len = usize::try_from(payload_bytes).map_err(|_| ShuffleCacheError::EntryTooLarge)?;
+    let payload_len =
+        usize::try_from(payload_bytes).map_err(|_| ShuffleCacheError::EntryTooLarge)?;
     let mut payload = vec![0_u8; payload_len];
     file.read_exact(&mut payload)?;
     let mut trailing = [0_u8; 1];
@@ -511,7 +501,11 @@ fn evict_for_insert(
     if incoming_bytes > max_bytes {
         return Err(ShuffleCacheError::CapacityTooSmall);
     }
-    while state.entries.len().checked_add(1).is_none_or(|count| count > max_entries)
+    while state
+        .entries
+        .len()
+        .checked_add(1)
+        .is_none_or(|count| count > max_entries)
         || state
             .bytes
             .checked_add(incoming_bytes)
@@ -579,8 +573,7 @@ mod tests {
     };
 
     use super::{
-        CACHE_ROOT_MARKER, CacheLookup, ShuffleCacheError, ShuffleCacheKey,
-        ShuffleResultCache,
+        CACHE_ROOT_MARKER, CacheLookup, ShuffleCacheError, ShuffleCacheKey, ShuffleResultCache,
     };
     use uuid::Uuid;
 
@@ -611,15 +604,22 @@ mod tests {
     }
 
     #[test]
-    fn cache_round_trip_and_reopen_preserve_exact_bytes() -> Result<(), Box<dyn std::error::Error>> {
+    fn cache_round_trip_and_reopen_preserve_exact_bytes() -> Result<(), Box<dyn std::error::Error>>
+    {
         let root = root();
         let cache = ShuffleResultCache::open(&root, 4096, 4, 2048)?;
         assert_eq!(cache.get(&key(0))?, CacheLookup::Miss);
         cache.insert(&key(0), b"exact-result")?;
-        assert_eq!(cache.get(&key(0))?, CacheLookup::Hit(b"exact-result".to_vec()));
+        assert_eq!(
+            cache.get(&key(0))?,
+            CacheLookup::Hit(b"exact-result".to_vec())
+        );
         drop(cache);
         let reopened = ShuffleResultCache::open(&root, 4096, 4, 2048)?;
-        assert_eq!(reopened.get(&key(0))?, CacheLookup::Hit(b"exact-result".to_vec()));
+        assert_eq!(
+            reopened.get(&key(0))?,
+            CacheLookup::Hit(b"exact-result".to_vec())
+        );
         remove_root(&root)?;
         Ok(())
     }
@@ -630,7 +630,10 @@ mod tests {
         let cache = ShuffleResultCache::open(&root, 4096, 4, 2048)?;
         cache.insert(&key(0), b"exact-result")?;
         let path = root.join(format!("{}.cache", key(0).digest()?));
-        OpenOptions::new().append(true).open(path)?.write_all(b"corrupt")?;
+        OpenOptions::new()
+            .append(true)
+            .open(path)?
+            .write_all(b"corrupt")?;
         assert_eq!(cache.get(&key(0))?, CacheLookup::Miss);
         assert_eq!(cache.usage()?, (0, 0));
         remove_root(&root)?;
@@ -705,7 +708,8 @@ mod tests {
     }
 
     #[test]
-    fn invalid_or_oversized_entries_are_never_published() -> Result<(), Box<dyn std::error::Error>> {
+    fn invalid_or_oversized_entries_are_never_published() -> Result<(), Box<dyn std::error::Error>>
+    {
         let root = root();
         let cache = ShuffleResultCache::open(&root, 256, 4, 96)?;
         assert!(matches!(
@@ -724,7 +728,8 @@ mod tests {
     }
 
     #[test]
-    fn truncation_extension_and_wrong_key_become_misses() -> Result<(), Box<dyn std::error::Error>> {
+    fn truncation_extension_and_wrong_key_become_misses() -> Result<(), Box<dyn std::error::Error>>
+    {
         for mutation in 0..3 {
             let root = root();
             let cache = ShuffleResultCache::open(&root, 4096, 4, 2048)?;
@@ -758,11 +763,7 @@ mod tests {
         let root = root();
         let cache = ShuffleResultCache::open(&root, 4096, 4, 2048)?;
         drop(cache);
-        let temp = root.join(format!(
-            ".{}.{}.tmp",
-            key(0).digest()?,
-            Uuid::new_v4()
-        ));
+        let temp = root.join(format!(".{}.{}.tmp", key(0).digest()?, Uuid::new_v4()));
         fs::write(&temp, b"incomplete")?;
         let reopened = ShuffleResultCache::open(&root, 4096, 4, 2048)?;
         assert!(!temp.exists());
@@ -789,7 +790,8 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    fn symlinked_cache_entry_makes_the_root_fail_closed() -> Result<(), Box<dyn std::error::Error>> {
+    fn symlinked_cache_entry_makes_the_root_fail_closed() -> Result<(), Box<dyn std::error::Error>>
+    {
         use std::os::unix::fs::symlink;
 
         let root = root();

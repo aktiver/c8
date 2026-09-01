@@ -875,7 +875,7 @@ fn write_batch(
     row_group_rows: usize,
 ) -> Result<(), DistributedArtifactError> {
     let properties = WriterProperties::builder()
-        .set_max_row_group_size(row_group_rows)
+        .set_max_row_group_row_count(Some(row_group_rows))
         .build();
     let mut writer = ArrowWriter::try_new(create_new(path)?, batch.schema(), Some(properties))?;
     writer.write(&batch)?;

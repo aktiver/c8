@@ -1,0 +1,72 @@
+openapi: 3.1.0
+info:
+  title: NGKG Evidence-Bound Agent Memory API
+  version: 0.7.0
+  description: Models propose memories; authenticated policy, NGKG OWL entailment, approval and published-snapshot revalidation control promotion.
+paths:
+  /v1/memories:
+    post:
+      operationId: proposeMemory
+      security: [{bearerAuth: [memory:write]}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: ./memory-proposal.schema.json}}}}
+      responses: {'201': {description: Immutable proposed memory, content: {application/json: {schema: {$ref: ./memory-view.schema.json}}}}, '422': {description: Poisoning or evidence rejected}}
+  /v1/memories/search:
+    post:
+      operationId: searchMemories
+      security: [{bearerAuth: [memory:read]}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: ./memory-search.schema.json}}}}
+      responses: {'200': {description: Authorized current memories, content: {application/json: {schema: {type: array, items: {$ref: ./memory-view.schema.json}}}}}}
+  /v1/memories/{memoryId}:
+    get:
+      operationId: getMemory
+      security: [{bearerAuth: [memory:read]}]
+      parameters: [{$ref: '#/components/parameters/memoryId'}]
+      responses: {'200': {description: Exact memory, content: {application/json: {schema: {$ref: ./memory-view.schema.json}}}}, '403': {description: Owner-only memory denied}}
+  /v1/memories/{memoryId}/explain:
+    get:
+      operationId: explainMemory
+      security: [{bearerAuth: [memory:read]}]
+      parameters: [{$ref: '#/components/parameters/memoryId'}]
+      responses: {'200': {description: Memory, transitions, edges and inclusion rule}}
+  /v1/memories/{memoryId}/validate:
+    post:
+      operationId: validateMemory
+      security: [{bearerAuth: [memory:validate]}]
+      parameters: [{$ref: '#/components/parameters/memoryId'}]
+      responses: {'200': {description: Structural or OWL entailment evidence}, '422': {description: Unknown, mismatched or volatile evidence}}
+  /v1/memories/{memoryId}/approve:
+    post:
+      operationId: approveMemory
+      security: [{bearerAuth: [memory:approve]}]
+      parameters: [{$ref: '#/components/parameters/memoryId'}]
+      requestBody: {$ref: '#/components/requestBodies/reason'}
+      responses: {'200': {description: Approved immutable lifecycle transition}}
+  /v1/memories/{memoryId}/publish:
+    post:
+      operationId: publishMemory
+      security: [{bearerAuth: [memory:publish]}]
+      parameters: [{$ref: '#/components/parameters/memoryId'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: ./memory-publication.schema.json}}}}
+      responses: {'200': {description: Activated only after published-snapshot re-entailment}, '422': {description: Not entailed; no publication}}
+  /v1/memories/{memoryId}/supersede:
+    post:
+      operationId: supersedeMemory
+      security: [{bearerAuth: [memory:write]}]
+      parameters: [{$ref: '#/components/parameters/memoryId'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, additionalProperties: false, required: [supersedingMemoryId, reasonCode], properties: {supersedingMemoryId: {type: string, format: uuid}, reasonCode: {$ref: '#/components/schemas/reasonCode'}}}}}}
+      responses: {'200': {description: Superseded memory; immutable edge recorded}}
+  /v1/memories/{memoryId}/revoke:
+    post:
+      operationId: revokeMemory
+      security: [{bearerAuth: [memory:write]}]
+      parameters: [{$ref: '#/components/parameters/memoryId'}]
+      requestBody: {$ref: '#/components/requestBodies/reason'}
+      responses: {'200': {description: Revoked memory excluded from retrieval}}
+components:
+  securitySchemes: {bearerAuth: {type: http, scheme: bearer}}
+  parameters:
+    memoryId: {in: path, name: memoryId, required: true, schema: {type: string, format: uuid}}
+  schemas:
+    reasonCode: {type: string, pattern: '^[A-Z0-9_]{1,128}$'}
+  requestBodies:
+    reason: {required: true, content: {application/json: {schema: {type: object, additionalProperties: false, required: [reasonCode], properties: {reasonCode: {$ref: '#/components/schemas/reasonCode'}}}}}}

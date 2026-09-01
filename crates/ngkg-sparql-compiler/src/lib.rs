@@ -8,11 +8,11 @@ use std::collections::BTreeSet;
 
 use ngkg_dataset::QueryDatasetSpecification;
 use ngkg_query_planner::{
-    AlgebraExecutionLane, AlgebraPlanError, DistributedAlgebraLimits,
-    DistributedAlgebraOperator, DistributedAlgebraPlan, DistributedAlgebraStage,
-    DistributedPathAutomaton, DistributedPropertyPathLimits, DistributedPropertyPathPlan,
-    PathDirection, PathTransition, PathTransitionKind, PropertyPathPlanError,
-    validate_distributed_algebra_plan, validate_distributed_property_path_plan,
+    AlgebraExecutionLane, AlgebraPlanError, DistributedAlgebraLimits, DistributedAlgebraOperator,
+    DistributedAlgebraPlan, DistributedAlgebraStage, DistributedPathAutomaton,
+    DistributedPropertyPathLimits, DistributedPropertyPathPlan, PathDirection, PathTransition,
+    PathTransitionKind, PropertyPathPlanError, validate_distributed_algebra_plan,
+    validate_distributed_property_path_plan,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -434,9 +434,7 @@ impl AlgebraPlanBuilder {
                 vec![self.pattern(inner, outer_project)?],
             ),
             GraphPattern::Extend {
-                inner,
-                expression,
-                ..
+                inner, expression, ..
             } => {
                 let mut inputs = vec![self.pattern(inner, outer_project)?];
                 self.expression_dependencies(expression, &mut inputs)?;
@@ -497,9 +495,7 @@ impl AlgebraPlanBuilder {
                 vec![self.pattern(inner, outer_project)?],
             ),
             GraphPattern::Group {
-                inner,
-                aggregates,
-                ..
+                inner, aggregates, ..
             } => {
                 let mut inputs = vec![self.pattern(inner, outer_project)?];
                 for (_, aggregate) in aggregates {
@@ -585,6 +581,7 @@ impl AlgebraPlanBuilder {
         )
     }
 
+    #[allow(clippy::unnecessary_wraps)]
     fn push(
         &mut self,
         operator: DistributedAlgebraOperator,
@@ -668,7 +665,11 @@ impl PathAutomatonBuilder {
             }
             PropertyPathExpression::Reverse(inner) => self.fragment(inner, !reverse),
             PropertyPathExpression::Sequence(left, right) => {
-                let (first, second) = if reverse { (right, left) } else { (left, right) };
+                let (first, second) = if reverse {
+                    (right, left)
+                } else {
+                    (left, right)
+                };
                 let (start, middle_left) = self.fragment(first, reverse)?;
                 let (middle_right, end) = self.fragment(second, reverse)?;
                 self.epsilon(middle_left, middle_right);
@@ -834,12 +835,7 @@ fn collect_distributed_property_paths(
             for order in expression {
                 match order {
                     OrderExpression::Asc(expression) | OrderExpression::Desc(expression) => {
-                        collect_expression_property_paths(
-                            expression,
-                            graph_scope,
-                            limits,
-                            output,
-                        )?;
+                        collect_expression_property_paths(expression, graph_scope, limits, output)?;
                     }
                 }
             }
@@ -847,7 +843,8 @@ fn collect_distributed_property_paths(
         GraphPattern::Project { inner, .. }
         | GraphPattern::Distinct { inner }
         | GraphPattern::Reduced { inner }
-        | GraphPattern::Slice { inner, .. } => {
+        | GraphPattern::Slice { inner, .. }
+        | GraphPattern::Service { inner, .. } => {
             collect_distributed_property_paths(inner, graph_scope, limits, output)?;
         }
         GraphPattern::Group {
@@ -859,9 +856,6 @@ fn collect_distributed_property_paths(
                     collect_expression_property_paths(expr, graph_scope, limits, output)?;
                 }
             }
-        }
-        GraphPattern::Service { inner, .. } => {
-            collect_distributed_property_paths(inner, graph_scope, limits, output)?;
         }
         GraphPattern::Bgp { .. } | GraphPattern::Values { .. } => {}
     }
@@ -900,9 +894,7 @@ fn collect_expression_property_paths(
                 collect_expression_property_paths(value, graph_scope, limits, output)?;
             }
         }
-        Expression::UnaryPlus(inner)
-        | Expression::UnaryMinus(inner)
-        | Expression::Not(inner) => {
+        Expression::UnaryPlus(inner) | Expression::UnaryMinus(inner) | Expression::Not(inner) => {
             collect_expression_property_paths(inner, graph_scope, limits, output)?;
         }
         Expression::Exists(pattern) => {
@@ -1248,10 +1240,10 @@ fn inspect_graph_pattern(
 fn inspect_triple_pattern(pattern: &TriplePattern, route: &mut RouteAnalysis) {
     if let NamedNodePattern::NamedNode(predicate) = &pattern.predicate {
         route.semantic_iris.insert(predicate.as_str().to_owned());
-        if predicate.as_str() == RDF_TYPE_IRI {
-            if let TermPattern::NamedNode(class) = &pattern.object {
-                route.semantic_iris.insert(class.as_str().to_owned());
-            }
+        if predicate.as_str() == RDF_TYPE_IRI
+            && let TermPattern::NamedNode(class) = &pattern.object
+        {
+            route.semantic_iris.insert(class.as_str().to_owned());
         }
     }
 }

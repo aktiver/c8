@@ -232,9 +232,7 @@ pub fn compile_catalog(
             .insert(declaration.graph_iri.clone(), declaration.clone())
             .is_some()
         {
-            return Err(DatasetError::DuplicateGraph(
-                declaration.graph_iri.clone(),
-            ));
+            return Err(DatasetError::DuplicateGraph(declaration.graph_iri.clone()));
         }
     }
     if let Some(iri) = named_quad_counts
@@ -255,8 +253,8 @@ pub fn compile_catalog(
         asserted_quad_count: default_quad_count,
     });
     for (ordinal, (iri, declaration)) in declared.into_iter().enumerate() {
-        let graph_id = u32::try_from(ordinal.saturating_add(1))
-            .map_err(|_| DatasetError::GraphIdOverflow)?;
+        let graph_id =
+            u32::try_from(ordinal.saturating_add(1)).map_err(|_| DatasetError::GraphIdOverflow)?;
         graphs.push(GraphRecord {
             graph_id,
             name: LogicalGraphName::Named { iri: iri.clone() },
@@ -290,9 +288,7 @@ impl GraphCatalog {
         let mut previous_iri: Option<&str> = None;
         let mut names = BTreeSet::new();
         for (ordinal, graph) in self.graphs.iter().enumerate() {
-            if usize::try_from(graph.graph_id).ok() != Some(ordinal)
-                || !valid_role(&graph.role)
-            {
+            if usize::try_from(graph.graph_id).ok() != Some(ordinal) || !valid_role(&graph.role) {
                 return Err(DatasetError::NonCanonicalCatalog);
             }
             for label in &graph.authorization_labels {
@@ -355,7 +351,9 @@ pub fn resolve_dataset(
     protocol: &ProtocolDatasetSpecification,
 ) -> Result<ResolvedDataset, DatasetError> {
     catalog.validate()?;
-    if query.specified != (!query.default_graph_iris.is_empty() || !query.named_graph_iris.is_empty()) {
+    if query.specified
+        != (!query.default_graph_iris.is_empty() || !query.named_graph_iris.is_empty())
+    {
         return Err(DatasetError::InvalidQueryDatasetSpecification);
     }
     let authorized = catalog
@@ -399,11 +397,7 @@ pub fn resolve_dataset(
         });
     };
 
-    let default_graph_ids = resolve_requested_graphs(
-        catalog,
-        &authorized_set,
-        default_iris,
-    )?;
+    let default_graph_ids = resolve_requested_graphs(catalog, &authorized_set, default_iris)?;
     let named_graph_ids = resolve_requested_graphs(catalog, &authorized_set, named_iris)?;
     let active_dataset_sha256 =
         hash_active_dataset(selection_source, &default_graph_ids, &named_graph_ids)?;
@@ -427,10 +421,10 @@ pub fn validate_resolved_dataset(
     catalog: &GraphCatalog,
     resolved: &ResolvedDataset,
 ) -> Result<(), DatasetError> {
-    catalog.validate()?;
     fn canonical(ids: &[u32]) -> bool {
         ids.windows(2).all(|pair| pair[0] < pair[1])
     }
+    catalog.validate()?;
     if !canonical(&resolved.default_graph_ids)
         || !canonical(&resolved.named_graph_ids)
         || !canonical(&resolved.authorized_graph_ids)
@@ -438,14 +432,25 @@ pub fn validate_resolved_dataset(
     {
         return Err(DatasetError::ResolvedDatasetIntegrity);
     }
-    let authorized = resolved.authorized_graph_ids.iter().copied().collect::<BTreeSet<_>>();
+    let authorized = resolved
+        .authorized_graph_ids
+        .iter()
+        .copied()
+        .collect::<BTreeSet<_>>();
     for graph_id in &resolved.authorized_graph_ids {
-        let graph = catalog.by_id(*graph_id).ok_or(DatasetError::ResolvedDatasetIntegrity)?;
+        let graph = catalog
+            .by_id(*graph_id)
+            .ok_or(DatasetError::ResolvedDatasetIntegrity)?;
         if !graph.query_visible || !matches!(graph.name, LogicalGraphName::Named { .. }) {
             return Err(DatasetError::ResolvedDatasetIntegrity);
         }
     }
-    if resolved.default_graph_ids.iter().chain(&resolved.named_graph_ids).any(|id| !authorized.contains(id)) {
+    if resolved
+        .default_graph_ids
+        .iter()
+        .chain(&resolved.named_graph_ids)
+        .any(|id| !authorized.contains(id))
+    {
         return Err(DatasetError::ResolvedDatasetIntegrity);
     }
     if resolved.selection_source == DatasetSelectionSource::ServiceDefault
@@ -454,9 +459,13 @@ pub fn validate_resolved_dataset(
     {
         return Err(DatasetError::ResolvedDatasetIntegrity);
     }
-    if hash_graph_set(catalog, &resolved.authorized_graph_ids)? != resolved.authorized_graph_set_sha256
-        || hash_active_dataset(resolved.selection_source, &resolved.default_graph_ids, &resolved.named_graph_ids)?
-            != resolved.active_dataset_sha256
+    if hash_graph_set(catalog, &resolved.authorized_graph_ids)?
+        != resolved.authorized_graph_set_sha256
+        || hash_active_dataset(
+            resolved.selection_source,
+            &resolved.default_graph_ids,
+            &resolved.named_graph_ids,
+        )? != resolved.active_dataset_sha256
     {
         return Err(DatasetError::ResolvedDatasetIntegrity);
     }
@@ -549,18 +558,13 @@ fn validate_graph_iri(iri: &str) -> Result<(), DatasetError> {
 
 fn valid_role(value: &str) -> bool {
     (1..=64).contains(&value.len())
-        && value
-            .bytes()
-            .enumerate()
-            .all(|(index, byte)| {
-                if index == 0 {
-                    byte.is_ascii_lowercase()
-                } else {
-                    byte.is_ascii_lowercase()
-                        || byte.is_ascii_digit()
-                        || matches!(byte, b'_' | b'-')
-                }
-            })
+        && value.bytes().enumerate().all(|(index, byte)| {
+            if index == 0 {
+                byte.is_ascii_lowercase()
+            } else {
+                byte.is_ascii_lowercase() || byte.is_ascii_digit() || matches!(byte, b'_' | b'-')
+            }
+        })
 }
 
 /// Validate one authorization label used by graph catalogs and bearer identities.
@@ -627,12 +631,8 @@ fn hash_active_dataset(
     // Selection precedence is retained in `selection_source`; the semantic hash
     // intentionally binds only the resulting active RDF dataset so equivalent
     // query and protocol specifications may share one exact certificate.
-    let bytes = serde_json::to_vec(&(
-        "ngkg-active-dataset-v1",
-        default_graph_ids,
-        named_graph_ids,
-    ))
-    .map_err(|error| DatasetError::HashSerialization(error.to_string()))?;
+    let bytes = serde_json::to_vec(&("ngkg-active-dataset-v1", default_graph_ids, named_graph_ids))
+        .map_err(|error| DatasetError::HashSerialization(error.to_string()))?;
     Ok(hex_sha256(&bytes))
 }
 
@@ -724,7 +724,10 @@ mod tests {
             &QueryDatasetSpecification::default(),
             &ProtocolDatasetSpecification::default(),
         )?;
-        assert_eq!(resolved.selection_source, DatasetSelectionSource::ServiceDefault);
+        assert_eq!(
+            resolved.selection_source,
+            DatasetSelectionSource::ServiceDefault
+        );
         assert_eq!(resolved.default_graph_ids, vec![1, 2]);
         assert_eq!(resolved.named_graph_ids, vec![1, 2]);
         assert_eq!(resolved.authorized_graph_ids, vec![1, 2]);
@@ -748,7 +751,10 @@ mod tests {
                 named_graph_uris: vec!["https://example.test/g1".to_owned()],
             },
         )?;
-        assert_eq!(resolved.selection_source, DatasetSelectionSource::ProtocolDataset);
+        assert_eq!(
+            resolved.selection_source,
+            DatasetSelectionSource::ProtocolDataset
+        );
         assert_eq!(resolved.default_graph_ids, vec![3]);
         assert_eq!(resolved.named_graph_ids, vec![2]);
         Ok(())
@@ -766,7 +772,10 @@ mod tests {
             },
             &ProtocolDatasetSpecification::default(),
         );
-        assert!(matches!(result, Err(DatasetError::ForbiddenRequestedGraph(_))));
+        assert!(matches!(
+            result,
+            Err(DatasetError::ForbiddenRequestedGraph(_))
+        ));
         Ok(())
     }
 
@@ -787,7 +796,8 @@ mod tests {
     }
 
     #[test]
-    fn active_dataset_hash_is_semantic_while_selection_source_is_separate() -> Result<(), DatasetError> {
+    fn active_dataset_hash_is_semantic_while_selection_source_is_separate()
+    -> Result<(), DatasetError> {
         let catalog = catalog()?;
         let labels = BTreeSet::from(["team-a".to_owned(), "team-b".to_owned()]);
         let query = QueryDatasetSpecification {
@@ -832,18 +842,28 @@ mod tests {
         named.insert("https://example.test/g1".to_owned(), 1);
         named.insert("https://example.test/g2".to_owned(), 1);
         let catalog = compile_catalog(
-            dataset_id, snapshot_id, 0, &named,
-            &[declaration("https://example.test/g1", "team"), declaration("https://example.test/g2", "team")],
+            dataset_id,
+            snapshot_id,
+            0,
+            &named,
+            &[
+                declaration("https://example.test/g1", "team"),
+                declaration("https://example.test/g2", "team"),
+            ],
         )?;
         let resolved = resolve_dataset(
-            &catalog, &BTreeSet::from(["team".to_owned()]),
-            &QueryDatasetSpecification::default(), &ProtocolDatasetSpecification::default(),
+            &catalog,
+            &BTreeSet::from(["team".to_owned()]),
+            &QueryDatasetSpecification::default(),
+            &ProtocolDatasetSpecification::default(),
         )?;
         validate_resolved_dataset(&catalog, &resolved)?;
         let mut tampered = resolved.clone();
         tampered.active_dataset_sha256 = "0".repeat(64);
-        assert_eq!(validate_resolved_dataset(&catalog, &tampered), Err(DatasetError::ResolvedDatasetIntegrity));
+        assert_eq!(
+            validate_resolved_dataset(&catalog, &tampered),
+            Err(DatasetError::ResolvedDatasetIntegrity)
+        );
         Ok(())
     }
-
 }

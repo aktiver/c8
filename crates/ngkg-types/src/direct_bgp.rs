@@ -5,7 +5,10 @@
 //! complete; it makes any result that crosses that future boundary snapshot-, dataset-, graph-,
 //! policy-, and RDF-term-exact and independently validateable.
 
-use std::{collections::{BTreeMap, BTreeSet}, thread};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    thread,
+};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -23,9 +26,7 @@ const RDF_LANG_STRING: &str = "http://www.w3.org/1999/02/22-rdf-syntax-ns#langSt
 pub enum DirectBgpGraphContext {
     /// The query's active default graph; its exact bytes/meaning are bound by this hash.
     #[serde(rename = "default")]
-    Default {
-        active_default_graph_sha256: String,
-    },
+    Default { active_default_graph_sha256: String },
     /// One independently queryable named graph.
     #[serde(rename = "named")]
     Named { graph_iri: String },
@@ -159,7 +160,9 @@ pub enum DirectBgpValidationError {
     FormatVersion,
     #[error("{0} must be lowercase hexadecimal SHA-256")]
     InvalidSha256(&'static str),
-    #[error("result variables must be sorted, unique, non-empty names without ?/$ prefixes or whitespace")]
+    #[error(
+        "result variables must be sorted, unique, non-empty names without ?/$ prefixes or whitespace"
+    )]
     InvalidVariables,
     #[error("graph context is invalid: {0}")]
     InvalidGraphContext(String),
@@ -180,7 +183,9 @@ pub enum DirectBgpValidationError {
 /// Large solution vectors are validated in deterministic bounded CPU lanes. The lowest solution
 /// index always wins if more than one lane observes invalid input, so worker scheduling cannot
 /// change the reported failure.
-pub fn validate_direct_bgp_result(result: &DirectBgpResult) -> Result<(), DirectBgpValidationError> {
+pub fn validate_direct_bgp_result(
+    result: &DirectBgpResult,
+) -> Result<(), DirectBgpValidationError> {
     if result.format_version != FORMAT_VERSION {
         return Err(DirectBgpValidationError::FormatVersion);
     }
@@ -188,9 +193,15 @@ pub fn validate_direct_bgp_result(result: &DirectBgpResult) -> Result<(), Direct
         ("querySha256", result.query_sha256.as_str()),
         ("bgpSha256", result.bgp_sha256.as_str()),
         ("activeDatasetSha256", result.active_dataset_sha256.as_str()),
-        ("authorizedGraphSetSha256", result.authorized_graph_set_sha256.as_str()),
+        (
+            "authorizedGraphSetSha256",
+            result.authorized_graph_set_sha256.as_str(),
+        ),
         ("owlSignatureSha256", result.owl_signature_sha256.as_str()),
-        ("datatypePolicySha256", result.datatype_policy_sha256.as_str()),
+        (
+            "datatypePolicySha256",
+            result.datatype_policy_sha256.as_str(),
+        ),
     ] {
         if !is_lower_sha256(value) {
             return Err(DirectBgpValidationError::InvalidSha256(name));
@@ -208,7 +219,11 @@ pub fn validate_direct_bgp_result(result: &DirectBgpResult) -> Result<(), Direct
         return Err(DirectBgpValidationError::CandidateCount);
     }
 
-    let variable_set = result.variables.iter().map(String::as_str).collect::<BTreeSet<_>>();
+    let variable_set = result
+        .variables
+        .iter()
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
     validate_solutions_parallel(&result.solutions, &variable_set)?;
 
     let mut multiplicity_total = 0_u64;
@@ -230,8 +245,11 @@ fn validate_solutions_parallel(
     if solutions.is_empty() {
         return Ok(());
     }
-    let available = thread::available_parallelism().map_or(1, |count| count.get());
-    let lanes = available.min(MAX_VALIDATION_LANES).min(solutions.len()).max(1);
+    let available = thread::available_parallelism().map_or(1, std::num::NonZero::get);
+    let lanes = available
+        .min(MAX_VALIDATION_LANES)
+        .min(solutions.len())
+        .max(1);
     let chunk_size = solutions.len().div_ceil(lanes);
     let mut first_error: Option<(usize, String)> = None;
     let worker_result = thread::scope(|scope| {
@@ -250,7 +268,10 @@ fn validate_solutions_parallel(
         for handle in handles {
             match handle.join() {
                 Ok(Some(observed)) => {
-                    if first_error.as_ref().is_none_or(|current| observed.0 < current.0) {
+                    if first_error
+                        .as_ref()
+                        .is_none_or(|current| observed.0 < current.0)
+                    {
                         first_error = Some(observed);
                     }
                 }
@@ -267,13 +288,18 @@ fn validate_solutions_parallel(
     Ok(())
 }
 
-fn validate_solution(solution: &DirectBgpSolution, variables: &BTreeSet<&str>) -> Result<(), String> {
+fn validate_solution(
+    solution: &DirectBgpSolution,
+    variables: &BTreeSet<&str>,
+) -> Result<(), String> {
     if solution.multiplicity == 0 {
         return Err("multiplicity must be greater than zero".to_owned());
     }
     for (variable, term) in &solution.bindings {
         if !variables.contains(variable.as_str()) {
-            return Err(format!("binding variable {variable:?} is absent from variables"));
+            return Err(format!(
+                "binding variable {variable:?} is absent from variables"
+            ));
         }
         validate_rdf_term(term)?;
     }
@@ -289,24 +315,32 @@ fn validate_rdf_term(term: &DirectBgpRdfTerm) -> Result<(), String> {
         }
         DirectBgpRdfTerm::BlankNode { value } => {
             if value.is_empty() || value.len() > 1024 || value.chars().any(char::is_whitespace) {
-                return Err("blank-node identifier is empty, oversized, or contains whitespace".to_owned());
+                return Err(
+                    "blank-node identifier is empty, oversized, or contains whitespace".to_owned(),
+                );
             }
         }
-        DirectBgpRdfTerm::Literal { lexical_form, datatype_iri, language } => {
+        DirectBgpRdfTerm::Literal {
+            lexical_form,
+            datatype_iri,
+            language,
+        } => {
             if lexical_form.len() > 1_048_576 {
                 return Err("literal lexical form exceeds the Phase 40.3 contract bound".to_owned());
             }
             if !is_absolute_iri(datatype_iri) {
                 return Err("literal datatype is not an absolute whitespace-free IRI".to_owned());
             }
-            if let Some(language) = language {
-                if language.is_empty()
+            if let Some(language) = language
+                && (language.is_empty()
                     || language.len() > 63
                     || language.chars().any(char::is_whitespace)
-                    || datatype_iri != RDF_LANG_STRING
-                {
-                    return Err("language literal must use rdf:langString and a bounded non-empty tag".to_owned());
-                }
+                    || datatype_iri != RDF_LANG_STRING)
+            {
+                return Err(
+                    "language literal must use rdf:langString and a bounded non-empty tag"
+                        .to_owned(),
+                );
             }
         }
     }
@@ -315,7 +349,9 @@ fn validate_rdf_term(term: &DirectBgpRdfTerm) -> Result<(), String> {
 
 fn validate_graph_context(context: &DirectBgpGraphContext) -> Result<(), DirectBgpValidationError> {
     match context {
-        DirectBgpGraphContext::Default { active_default_graph_sha256 } => {
+        DirectBgpGraphContext::Default {
+            active_default_graph_sha256,
+        } => {
             if !is_lower_sha256(active_default_graph_sha256) {
                 return Err(DirectBgpValidationError::InvalidGraphContext(
                     "default graph hash is not lowercase SHA-256".to_owned(),
@@ -338,7 +374,8 @@ fn validate_variables(variables: &[String]) -> Result<(), DirectBgpValidationErr
         || variables.iter().any(|variable| {
             variable.is_empty()
                 || variable.len() > 1024
-                || variable.starts_with('?') || variable.starts_with('$')
+                || variable.starts_with('?')
+                || variable.starts_with('$')
                 || variable.chars().any(char::is_whitespace)
         })
     {
@@ -383,7 +420,10 @@ fn validate_outcome(result: &DirectBgpResult) -> Result<(), DirectBgpValidationE
 }
 
 fn is_lower_sha256(value: &str) -> bool {
-    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
 }
 
 fn is_absolute_iri(value: &str) -> bool {
@@ -393,13 +433,16 @@ fn is_absolute_iri(value: &str) -> bool {
     if colon == 0 || value.chars().any(char::is_whitespace) {
         return false;
     }
-    value[..colon].chars().enumerate().all(|(index, character)| {
-        if index == 0 {
-            character.is_ascii_alphabetic()
-        } else {
-            character.is_ascii_alphanumeric() || matches!(character, '+' | '-' | '.')
-        }
-    })
+    value[..colon]
+        .chars()
+        .enumerate()
+        .all(|(index, character)| {
+            if index == 0 {
+                character.is_ascii_alphabetic()
+            } else {
+                character.is_ascii_alphanumeric() || matches!(character, '+' | '-' | '.')
+            }
+        })
 }
 
 #[cfg(test)]
@@ -417,7 +460,9 @@ mod phase40_3_tests {
         let mut bindings = BTreeMap::new();
         bindings.insert(
             "x".to_owned(),
-            DirectBgpRdfTerm::Iri { value: "https://example.test/a".to_owned() },
+            DirectBgpRdfTerm::Iri {
+                value: "https://example.test/a".to_owned(),
+            },
         );
         DirectBgpResult {
             format_version: 1,
@@ -436,7 +481,10 @@ mod phase40_3_tests {
             variables: vec!["x".to_owned()],
             candidate_binding_count: 8,
             solution_multiplicity_total: 2,
-            solutions: vec![DirectBgpSolution { bindings, multiplicity: 2 }],
+            solutions: vec![DirectBgpSolution {
+                bindings,
+                multiplicity: 2,
+            }],
             outcome: DirectBgpOutcome {
                 status: DirectBgpStatus::Complete,
                 exactness: DirectBgpExactness::Exact,

@@ -1,0 +1,22 @@
+{{- if .Values.promptCompiler.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: {name: ngkg-prompt-compiler}
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: ngkg-prompt-compiler}
+  minReplicas: {{ .Values.promptCompiler.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.promptCompiler.autoscaling.maxReplicas }}
+  behavior:
+    scaleUp: {selectPolicy: Max, stabilizationWindowSeconds: 0, policies: [{type: Percent, value: 200, periodSeconds: 60}, {type: Pods, value: 10, periodSeconds: 60}]}
+    scaleDown: {stabilizationWindowSeconds: 600, policies: [{type: Percent, value: 25, periodSeconds: 120}]}
+  metrics:
+    - {type: Resource, resource: {name: cpu, target: {type: Utilization, averageUtilization: {{ .Values.promptCompiler.autoscaling.cpuTargetPercent }}}}}
+    - {type: Resource, resource: {name: memory, target: {type: Utilization, averageUtilization: {{ .Values.promptCompiler.autoscaling.memoryTargetPercent }}}}}
+{{- end }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: ngkg-prompt-compiler}
+spec:
+  minAvailable: 2
+  selector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: prompt-compiler}}

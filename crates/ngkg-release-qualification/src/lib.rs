@@ -255,7 +255,10 @@ pub enum QualificationError {
 }
 
 fn valid_sha(value: &str) -> bool {
-    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
 }
 
 /// Validate the graph-producing, distributed semantic prerequisite.
@@ -321,7 +324,11 @@ pub fn validate_plan(plan: &ReleaseQualificationPlan) -> Result<(), Qualificatio
             || !valid_sha(&scenario.expected_output_sha256)
             || scenario.partition >= plan.partition_count
             || scenario.partition
-                != stable_partition(&scenario.scenario_id, &scenario.input_sha256, plan.partition_count)
+                != stable_partition(
+                    &scenario.scenario_id,
+                    &scenario.input_sha256,
+                    plan.partition_count,
+                )
             || scenario.minimum_nodes < 3
             || scenario.minimum_cpu_millis < 3_000
             || scenario.minimum_memory_bytes == 0
@@ -383,7 +390,9 @@ pub fn certify_release(
                 || observation.activated_memory_bytes < scenario.minimum_memory_bytes
                 || observation.duration_seconds < scenario.minimum_duration_seconds
                 || observation.injected_failures != observation.recovered_failures
-                || observed.insert(&observation.scenario_id, observation).is_some()
+                || observed
+                    .insert(&observation.scenario_id, observation)
+                    .is_some()
             {
                 return Err(QualificationError::InvalidReportBarrier);
             }
@@ -394,19 +403,42 @@ pub fn certify_release(
     {
         return Err(QualificationError::InvalidReportBarrier);
     }
-    let all_providers = [KubernetesProvider::Rke, KubernetesProvider::Rke2, KubernetesProvider::Eks, KubernetesProvider::Aks, KubernetesProvider::Gke]
-        .into_iter()
-        .collect::<BTreeSet<_>>();
+    let all_providers = [
+        KubernetesProvider::Rke,
+        KubernetesProvider::Rke2,
+        KubernetesProvider::Eks,
+        KubernetesProvider::Aks,
+        KubernetesProvider::Gke,
+    ]
+    .into_iter()
+    .collect::<BTreeSet<_>>();
     let all_gates = [
-        ReleaseGate::SemanticContextGraph, ReleaseGate::MultinodeSoak,
-        ReleaseGate::ComputeChaos, ReleaseGate::NetworkChaos, ReleaseGate::StorageChaos,
-        ReleaseGate::Upgrade, ReleaseGate::Rollback, ReleaseGate::BackupRestore,
-        ReleaseGate::Helm, ReleaseGate::ImageProvenance, ReleaseGate::Sbom,
-        ReleaseGate::Cve, ReleaseGate::License, ReleaseGate::ReproducibleBuild,
+        ReleaseGate::SemanticContextGraph,
+        ReleaseGate::MultinodeSoak,
+        ReleaseGate::ComputeChaos,
+        ReleaseGate::NetworkChaos,
+        ReleaseGate::StorageChaos,
+        ReleaseGate::Upgrade,
+        ReleaseGate::Rollback,
+        ReleaseGate::BackupRestore,
+        ReleaseGate::Helm,
+        ReleaseGate::ImageProvenance,
+        ReleaseGate::Sbom,
+        ReleaseGate::Cve,
+        ReleaseGate::License,
+        ReleaseGate::ReproducibleBuild,
         ReleaseGate::ProviderPortability,
-    ].into_iter().collect::<BTreeSet<_>>();
-    let providers = observed.values().map(|item| item.provider).collect::<BTreeSet<_>>();
-    let gates = observed.values().map(|item| item.gate).collect::<BTreeSet<_>>();
+    ]
+    .into_iter()
+    .collect::<BTreeSet<_>>();
+    let providers = observed
+        .values()
+        .map(|item| item.provider)
+        .collect::<BTreeSet<_>>();
+    let gates = observed
+        .values()
+        .map(|item| item.gate)
+        .collect::<BTreeSet<_>>();
     if providers != all_providers || gates != all_gates {
         return Err(QualificationError::InvalidReportBarrier);
     }
@@ -445,17 +477,29 @@ mod tests {
     #[test]
     fn semantic_context_requires_distributed_graph_equivalence() {
         let evidence = SemanticContextEvidence {
-            owl2_dl_qualification_sha256: "1".repeat(64), snapshot_sha256: "2".repeat(64),
-            authorized_graph_set_sha256: "3".repeat(64), query_sha256: "4".repeat(64),
-            result_graph_sha256: "5".repeat(64), scalar_oracle_graph_sha256: "5".repeat(64),
-            reasoning_certificate_sha256: "6".repeat(64), domain_count: 4, hop_count: 3,
-            reasoned_output_triples: 1, activated_nodes: 3, activated_cpu_millis: 12_000,
-            activated_memory_bytes: 32 * 1024 * 1024 * 1024, query_form: "CONSTRUCT".into(),
-            complete: true, proof_coverage: "complete".into(),
+            owl2_dl_qualification_sha256: "1".repeat(64),
+            snapshot_sha256: "2".repeat(64),
+            authorized_graph_set_sha256: "3".repeat(64),
+            query_sha256: "4".repeat(64),
+            result_graph_sha256: "5".repeat(64),
+            scalar_oracle_graph_sha256: "5".repeat(64),
+            reasoning_certificate_sha256: "6".repeat(64),
+            domain_count: 4,
+            hop_count: 3,
+            reasoned_output_triples: 1,
+            activated_nodes: 3,
+            activated_cpu_millis: 12_000,
+            activated_memory_bytes: 32 * 1024 * 1024 * 1024,
+            query_form: "CONSTRUCT".into(),
+            complete: true,
+            proof_coverage: "complete".into(),
         };
         assert_eq!(validate_semantic_context_evidence(&evidence), Ok(()));
         let mut unequal = evidence;
         unequal.scalar_oracle_graph_sha256 = "7".repeat(64);
-        assert_eq!(validate_semantic_context_evidence(&unequal), Err(QualificationError::SemanticPrerequisite));
+        assert_eq!(
+            validate_semantic_context_evidence(&unequal),
+            Err(QualificationError::SemanticPrerequisite)
+        );
     }
 }

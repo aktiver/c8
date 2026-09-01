@@ -1,0 +1,63 @@
+openapi: 3.1.0
+info:
+  title: NGKG Inference Admission Gateway
+  version: 0.9.0
+  description: Internal CPU admission API that safely queues model calls while GPU capacity scales from zero.
+paths:
+  /health/live:
+    get:
+      operationId: inferenceLive
+      responses: {'204': {description: Process is live}}
+  /health/ready:
+    get:
+      operationId: inferenceReady
+      responses:
+        '204': {description: Admission gateway accepts bounded requests}
+        '503': {description: Gateway is draining}
+  /v1/status:
+    get:
+      operationId: inferenceInstanceStatus
+      responses:
+        '200':
+          description: Instance-local queue and backend readiness state
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/InferenceStatus'}
+  /v1/chat/completions:
+    post:
+      operationId: createVllmChatCompletion
+      description: Queues a bounded OpenAI-compatible request until a ready GPU backend exists, then submits it exactly once.
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object}}}
+      responses:
+        '200': {description: OpenAI-compatible completion, content: {application/json: {schema: {type: object}}}}
+        '429': {description: Admission queue exhausted}
+        '503': {description: Gateway draining}
+        '504': {description: GPU cold-start or admission deadline exceeded}
+  /metrics:
+    get:
+      operationId: inferenceMetrics
+      responses: {'200': {description: Prometheus metrics}}
+  /openapi.yaml:
+    get:
+      operationId: inferenceOpenApi
+      responses: {'200': {description: This immutable contract}}
+components:
+  schemas:
+    InferenceStatus:
+      type: object
+      additionalProperties: false
+      required: [scope, ready, draining, backendReady, waitingRequests, inFlightRequests, admittedTotal, rejectedTotal, failedTotal, servedModel, observedAtEpochMs]
+      properties:
+        scope: {type: string, const: INSTANCE}
+        ready: {type: boolean}
+        draining: {type: boolean}
+        backendReady: {type: boolean}
+        waitingRequests: {type: integer, minimum: 0}
+        inFlightRequests: {type: integer, minimum: 0}
+        admittedTotal: {type: integer, minimum: 0}
+        rejectedTotal: {type: integer, minimum: 0}
+        failedTotal: {type: integer, minimum: 0}
+        servedModel: {type: string, minLength: 1}
+        observedAtEpochMs: {type: integer, minimum: 0}

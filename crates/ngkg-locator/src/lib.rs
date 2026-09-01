@@ -3,12 +3,12 @@
 use std::{
     collections::BTreeMap,
     fs::{self, File, OpenOptions},
-    io::{BufRead, BufReader, BufWriter, Write},
+    io::{BufRead, BufReader, BufWriter, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
 };
 
 use async_trait::async_trait;
-use memmap2::{Mmap, MmapMut};
+use memmap2::{Mmap, MmapOptions};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
@@ -113,10 +113,11 @@ pub struct ShardLocatorRecord {
     pub predicate_id: u64,
 }
 
-/// Read-only anonymous memory map containing a verified fixed-width locator.
+/// Read-only file-backed memory map containing a verified fixed-width locator.
 ///
-/// Anonymous mapping keeps unsafe OS mapping calls inside the vetted `memmap2`
-/// dependency while NGKG copies only checksum-verified bytes into the map.
+/// The immutable locator file is mapped once and searched directly by every
+/// query lane. This avoids an additional locator-sized RAM copy while allowing
+/// the kernel page cache to be shared across worker threads and processes.
 pub struct MmapLocatorIndex {
     snapshot_id: Uuid,
     source_locator_sha256: [u8; 32],
@@ -167,13 +168,14 @@ pub fn compile_sharded_locator(
             }
             write_sharded_record(&mut writer, record)?;
             previous = Some(record);
-            count = count.checked_add(1).ok_or(LocatorError::RecordCountOverflow)?;
+            count = count
+                .checked_add(1)
+                .ok_or(LocatorError::RecordCountOverflow)?;
         }
         writer.flush()?;
         writer.get_ref().sync_all()?;
         drop(writer);
         let mut file = OpenOptions::new().read(true).write(true).open(output)?;
-        use std::io::{Seek, SeekFrom};
         file.seek(SeekFrom::Start(56))?;
         file.write_all(&count.to_be_bytes())?;
         file.sync_all()?;
@@ -186,7 +188,7 @@ pub fn compile_sharded_locator(
 }
 
 impl MmapLocatorIndex {
-    /// Open, checksum, copy into a read-only map, and validate every fixed-width record.
+    /// Open, checksum, map read-only, and validate every fixed-width record.
     pub fn open(
         path: &Path,
         expected_binary_sha256: &str,
@@ -199,9 +201,12 @@ impl MmapLocatorIndex {
         if bytes_len < SHARDED_HEADER_BYTES {
             return Err(LocatorError::InvalidShardedFormat);
         }
-        let mut map = MmapMut::map_anon(bytes_len)?;
-        let mut file = File::open(path)?;
-        std::io::Read::read_exact(&mut file, &mut map)?;
+        let file = File::open(path)?;
+        // SAFETY: the descriptor is opened read-only; NGKG publishes locator files
+        // by atomic rename and never mutates an admitted path. The complete mapped
+        // bytes are checksum-verified before any record is exposed. Deployment
+        // policy mounts the snapshot cache read-only to all consumers.
+        let map = unsafe { MmapOptions::new().len(bytes_len).map(&file)? };
         let observed_binary: [u8; 32] = Sha256::digest(&map[..]).into();
         if observed_binary != expected_binary {
             return Err(LocatorError::ChecksumMismatch);
@@ -228,12 +233,11 @@ impl MmapLocatorIndex {
         if map.len() != expected_bytes {
             return Err(LocatorError::InvalidShardedFormat);
         }
-        let bytes = map.make_read_only()?;
         let index = Self {
             snapshot_id: expected_snapshot_id,
             source_locator_sha256: expected_source,
             record_count,
-            bytes,
+            bytes: map,
         };
         index.validate_sorted()?;
         Ok(index)
@@ -320,7 +324,11 @@ impl LocatorDirectory {
                 return Err(LocatorError::InvalidDirectory);
             }
         }
-        if self.owners.last().is_none_or(|owner| owner.end_inclusive != u64::MAX) {
+        if self
+            .owners
+            .last()
+            .is_none_or(|owner| owner.end_inclusive != u64::MAX)
+        {
             return Err(LocatorError::InvalidDirectory);
         }
         Ok(())
@@ -349,13 +357,24 @@ pub trait LocatorClient: Send + Sync {
 #[must_use]
 pub fn coalesce_ranges(mut ranges: Vec<PhysicalRange>) -> Vec<PhysicalRange> {
     ranges.sort_by(|left, right| {
-        (&left.object_uri, left.row_group, left.column_mask_id, left.first_row)
-            .cmp(&(&right.object_uri, right.row_group, right.column_mask_id, right.first_row))
+        (
+            &left.object_uri,
+            left.row_group,
+            left.column_mask_id,
+            left.first_row,
+        )
+            .cmp(&(
+                &right.object_uri,
+                right.row_group,
+                right.column_mask_id,
+                right.first_row,
+            ))
     });
     let mut output: Vec<PhysicalRange> = Vec::new();
     for range in ranges {
         if let Some(previous) = output.last_mut() {
-            let adjacent = previous.first_row.checked_add(previous.row_count) == Some(range.first_row);
+            let adjacent =
+                previous.first_row.checked_add(previous.row_count) == Some(range.first_row);
             if adjacent
                 && previous.object_uri == range.object_uri
                 && previous.row_group == range.row_group
@@ -383,8 +402,8 @@ fn parse_locator_line(line: &str) -> Result<ShardLocatorRecord, LocatorError> {
         return Err(LocatorError::InvalidShardedFormat);
     }
     let guid_bytes = hex::decode(fields[0]).map_err(|_| LocatorError::InvalidShardedFormat)?;
-    let entity_guid = Uuid::from_slice(&guid_bytes)
-        .map_err(|_| LocatorError::InvalidShardedFormat)?;
+    let entity_guid =
+        Uuid::from_slice(&guid_bytes).map_err(|_| LocatorError::InvalidShardedFormat)?;
     Ok(ShardLocatorRecord {
         entity_guid,
         partition_index: parse_decimal(fields[1])?,
@@ -399,7 +418,9 @@ fn parse_decimal<T: std::str::FromStr>(value: &str) -> Result<T, LocatorError> {
     if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {
         return Err(LocatorError::InvalidShardedFormat);
     }
-    value.parse::<T>().map_err(|_| LocatorError::InvalidShardedFormat)
+    value
+        .parse::<T>()
+        .map_err(|_| LocatorError::InvalidShardedFormat)
 }
 
 fn write_sharded_record(
@@ -459,7 +480,7 @@ fn decode_sha256(value: &str) -> Result<[u8; 32], LocatorError> {
 fn sha256_path(path: &Path) -> Result<[u8; 32], LocatorError> {
     let mut hasher = Sha256::new();
     let mut reader = BufReader::new(File::open(path)?);
-    let mut block = [0_u8; 1024 * 1024];
+    let mut block = vec![0_u8; 1024 * 1024].into_boxed_slice();
     loop {
         let read = std::io::Read::read(&mut reader, &mut block)?;
         if read == 0 {
@@ -480,7 +501,8 @@ mod sharded_tests {
     use super::{MmapLocatorIndex, compile_sharded_locator};
 
     #[test]
-    fn compiled_locator_preserves_multirow_direct_lookup() -> Result<(), Box<dyn std::error::Error>> {
+    fn compiled_locator_preserves_multirow_direct_lookup() -> Result<(), Box<dyn std::error::Error>>
+    {
         let root = std::env::temp_dir().join(format!("ngkg-sharded-locator-{}", Uuid::new_v4()));
         fs::create_dir(&root)?;
         let input = root.join("locator.tsv");

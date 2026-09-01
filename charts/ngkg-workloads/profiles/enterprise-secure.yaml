@@ -1,0 +1,49 @@
+# Enterprise production overlay. Provider-specific values must additionally
+# supply explicit dependency CIDRs, immutable image digests, workload-identity
+# service accounts, TLS Secrets, storage endpoints and tenant policy checksums.
+onlineServing:
+  federationEnabled: false
+  nativeCutoverMode: required
+  queryLogs:
+    storeQueryText: false
+
+networking:
+  externalApi: gateway-api
+  internalExchange: certified-arrow-ipc-rest
+  tlsMode: external-service-mesh-required
+  defaultDenyNetworkPolicies: true
+  topologyAwareRouting: true
+
+metrics:
+  cpuUtilizationTargetPercent: 80
+  memoryUtilizationTargetPercent: 80
+  workloadAwareAutoscalingEnabled: true
+
+metricsApis:
+  requireResourceMetrics: true
+  requireCustomMetrics: true
+
+productionAutoscaling:
+  enabled: true
+  cpuTargetPercent: 80
+  memoryTargetPercent: 80
+
+batchScheduling:
+  mode: kueue
+
+hpcNodeGroups:
+  provisioner: cluster-autoscaler
+
+nodeProvisioning:
+  installationMode: external
+  provider: external-cluster-autoscaler
+  namespace: kube-system
+  workloadName: cluster-autoscaler
+  credentialSecret: ''
+  discoveryResource: nodes
+
+autoscaling:
+  sparqlQueryProcessing: {owner: hpa, minNodes: 3, maxNodes: 30}
+  sparqlFragmentProcessing: {owner: hpa, minNodes: 3, maxNodes: 60}
+  parquetHydration: {owner: hpa, minNodes: 2, maxNodes: 20}
+  onlineReasoning: {owner: hpa, minNodes: 2, maxNodes: 24, targetDrainSeconds: 1800}

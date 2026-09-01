@@ -785,7 +785,7 @@ fn is_sha256(value: &str) -> bool {
 fn sha256_path(path: &Path) -> Result<[u8; 32], HydrationError> {
     let mut hasher = Sha256::new();
     let mut reader = BufReader::new(File::open(path)?);
-    let mut block = [0_u8; 1024 * 1024];
+    let mut block = vec![0_u8; 1024 * 1024].into_boxed_slice();
     loop {
         let read = reader.read(&mut block)?;
         if read == 0 {
@@ -966,7 +966,7 @@ mod sharded_tests {
         ];
         let batch = RecordBatch::try_new(schema.clone(), columns)?;
         let properties = WriterProperties::builder()
-            .set_max_row_group_size(1)
+            .set_max_row_group_row_count(Some(1))
             .build();
         let mut writer = ArrowWriter::try_new(File::create(path)?, schema, Some(properties))?;
         writer.write(&batch)?;

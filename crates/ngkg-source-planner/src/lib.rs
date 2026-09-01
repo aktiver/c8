@@ -237,8 +237,8 @@ pub fn plan_cloud_decode(
     if target_work_bytes == 0 || max_work_items == 0 {
         return Err(PlanningError::InvalidCloudLimits);
     }
-    let object_count = u32::try_from(manifest.objects.len())
-        .map_err(|_| PlanningError::InvalidCloudManifest)?;
+    let object_count =
+        u32::try_from(manifest.objects.len()).map_err(|_| PlanningError::InvalidCloudManifest)?;
     let totals = manifest.objects.iter().enumerate().try_fold(
         (0_u64, 0_u64),
         |(bytes, quads), (ordinal, object)| {
@@ -275,8 +275,7 @@ pub fn plan_cloud_decode(
             .cmp(&left.bytes)
             .then_with(|| left.ordinal.cmp(&right.ordinal))
     });
-    let group_count =
-        usize::try_from(work_count).map_err(|_| PlanningError::InvalidCloudLimits)?;
+    let group_count = usize::try_from(work_count).map_err(|_| PlanningError::InvalidCloudLimits)?;
     let mut groups = vec![Vec::<FrozenCloudSourceObject>::new(); group_count];
     let mut group_bytes = vec![0_u64; groups.len()];
     for object in sorted {
@@ -304,7 +303,8 @@ pub fn plan_cloud_decode(
             identity.update(object.sha256.as_bytes());
         }
         work_items.push(CloudDecodeWorkItem {
-            completion_index: u32::try_from(index).map_err(|_| PlanningError::InvalidCloudLimits)?,
+            completion_index: u32::try_from(index)
+                .map_err(|_| PlanningError::InvalidCloudLimits)?,
             work_id: format!("sha256:{}", hex::encode(identity.finalize())),
             total_bytes,
             total_quads,
@@ -349,7 +349,8 @@ pub fn plan_parquet_row_groups(
         return Err(PlanningError::EmptyColumn);
     }
     let groups: Vec<u32> = (0..row_group_count).collect();
-    let partition_size = usize::try_from(row_groups_per_partition).map_err(|_| PlanningError::ZeroTarget)?;
+    let partition_size =
+        usize::try_from(row_groups_per_partition).map_err(|_| PlanningError::ZeroTarget)?;
     Ok(groups
         .chunks(partition_size)
         .map(|chunk| {
@@ -436,7 +437,7 @@ mod tests {
                 parsed_quad_count: bytes,
                 default_graph_quad_count: bytes,
                 named_graph_quad_counts: BTreeMap::new(),
-                blank_node_scope: format!("object-{ordinal:08}-{:064x}", ordinal),
+                blank_node_scope: format!("object-{ordinal:08}-{ordinal:064x}"),
             })
             .collect::<Vec<_>>();
         let manifest = FrozenCloudSourceManifest {

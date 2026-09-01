@@ -1,0 +1,37 @@
+openapi: 3.1.0
+info: {title: NGKG Managed Agent API, version: 0.5.0}
+paths:
+  /v1/agent-executions:
+    post:
+      operationId: executeManagedAgent
+      summary: Produce a wholly entailed, snapshot-bound RDF answer
+      security: [{bearerAuth: [agents:execute]}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: ./managed-agent-request.schema.json}
+      responses:
+        '200':
+          description: Every returned RDF statement was entailed against the pinned authorized snapshot.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [executionId, answer, certificate]
+                properties:
+                  executionId: {type: string, format: uuid}
+                  answer: {type: string, description: Deterministically ordered N-Triples only}
+                  certificate: {$ref: ./answer-certificate.schema.json}
+        '400': {description: Invalid closed request}
+        '401': {description: Authentication required}
+        '403': {description: Tenant scope or immutable profile denied the request}
+        '409': {description: Input compilation is incomplete}
+        '413': {description: A hard source, context, claim or output ceiling was exceeded}
+        '422': {description: Context or one or more model claims could not be certified; no partial answer is returned}
+        '502': {description: Bounded model provider failed}
+        '503': {description: Required security, storage, query, or audit dependency failed closed}
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: OAuth2 access token or NGKG compatibility token}

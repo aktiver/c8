@@ -39,7 +39,11 @@ pub fn semantic_spine_schema() -> Schema {
         Field::new("value_i64", DataType::Int64, true),
         Field::new("value_f64", DataType::Float64, true),
         Field::new("value_decimal128", DataType::Decimal128(38, 12), true),
-        Field::new("value_timestamp_ns", DataType::Timestamp(TimeUnit::Nanosecond, Some(Arc::from("UTC"))), true),
+        Field::new(
+            "value_timestamp_ns",
+            DataType::Timestamp(TimeUnit::Nanosecond, Some(Arc::from("UTC"))),
+            true,
+        ),
         Field::new("value_utf8", DataType::Utf8, true),
         Field::new("value_binary", DataType::Binary, true),
         Field::new("datatype_id32", DataType::UInt32, true),
@@ -51,10 +55,13 @@ pub fn semantic_spine_schema() -> Schema {
         Field::new("policy_label_set_id", DataType::UInt32, false),
         Field::new("snapshot_id128", DataType::FixedSizeBinary(16), false),
     ];
-    Schema::new_with_metadata(fields, HashMap::from([
-        ("ngkg.schema".to_owned(), "semantic-spine".to_owned()),
-        ("ngkg.schema.version".to_owned(), "2".to_owned()),
-    ]))
+    Schema::new_with_metadata(
+        fields,
+        HashMap::from([
+            ("ngkg.schema".to_owned(), "semantic-spine".to_owned()),
+            ("ngkg.schema.version".to_owned(), "2".to_owned()),
+        ]),
+    )
 }
 
 /// Content-addressed output object.
@@ -172,8 +179,7 @@ pub fn validate_semantic_batch(batch: &RecordBatch) -> Result<(), ProjectionErro
         let kind = kinds.value(row);
         let expected = match kind {
             value if value == ObjectKind::Entity as u8 => {
-                if object_term_kinds.is_null(row)
-                    || !matches!(object_term_kinds.value(row), 1 | 2)
+                if object_term_kinds.is_null(row) || !matches!(object_term_kinds.value(row), 1 | 2)
                 {
                     return Err(ProjectionError::InvalidObjectTermKind(row));
                 }
@@ -191,10 +197,12 @@ pub fn validate_semantic_batch(batch: &RecordBatch) -> Result<(), ProjectionErro
         if kind != ObjectKind::Entity as u8 && !object_term_kinds.is_null(row) {
             return Err(ProjectionError::InvalidObjectTermKind(row));
         }
-        if batch.column_by_name(expected).is_none_or(|array| array.is_null(row)) {
+        if batch
+            .column_by_name(expected)
+            .is_none_or(|array| array.is_null(row))
+        {
             return Err(ProjectionError::ObjectKindMismatch(row));
         }
     }
     Ok(())
 }
-
