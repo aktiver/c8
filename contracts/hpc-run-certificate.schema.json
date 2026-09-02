@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/hpc-run-certificate-v1.schema.json",
+  "title": "NGKG complete finite MPI run certificate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "runId", "planSha256", "snapshotManifestSha256", "semanticRootSha256", "authorizedGraphSetSha256", "rankCount", "partitionCount", "scannedRows", "physicallyScannedRows", "prunedRowGroups", "prunedRows", "matchedRows", "decodedBytes", "rankReceiptSetSha256", "resultSetSha256", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "runId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "planSha256": {"$ref": "#/$defs/sha256"},
+    "snapshotManifestSha256": {"$ref": "#/$defs/sha256"},
+    "semanticRootSha256": {"$ref": "#/$defs/sha256"},
+    "authorizedGraphSetSha256": {"$ref": "#/$defs/sha256"},
+    "rankCount": {"type": "integer", "minimum": 2},
+    "partitionCount": {"type": "integer", "minimum": 1},
+    "scannedRows": {"type": "integer", "minimum": 0},
+    "physicallyScannedRows": {"type": "integer", "minimum": 0},
+    "prunedRowGroups": {"type": "integer", "minimum": 0},
+    "prunedRows": {"type": "integer", "minimum": 0},
+    "matchedRows": {"type": "integer", "minimum": 0},
+    "decodedBytes": {"type": "integer", "minimum": 0},
+    "rankReceiptSetSha256": {"$ref": "#/$defs/sha256"},
+    "resultSetSha256": {"$ref": "#/$defs/sha256"},
+    "complete": {"const": true}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

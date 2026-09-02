@@ -1,7 +1,0 @@
-contextSlice:
-  enabled: true
-  storage:
-    provider: s3
-    s3: {bucket: replace-context-slice-bucket, region: us-east-1, endpoint: ''}
-    serviceAccountAnnotations: {eks.amazonaws.com/role-arn: arn:aws:iam::000000000000:role/replace-ngkg-context-slice}
-  scheduling: {nodeSelector: {ngkg.io/workload-class: cpu-hpc}, tolerations: []}

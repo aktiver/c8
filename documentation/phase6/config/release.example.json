@@ -1,6 +1,0 @@
-{
-  "formatVersion": 1,
-  "subjectSha256": "REPLACE_WITH_SOURCE_ARCHIVE_SHA256",
-  "certificateIdentityRegexp": "^https://github.com/OWNER/REPOSITORY/.github/workflows/phase6-controlled-release.yml@refs/heads/main$",
-  "certificateOidcIssuer": "https://token.actions.githubusercontent.com"
-}

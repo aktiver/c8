@@ -25,8 +25,9 @@ def main():
  expected={'maxBgps':4096,'maxTriplesPerBgp':65536,'maxClassificationCpuLanes':32}
  if values!=expected: raise RuntimeError('workload Direct admission values drifted')
  tmpl=req('charts/ngkg-workloads/templates/phase40-online-ceilings.yaml','kind: ConfigMap','immutable: true','ngkg.io/phase: "40.12"','NGKG_PHASE40_DIRECT_ADMISSION_MAX_BGPS','NGKG_PHASE40_DIRECT_ADMISSION_MAX_TRIPLES_PER_BGP','NGKG_PHASE40_DIRECT_ADMISSION_MAX_CLASSIFICATION_CPU_LANES')
- online=req('charts/ngkg-workloads/templates/online-data-plane.yaml','configMapRef: {name: ngkg-phase40-online-ceilings}')
- if online.count('configMapRef: {name: ngkg-phase40-online-ceilings}')!=4: raise RuntimeError('not all online-serving roles consume Phase 40.12 ConfigMap')
+ config_ref='configMapRef: {name: ngkg-phase40-online-ceilings-{{ toJson .Values.phase40.directAdmission | sha256sum | trunc 12 }}}'
+ online=req('charts/ngkg-workloads/templates/online-data-plane.yaml',config_ref)
+ if online.count(config_ref)!=4: raise RuntimeError('not all online-serving roles consume the content-addressed Phase 40.12 ConfigMap')
  runtime=req('services/online-serving/src/phase40_limits.rs','TrustedPhase40AdmissionCeilings','from_env','classifier_limits','available_parallelism','min(rust_compute_threads)','ngkg-phase40-online-admission-ceilings-v1','HARD_MAX_BGPS: usize = 4096','HARD_MAX_TRIPLES_PER_BGP: usize = 65_536','HARD_MAX_CLASSIFICATION_CPU_LANES: usize = 32')
  main=req('services/online-serving/src/main.rs','TrustedPhase40AdmissionCeilings::from_env','phase40_admission.classifier_limits(rust_compute_threads)','direct_bgp_classification_limits','state.direct_bgp_classification_limits','phase40_admission_ceiling_sha256')
  handler=main[main.index('async fn validate_direct_bgps('):main.index('async fn query(',main.index('async fn validate_direct_bgps('))]

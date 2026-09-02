@@ -2,16 +2,15 @@ openapi: 3.1.0
 info:
   title: NGKG Exact Online Read Plane
   version: 1.0.0
-  description: Exact, tenant-isolated access to the active published NGKG snapshot. Phase 39.4 accepts supported ad-hoc
-    SPARQL 1.1 queries on the bounded exact RDF scalar path while retaining snapshot-bound certificates for optimized query
-    paths. SELECT may use the certified distributed Arrow/NVMe/Grace-join fast path only when the typed algebra proves it
-    eligible; uncached or uncertified supported queries execute against the immutable authorized dataset with existing resource
-    ceilings. Phase 40.13.7 binds exact online OWL Direct evidence to normal query responses. Phase 40.13.8 additionally
-    checksum-binds a complete distributed algebra DAG and its deterministic partition waves; distributed certification remains
-    disabled until native, differential, failure-injection, and multinode qualification gates pass. Phase 40.13.9 adds
-    checksum-bound property-path NFAs, stable frontier partitions, hot-vertex splits and checkpoint ceilings while retaining
-    the scalar property-path oracle until the distributed route is qualified.
-    Phase 40.13.21 adds a durable tenant-scoped query execution ledger with principal,
+  description: Exact, tenant-isolated access to the active published NGKG snapshot. Phase 39.4 accepts supported ad-hoc SPARQL
+    1.1 queries on the bounded exact RDF scalar path while retaining snapshot-bound certificates for optimized query paths.
+    SELECT may use the certified distributed Arrow/NVMe/Grace-join fast path only when the typed algebra proves it eligible;
+    uncached or uncertified supported queries execute against the immutable authorized dataset with existing resource ceilings.
+    Phase 40.13.7 binds exact online OWL Direct evidence to normal query responses. Phase 40.13.8 additionally checksum-binds
+    a complete distributed algebra DAG and its deterministic partition waves; distributed certification remains disabled until
+    native, differential, failure-injection, and multinode qualification gates pass. Phase 40.13.9 adds checksum-bound property-path
+    NFAs, stable frontier partitions, hot-vertex splits and checkpoint ceilings while retaining the scalar property-path oracle
+    until the distributed route is qualified. Phase 40.13.21 adds a durable tenant-scoped query execution ledger with principal,
     epoch timing, human duration, result disposition and Kubernetes resource-envelope evidence.
 servers:
 - url: /
@@ -29,6 +28,11 @@ paths:
             text/html:
               schema:
                 type: string
+      operationId: getDocs
+      description: This operation implements the documented "Open the Swagger UI for this contract" API capability. Use it
+        when client developers need the exact running contract for code generation, testing or interactive requests. The operation
+        takes no request body; success returns swagger ui html. This operational endpoint returns only the documented non-sensitive
+        contract and never dataset contents or credentials.
   /openapi.yaml:
     get:
       security: []
@@ -40,6 +44,11 @@ paths:
             application/yaml:
               schema:
                 type: string
+      operationId: getOpenapiYaml
+      description: This operation implements the documented "Retrieve the canonical OpenAPI YAML" API capability. Use it when
+        client developers need the exact running contract for code generation, testing or interactive requests. The operation
+        takes no request body; success returns openapi 3.1 document. This operational endpoint returns only the documented
+        non-sensitive contract and never dataset contents or credentials.
   /openapi.json:
     get:
       security: []
@@ -51,6 +60,11 @@ paths:
             application/json:
               schema:
                 type: object
+      operationId: getOpenapiJson
+      description: This operation implements the documented "Retrieve the canonical OpenAPI document as JSON" API capability.
+        Use it when client developers need the exact running contract for code generation, testing or interactive requests.
+        The operation takes no request body; success returns openapi 3.1 document. This operational endpoint returns only
+        the documented non-sensitive contract and never dataset contents or credentials.
   /health/live:
     get:
       security: []
@@ -58,6 +72,11 @@ paths:
       responses:
         '204':
           description: Process is alive
+      operationId: getHealthLive
+      description: This operation implements the documented "Report online-role process liveness" API capability. Use it when
+        Kubernetes probes and operators need to decide whether this exact process should receive traffic. The operation takes
+        no request body; success returns process is alive. This operational endpoint returns only the documented non-sensitive
+        contract and never dataset contents or credentials.
   /health/ready:
     get:
       security: []
@@ -67,6 +86,11 @@ paths:
           description: Catalog dependency is ready
         '503':
           description: Catalog dependency is unavailable
+      operationId: getHealthReady
+      description: This operation implements the documented "Report online-role catalog readiness" API capability. Use it
+        when Kubernetes probes and operators need to decide whether this exact process should receive traffic. The operation
+        takes no request body; success returns catalog dependency is ready. This operational endpoint returns only the documented
+        non-sensitive contract and never dataset contents or credentials.
   /metrics:
     get:
       security: []
@@ -78,31 +102,116 @@ paths:
             text/plain:
               schema:
                 type: string
+      operationId: getMetrics
+      description: This operation implements the documented "Prometheus admission, service-time, cache and worker-join metrics"
+        API capability. Use it when Prometheus and platform operators need bounded operational measurements for alerting and
+        autoscaling. The operation takes no request body; success returns prometheus text exposition without tenant or query
+        labels. This operational endpoint returns only the documented non-sensitive contract and never dataset contents or
+        credentials.
+  /v1/hpc/capabilities:
+    get:
+      operationId: getHpcCapabilities
+      summary: Inspect the authenticated query pod's bounded HPC capabilities
+      description: This route reports the CPU set, mutually exclusive Rust/OpenMP thread budget, cgroup memory envelope, Parquet
+        execution features and 80-percent autoscaling target used by the selected query pod. Operators use it to confirm that
+        Helm resource limits became real process limits before enabling optimized execution. The operation takes no request
+        body; success returns a live cgroup-derived resource and execution-capability envelope for this authenticated query
+        replica. Authentication, tenant authorization, resource ceilings and documented failure responses are enforced before
+        a result is accepted.
+      responses:
+        '200':
+          description: A live cgroup-derived resource and execution-capability envelope for this authenticated query replica.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HpcCapabilities'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Error'
   /v1/query_logs:
     get:
       summary: List tenant-scoped SPARQL query executions
-      description: Query users see only their own executions. Principals with query-logs:read may list all users in their authenticated tenant. Exact query text is returned only to its requesting principal or a principal with query-logs:read:text.
+      description: Query users see only their own executions. Principals with query-logs:read may list all users in their
+        authenticated tenant. Inputs use the documented path, query and header parameters; success returns bounded deterministic
+        page of query execution records. Authentication, tenant authorization, resource ceilings and documented failure responses
+        are enforced before a result is accepted.
       parameters:
-      - {name: datasetId, in: query, schema: {type: string, format: uuid}}
-      - {name: userId, in: query, schema: {type: string, minLength: 1, maxLength: 256}}
-      - {name: status, in: query, schema: {enum: [RUNNING, COMPLETED, FAILED, TIMED_OUT, CANCELLED]}}
-      - {name: startedAfterEpochMs, in: query, schema: {type: integer, minimum: 0}}
-      - {name: startedBeforeEpochMs, in: query, schema: {type: integer, minimum: 0}}
-      - {name: minDurationMs, in: query, schema: {type: integer, minimum: 0}}
-      - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 1000, default: 100}}
-      - {name: offset, in: query, schema: {type: integer, minimum: 0, maximum: 10000000, default: 0}}
+      - name: datasetId
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: userId
+        in: query
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 256
+      - name: status
+        in: query
+        schema:
+          enum:
+          - RUNNING
+          - COMPLETED
+          - FAILED
+          - TIMED_OUT
+          - CANCELLED
+      - name: startedAfterEpochMs
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+      - name: startedBeforeEpochMs
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+      - name: minDurationMs
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+          default: 0
       responses:
         '200':
           description: Bounded deterministic page of query execution records
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/QueryLogPage'}
-        '401': {$ref: '#/components/responses/Error'}
-        '403': {$ref: '#/components/responses/Error'}
-        '404': {$ref: '#/components/responses/Error'}
-        '422': {$ref: '#/components/responses/Error'}
-        '429': {$ref: '#/components/responses/TooManyRequests'}
-        '503': {$ref: '#/components/responses/Error'}
+              schema:
+                $ref: '#/components/schemas/QueryLogPage'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Error'
+      operationId: getV1QueryLogs
   /v1/query_logs/{queryExecutionId}:
     get:
       summary: Read one tenant-scoped SPARQL query execution
@@ -110,27 +219,39 @@ paths:
       - name: queryExecutionId
         in: path
         required: true
-        schema: {type: string, format: uuid}
+        schema:
+          type: string
+          format: uuid
       responses:
         '200':
           description: Exact query execution record, subject to query-text redaction
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/QueryLog'}
-        '401': {$ref: '#/components/responses/Error'}
-        '403': {$ref: '#/components/responses/Error'}
-        '404': {$ref: '#/components/responses/Error'}
-        '429': {$ref: '#/components/responses/TooManyRequests'}
-        '503': {$ref: '#/components/responses/Error'}
+              schema:
+                $ref: '#/components/schemas/QueryLog'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Error'
+      operationId: getV1QueryLogsQueryExecutionId
+      description: This operation implements the documented "Read one tenant-scoped SPARQL query execution" API capability.
+        Use it when a user or auditor needs tenant-scoped execution timing, resource attribution and outcome evidence. Inputs
+        use the documented path, query and header parameters; success returns exact query execution record, subject to query-text
+        redaction. Authentication, tenant authorization, resource ceilings and documented failure responses are enforced before
+        a result is accepted.
   /v1/datasets/{datasetId}/sparql:
     get:
       summary: Execute a SPARQL 1.1 query through a SPARQL Protocol GET encoding
       description: Executes a supported exact query over the authenticated immutable active dataset. SERVICE operators use
-        the checksum-bound tenant endpoint registry and are always uncached. In shadow mode, the scalar evaluator is retained
-        only for differential qualification. In required native-cutover mode, every algebra stage must have an executable
-        native plan or an explicitly bounded exact-reasoner route; otherwise the request returns
-        NATIVE_CUTOVER_UNAVAILABLE without scalar fallback. Protocol dataset parameters override query FROM/FROM NAMED clauses.
-        Unsupported, exhausted or timed-out execution fails without a partial success document.
+        the checksum-bound tenant endpoint registry and are always uncached. Inputs use the documented path, query and header
+        parameters; success returns the SparqlQuery response schema. Authentication, tenant authorization, resource ceilings
+        and documented failure responses are enforced before a result is accepted.
       parameters:
       - $ref: '#/components/parameters/DatasetId'
       - $ref: '#/components/parameters/SparqlQuery'
@@ -160,13 +281,13 @@ paths:
           $ref: '#/components/responses/Error'
         '504':
           $ref: '#/components/responses/Error'
+      operationId: getV1DatasetsDatasetIdSparql
     post:
       summary: Execute a SPARQL 1.1 query through a SPARQL Protocol POST encoding
       description: Executes a supported exact query over the authenticated immutable active dataset. SERVICE operators use
-        the checksum-bound tenant endpoint registry and are always uncached. A matching snapshot-bound
-        certificate may select an optimized path; otherwise the query uses the bounded exact RDF scalar path. Protocol dataset
-        parameters override query FROM/FROM NAMED clauses. Unsupported, exhausted or timed-out execution fails without a
-        partial success document.
+        the checksum-bound tenant endpoint registry and are always uncached. The request body uses application/sparql-query,
+        application/x-www-form-urlencoded and the schema shown below; success returns the SparqlQuery response schema. Authentication,
+        tenant authorization, resource ceilings and documented failure responses are enforced before a result is accepted.
       parameters:
       - $ref: '#/components/parameters/DatasetId'
       - $ref: '#/components/parameters/DefaultGraphUri'
@@ -208,14 +329,16 @@ paths:
           $ref: '#/components/responses/Error'
         '504':
           $ref: '#/components/responses/Error'
+      operationId: postV1DatasetsDatasetIdSparql
   /v1/datasets/{datasetId}/sparql/direct/validate:
     post:
       summary: Validate OWL 2 Direct-Semantics BGP legality
-      description: >-
-        Parses the query through the same typed SPARQL compiler used by execution, applies authorization and SPARQL dataset precedence,
-        and classifies every basic graph pattern against the checksum-bound OWL signature, datatype policy, profile qualification,
-        and global consistency qualification. This is an admission/preflight endpoint only; it does not execute OWL Direct entailment.
-        Property paths remain SPARQL algebra operators outside the Direct-BGP entailment extension.
+      description: Parses the query through the same typed SPARQL compiler used by execution, applies authorization and SPARQL
+        dataset precedence, and classifies every basic graph pattern against the checksum-bound OWL signature, datatype policy,
+        profile qualification, and global consistency qualification. This is an admission/preflight endpoint only; it does
+        not execute OWL Direct entailment. The request body uses application/json and the schema shown below; success returns
+        snapshot-bound deterministic legality report for every bgp. Authentication, tenant authorization, resource ceilings
+        and documented failure responses are enforced before a result is accepted.
       parameters:
       - $ref: '#/components/parameters/DatasetId'
       requestBody:
@@ -249,14 +372,16 @@ paths:
           $ref: '#/components/responses/Error'
         '504':
           $ref: '#/components/responses/Error'
+      operationId: postV1DatasetsDatasetIdSparqlDirectValidate
   /v1/datasets/{datasetId}/sparql/direct/route:
     post:
       summary: Route OWL 2 Direct-Semantics BGPs fail closed
-      description: >-
-        Performs the same authorized, snapshot-bound legality classification as the validation
-        endpoint and selects certified semantic index, certified finite closure, exact HermiT, or
-        illegal. Phase 40.13.6 treats unqualified index/closure coverage as unknown and therefore
-        routes every legal BGP to exact HermiT; unknown is never interpreted as false.
+      description: Performs the same authorized, snapshot-bound legality classification as the validation endpoint and selects
+        certified semantic index, certified finite closure, exact HermiT, or illegal. Phase 40.13.6 treats unqualified index/closure
+        coverage as unknown and therefore routes every legal BGP to exact HermiT; unknown is never interpreted as false. The
+        request body uses application/json and the schema shown below; success returns snapshot-bound legality and fail-closed
+        route decision. Authentication, tenant authorization, resource ceilings and documented failure responses are enforced
+        before a result is accepted.
       parameters:
       - $ref: '#/components/parameters/DatasetId'
       requestBody:
@@ -290,12 +415,14 @@ paths:
           $ref: '#/components/responses/Error'
         '504':
           $ref: '#/components/responses/Error'
+      operationId: postV1DatasetsDatasetIdSparqlDirectRoute
   /v1/datasets/{datasetId}/sparql/service-description:
     get:
       summary: Retrieve the authenticated dataset service description
       description: Returns a fail-closed service description. Secured BasicFederatedQuery is advertised only when a checksum-bound
-        endpoint registry is active. SPARQL 1.1, union-default, OWL Direct and OWL 2 DL claims remain disabled until their
-        independent checksum-bound conformance evidence enables those release gates.
+        endpoint registry is active. Inputs use the documented path, query and header parameters; success returns rdf 1.1
+        turtle service description. Authentication, tenant authorization, resource ceilings and documented failure responses
+        are enforced before a result is accepted.
       parameters:
       - $ref: '#/components/parameters/DatasetId'
       responses:
@@ -317,10 +444,15 @@ paths:
           $ref: '#/components/responses/Error'
         '504':
           $ref: '#/components/responses/Error'
+      operationId: getV1DatasetsDatasetIdSparqlServiceDescription
   /v1/datasets/{datasetId}/query:
     post:
       summary: Execute an exact SPARQL query through the NGKG JSON API
-      description: Uses the same authenticated snapshot, native-cutover admission, exact-reasoning, complete-partition, and fail-closed result contract as the SPARQL Protocol route. The enterprise profile never silently selects the ordinary scalar runtime.
+      description: Uses the same authenticated snapshot, native-cutover admission, exact-reasoning, complete-partition, and
+        fail-closed result contract as the SPARQL Protocol route. The enterprise profile never silently selects the ordinary
+        scalar runtime. The request body uses application/json and the schema shown below; success returns complete exact
+        semantic result and optional payload. Authentication, tenant authorization, resource ceilings and documented failure
+        responses are enforced before a result is accepted.
       parameters:
       - $ref: '#/components/parameters/DatasetId'
       requestBody:
@@ -335,7 +467,9 @@ paths:
           headers:
             x-ngkg-query-execution-id:
               required: true
-              schema: {type: string, format: uuid}
+              schema:
+                type: string
+                format: uuid
               description: Durable Phase 40.13.21 query execution ledger identity.
             x-ngkg-query-cache:
               required: true
@@ -364,6 +498,7 @@ paths:
           $ref: '#/components/responses/Error'
         '504':
           $ref: '#/components/responses/Error'
+      operationId: postV1DatasetsDatasetIdQuery
   /v1/datasets/{datasetId}/locate:
     post:
       summary: Resolve qualified GUIDs through the checksum-verified mmap index
@@ -398,6 +533,12 @@ paths:
           $ref: '#/components/responses/Error'
         '504':
           $ref: '#/components/responses/Error'
+      operationId: postV1DatasetsDatasetIdLocate
+      description: This operation implements the documented "Resolve qualified GUIDs through the checksum-verified mmap index"
+        API capability. Use it when an authorized data publisher needs to manage immutable dataset or snapshot lifecycle state.
+        The request body uses application/json and the schema shown below; success returns exact physical addresses for every
+        guid. Authentication, tenant authorization, resource ceilings and documented failure responses are enforced before
+        a result is accepted.
   /v1/datasets/{datasetId}/fragments/{querySha256}/{fragmentId}/execute:
     post:
       summary: Execute one immutable certified graph fragment
@@ -452,6 +593,12 @@ paths:
           $ref: '#/components/responses/Error'
         '504':
           $ref: '#/components/responses/Error'
+      operationId: postV1DatasetsDatasetIdFragmentsQuerySha256FragmentIdExecute
+      description: This operation implements the documented "Execute one immutable certified graph fragment" API capability.
+        Use it when an authorized data publisher needs to manage immutable dataset or snapshot lifecycle state. The request
+        body uses application/json and the schema shown below; success returns exact fragment bag verified against its offline
+        certificate. Authentication, tenant authorization, resource ceilings and documented failure responses are enforced
+        before a result is accepted.
   /v1/datasets/{datasetId}/shuffles/{querySha256}/{stage}/{partition}/join:
     post:
       summary: Execute one exact hash-owned join partition
@@ -563,6 +710,12 @@ paths:
           $ref: '#/components/responses/Error'
         '504':
           $ref: '#/components/responses/Error'
+      operationId: postV1DatasetsDatasetIdShufflesQuerySha256StagePartitionJoin
+      description: This operation implements the documented "Execute one exact hash-owned join partition" API capability.
+        Use it when an authorized data publisher needs to manage immutable dataset or snapshot lifecycle state. The request
+        body uses application/vnd.apache.arrow.stream and the schema shown below; success returns exact sparql bag join for
+        one plan-, stage- and hash-owned partition. Authentication, tenant authorization, resource ceilings and documented
+        failure responses are enforced before a result is accepted.
   /v1/datasets/{datasetId}/hydrate:
     post:
       summary: Hydrate qualified GUIDs from exact Parquet row groups
@@ -597,113 +750,184 @@ paths:
           $ref: '#/components/responses/Error'
         '504':
           $ref: '#/components/responses/Error'
+      operationId: postV1DatasetsDatasetIdHydrate
+      description: This operation implements the documented "Hydrate qualified GUIDs from exact Parquet row groups" API capability.
+        Use it when an authorized data publisher needs to manage immutable dataset or snapshot lifecycle state. The request
+        body uses application/json and the schema shown below; success returns payload rows with semantic result ordinals
+        preserved. Authentication, tenant authorization, resource ceilings and documented failure responses are enforced before
+        a result is accepted.
   /v1/datasets/{datasetId}/algebra/{querySha256}/{replica}/execute:
     post:
       summary: Execute one checksum-bound complete SPARQL algebra replica
-      description: Executes the complete rewritten typed algebra with the pinned scalar oracle. The query coordinator requires a dense set of distinct replicas with byte-equivalent canonical results before returning any answer.
+      description: Executes the complete rewritten typed algebra with the pinned scalar oracle. The query coordinator requires
+        a dense set of distinct replicas with byte-equivalent canonical results before returning any answer. The request body
+        uses application/json and the schema shown below; success returns one complete scalar-oracle result replica; this
+        response is not independently publishable. Authentication, tenant authorization, resource ceilings and documented
+        failure responses are enforced before a result is accepted.
       parameters:
       - $ref: '#/components/parameters/DatasetId'
       - name: querySha256
         in: path
         required: true
-        schema: {type: string, pattern: '^[0-9a-f]{64}$'}
+        schema:
+          type: string
+          pattern: ^[0-9a-f]{64}$
       - name: replica
         in: path
         required: true
-        schema: {type: integer, minimum: 0}
+        schema:
+          type: integer
+          minimum: 0
       requestBody:
         required: true
         content:
           application/json:
-            schema: {$ref: '#/components/schemas/DistributedAlgebraExecutionRequest'}
+            schema:
+              $ref: '#/components/schemas/DistributedAlgebraExecutionRequest'
       responses:
         '200':
           description: One complete scalar-oracle result replica; this response is not independently publishable.
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/DistributedAlgebraExecutionResponse'}
-        '401': {$ref: '#/components/responses/Error'}
-        '403': {$ref: '#/components/responses/Error'}
-        '409': {$ref: '#/components/responses/Error'}
-        '413': {description: Request exceeds the configured body limit}
-        '422': {$ref: '#/components/responses/Error'}
-        '429': {$ref: '#/components/responses/TooManyRequests'}
-        '503': {$ref: '#/components/responses/Error'}
-        '504': {$ref: '#/components/responses/Error'}
+              schema:
+                $ref: '#/components/schemas/DistributedAlgebraExecutionResponse'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          description: Request exceeds the configured body limit
+        '422':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Error'
+        '504':
+          $ref: '#/components/responses/Error'
+      operationId: postV1DatasetsDatasetIdAlgebraQuerySha256ReplicaExecute
   /v1/datasets/{datasetId}/paths/{querySha256}/{pathId}/{iteration}/{partition}/expand:
     post:
       summary: Execute one immutable semantic-partition property-path scan
-      description: Internal fragment-worker operation. It checksum-validates the active semantic root, dense dictionary and forward/reverse adjacency artifacts before seeding or expanding one exact property-path frontier. The coordinator must receive the dense partition set before advancing or terminating.
+      description: Internal fragment-worker operation. It checksum-validates the active semantic root, dense dictionary and
+        forward/reverse adjacency artifacts before seeding or expanding one exact property-path frontier. The request body
+        uses application/json and the schema shown below; success returns complete checksum-bound seed or expansion result
+        for exactly one semantic partition. Authentication, tenant authorization, resource ceilings and documented failure
+        responses are enforced before a result is accepted.
       parameters:
       - $ref: '#/components/parameters/DatasetId'
       - name: querySha256
         in: path
         required: true
-        schema: {type: string, pattern: '^[0-9a-f]{64}$'}
+        schema:
+          type: string
+          pattern: ^[0-9a-f]{64}$
       - name: pathId
         in: path
         required: true
-        schema: {type: string, minLength: 1, maxLength: 128}
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 128
       - name: iteration
         in: path
         required: true
-        schema: {type: integer, minimum: 0, maximum: 4294967295}
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
       - name: partition
         in: path
         required: true
-        schema: {type: integer, minimum: 0, maximum: 4294967295}
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
       requestBody:
         required: true
         content:
           application/json:
-            schema: {$ref: '#/components/schemas/PartitionPathExecutionRequest'}
+            schema:
+              $ref: '#/components/schemas/PartitionPathExecutionRequest'
       responses:
         '200':
           description: Complete checksum-bound seed or expansion result for exactly one semantic partition.
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/PartitionPathExecutionResponse'}
-        '401': {$ref: '#/components/responses/Error'}
-        '403': {$ref: '#/components/responses/Error'}
-        '409': {$ref: '#/components/responses/Error'}
-        '413': {description: Request exceeds the configured body limit}
-        '422': {$ref: '#/components/responses/Error'}
-        '429': {$ref: '#/components/responses/TooManyRequests'}
-        '503': {$ref: '#/components/responses/Error'}
-        '504': {$ref: '#/components/responses/Error'}
+              schema:
+                $ref: '#/components/schemas/PartitionPathExecutionResponse'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          description: Request exceeds the configured body limit
+        '422':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Error'
+        '504':
+          $ref: '#/components/responses/Error'
+      operationId: postV1DatasetsDatasetIdPathsQuerySha256PathIdIterationPartitionExpand
   /v1/datasets/{datasetId}/native/leaves/{querySha256}/{partition}/scan:
     post:
       summary: Scan one checksum-verified semantic Parquet partition
-      description: Internal fragment-worker operation used by the native query runtime. The worker derives graph IDs from the authenticated active dataset, verifies the semantic root, partition manifest, file size and SHA-256, and applies dictionary-ID predicates in bounded Arrow batches. No partial scan is returned.
+      description: Internal fragment-worker operation used by the native query runtime. The worker derives graph IDs from
+        the authenticated active dataset, verifies the semantic root, partition manifest, file size and SHA-256, and applies
+        dictionary-ID predicates in bounded Arrow batches. The request body uses application/json and the schema shown below;
+        success returns complete bounded leaf result and checksum evidence for exactly one partition. Authentication, tenant
+        authorization, resource ceilings and documented failure responses are enforced before a result is accepted.
       parameters:
       - $ref: '#/components/parameters/DatasetId'
       - name: querySha256
         in: path
         required: true
-        schema: {type: string, pattern: '^[0-9a-f]{64}$'}
+        schema:
+          type: string
+          pattern: ^[0-9a-f]{64}$
       - name: partition
         in: path
         required: true
-        schema: {type: integer, minimum: 0, maximum: 4294967295}
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
       requestBody:
         required: true
         content:
           application/json:
-            schema: {$ref: '#/components/schemas/NativeLeafScanRequest'}
+            schema:
+              $ref: '#/components/schemas/NativeLeafScanRequest'
       responses:
         '200':
           description: Complete bounded leaf result and checksum evidence for exactly one partition.
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/NativeLeafScanResponse'}
-        '401': {$ref: '#/components/responses/Error'}
-        '403': {$ref: '#/components/responses/Error'}
-        '409': {$ref: '#/components/responses/Error'}
-        '413': {description: Request exceeds the configured body limit}
-        '422': {$ref: '#/components/responses/Error'}
-        '429': {$ref: '#/components/responses/TooManyRequests'}
-        '503': {$ref: '#/components/responses/Error'}
-        '504': {$ref: '#/components/responses/Error'}
+              schema:
+                $ref: '#/components/schemas/NativeLeafScanResponse'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          description: Request exceeds the configured body limit
+        '422':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Error'
+        '504':
+          $ref: '#/components/responses/Error'
+      operationId: postV1DatasetsDatasetIdNativeLeavesQuerySha256PartitionScan
 components:
   securitySchemes:
     bearerAuth:
@@ -783,7 +1007,9 @@ components:
       headers:
         x-ngkg-query-execution-id:
           required: true
-          schema: {type: string, format: uuid}
+          schema:
+            type: string
+            format: uuid
         x-ngkg-query-cache:
           required: true
           schema:
@@ -810,20 +1036,29 @@ components:
           description: Serving policy used for this request; production qualification requires `required`.
           required: true
           schema:
-            enum: [disabled, shadow, required]
+            enum:
+            - disabled
+            - shadow
+            - required
         x-ngkg-complete:
           required: true
           schema:
             const: 'true'
         x-ngkg-federation-registry-sha256:
           description: Present only for SERVICE queries.
-          schema: {type: string, pattern: '^[0-9a-f]{64}$'}
+          schema:
+            type: string
+            pattern: ^[0-9a-f]{64}$
         x-ngkg-federation-call-count:
           description: Present only for SERVICE queries.
-          schema: {type: integer, minimum: 0}
+          schema:
+            type: integer
+            minimum: 0
         x-ngkg-federation-endpoint-set-sha256:
           description: Present only for SERVICE queries.
-          schema: {type: string, pattern: '^[0-9a-f]{64}$'}
+          schema:
+            type: string
+            pattern: ^[0-9a-f]{64}$
       content:
         application/sparql-results+json:
           schema:
@@ -849,70 +1084,393 @@ components:
           schema:
             type: string
   schemas:
+    HpcCapabilities:
+      type: object
+      additionalProperties: false
+      required:
+      - formatVersion
+      - role
+      - workerId
+      - local
+      - memory
+      - parquet
+      - mpi
+      - autoscalingTargetPercent
+      properties:
+        formatVersion:
+          const: 1
+        role:
+          enum:
+          - query
+        workerId:
+          type: string
+          minLength: 1
+        autoscalingTargetPercent:
+          type: integer
+          minimum: 1
+          maximum: 80
+        local:
+          type: object
+          additionalProperties: false
+          required:
+          - cpusetCores
+          - cpusetSource
+          - budget
+          - nodeSaturationTargetPercent
+          - ompNumThreads
+          - openblasNumThreads
+          - mklNumThreads
+          properties:
+            cpusetCores:
+              type: integer
+              minimum: 1
+            cpusetSource:
+              type: string
+              minLength: 1
+            nodeSaturationTargetPercent:
+              type: integer
+              minimum: 1
+              maximum: 80
+            ompNumThreads:
+              type: integer
+              minimum: 1
+            openblasNumThreads:
+              type: integer
+              minimum: 1
+            mklNumThreads:
+              type: integer
+              minimum: 1
+            budget:
+              type: object
+              additionalProperties: false
+              required:
+              - rustCompute
+              - blockingIo
+              - openmp
+              - blas
+              - control
+              properties:
+                rustCompute:
+                  type: integer
+                  minimum: 1
+                blockingIo:
+                  type: integer
+                  minimum: 1
+                openmp:
+                  type: integer
+                  minimum: 1
+                blas:
+                  type: integer
+                  minimum: 1
+                control:
+                  type: integer
+                  minimum: 1
+        memory:
+          type: object
+          additionalProperties: false
+          required:
+          - cpusetCores
+          - cpusetSource
+          - memoryLimitBytes
+          - memoryCurrentBytes
+          - usableMemoryBytes
+          - memoryHeadroomBytes
+          - saturationTargetPercent
+          - memorySaturated
+          properties:
+            cpusetCores:
+              type: integer
+              minimum: 1
+            cpusetSource:
+              type: string
+              minLength: 1
+            memoryLimitBytes:
+              type: integer
+              minimum: 1
+            memoryCurrentBytes:
+              type: integer
+              minimum: 0
+            usableMemoryBytes:
+              type: integer
+              minimum: 1
+            memoryHeadroomBytes:
+              type: integer
+              minimum: 0
+            saturationTargetPercent:
+              type: integer
+              minimum: 1
+              maximum: 80
+            memorySaturated:
+              type: boolean
+        parquet:
+          type: object
+          additionalProperties: false
+          required:
+          - projectedColumns
+          - boundedArrowBatches
+          - deterministicRankReceipts
+          - executionModes
+          properties:
+            projectedColumns:
+              const: true
+            boundedArrowBatches:
+              const: true
+            deterministicRankReceipts:
+              const: true
+            executionModes:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              items:
+                enum:
+                - rust
+                - openmp
+        mpi:
+          type: object
+          additionalProperties: false
+          required:
+          - onlineQueryParticipant
+          - finiteBatchSupported
+          - oneRankPerPod
+          - elasticRankResize
+          properties:
+            onlineQueryParticipant:
+              const: false
+            finiteBatchSupported:
+              const: true
+            oneRankPerPod:
+              const: true
+            elasticRankResize:
+              const: false
     QueryLogPage:
       type: object
       additionalProperties: false
-      required: [items, limit, offset, hasMore]
+      required:
+      - items
+      - limit
+      - offset
+      - hasMore
       properties:
-        items: {type: array, items: {$ref: '#/components/schemas/QueryLog'}}
-        limit: {type: integer, minimum: 1, maximum: 1000}
-        offset: {type: integer, minimum: 0}
-        hasMore: {type: boolean}
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryLog'
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        offset:
+          type: integer
+          minimum: 0
+        hasMore:
+          type: boolean
     QueryLog:
       type: object
       additionalProperties: false
-      required: [queryExecutionId, datasetId, requestId, user, querySha256, status, resources, timing]
+      required:
+      - queryExecutionId
+      - datasetId
+      - requestId
+      - user
+      - querySha256
+      - status
+      - resources
+      - timing
       properties:
-        queryExecutionId: {type: string, format: uuid}
-        datasetId: {type: string, format: uuid}
-        snapshotId: {type: [string, 'null'], format: uuid}
-        requestId: {type: string, minLength: 1, maxLength: 128}
+        queryExecutionId:
+          type: string
+          format: uuid
+        datasetId:
+          type: string
+          format: uuid
+        snapshotId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        requestId:
+          type: string
+          minLength: 1
+          maxLength: 128
         user:
           type: object
           additionalProperties: false
-          required: [principalId]
-          properties: {principalId: {type: string, minLength: 1, maxLength: 256}}
-        sparqlQuery: {type: [string, 'null'], description: Redacted unless the caller owns the query or has query-logs:read:text.}
-        querySha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        queryForm: {type: [string, 'null'], enum: [SELECT, ASK, CONSTRUCT, DESCRIBE, null]}
-        executionMode: {type: [string, 'null']}
-        status: {enum: [RUNNING, COMPLETED, FAILED, TIMED_OUT, CANCELLED]}
+          required:
+          - principalId
+          properties:
+            principalId:
+              type: string
+              minLength: 1
+              maxLength: 256
+        sparqlQuery:
+          type:
+          - string
+          - 'null'
+          description: Redacted unless the caller owns the query or has query-logs:read:text.
+        querySha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        queryForm:
+          type:
+          - string
+          - 'null'
+          enum:
+          - SELECT
+          - ASK
+          - CONSTRUCT
+          - DESCRIBE
+          - null
+        executionMode:
+          type:
+          - string
+          - 'null'
+        status:
+          enum:
+          - RUNNING
+          - COMPLETED
+          - FAILED
+          - TIMED_OUT
+          - CANCELLED
         resources:
           $ref: '#/components/schemas/QueryLogResources'
         timing:
           $ref: '#/components/schemas/QueryLogTiming'
-        resultRows: {type: [integer, 'null'], minimum: 0}
-        resultBytes: {type: [integer, 'null'], minimum: 0}
-        cacheHit: {type: [boolean, 'null']}
-        errorCode: {type: [string, 'null']}
+        resultRows:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        resultBytes:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        cacheHit:
+          type:
+          - boolean
+          - 'null'
+        errorCode:
+          type:
+          - string
+          - 'null'
     QueryLogResources:
       type: object
       additionalProperties: false
-      required: [participatingPods, participatingNodes, requestedCpuMillicores, requestedRamBytes, allocatedCpuMillicores, allocatedRamBytes, measuredCpuTimeMs, measuredPeakRssBytes, measuredGpuTimeMs, measuredGpuPeakMemoryBytes, measurementScope, autoscalingEvents]
+      required:
+      - participatingPods
+      - participatingNodes
+      - requestedCpuMillicores
+      - requestedRamBytes
+      - allocatedCpuMillicores
+      - allocatedRamBytes
+      - measuredCpuTimeMs
+      - measuredPeakRssBytes
+      - measuredGpuTimeMs
+      - measuredGpuPeakMemoryBytes
+      - measurementScope
+      - autoscalingEvents
       properties:
-        participatingPods: {type: array, uniqueItems: true, items: {type: string}, description: Kubernetes pod UIDs contributing measurement evidence.}
-        participatingNodes: {type: array, uniqueItems: true, items: {type: string}, description: Kubernetes node UIDs contributing measurement evidence.}
-        requestedCpuMillicores: {type: [integer, 'null'], minimum: 1}
-        requestedRamBytes: {type: [integer, 'null'], minimum: 1}
-        allocatedCpuMillicores: {type: [integer, 'null'], minimum: 1}
-        allocatedRamBytes: {type: [integer, 'null'], minimum: 1}
-        measuredCpuTimeMs: {type: [integer, 'null'], minimum: 0, description: Actual cgroup CPU usage delta over the execution interval; scope identifies coverage.}
-        measuredPeakRssBytes: {type: [integer, 'null'], minimum: 0}
-        measuredGpuTimeMs: {type: [integer, 'null'], minimum: 0}
-        measuredGpuPeakMemoryBytes: {type: [integer, 'null'], minimum: 0}
-        measurementScope: {enum: [COORDINATOR_CGROUP_INTERVAL, ALL_PARTICIPANTS, UNAVAILABLE]}
-        autoscalingEvents: {type: array, items: {type: object}}
+        participatingPods:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+          description: Kubernetes pod UIDs contributing measurement evidence.
+        participatingNodes:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+          description: Kubernetes node UIDs contributing measurement evidence.
+        requestedCpuMillicores:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+        requestedRamBytes:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+        allocatedCpuMillicores:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+        allocatedRamBytes:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+        measuredCpuTimeMs:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+          description: Actual cgroup CPU usage delta over the execution interval; scope identifies coverage.
+        measuredPeakRssBytes:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        measuredGpuTimeMs:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        measuredGpuPeakMemoryBytes:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        measurementScope:
+          enum:
+          - COORDINATOR_CGROUP_INTERVAL
+          - ALL_PARTICIPANTS
+          - UNAVAILABLE
+        autoscalingEvents:
+          type: array
+          items:
+            type: object
     QueryLogTiming:
       type: object
       additionalProperties: false
-      required: [startTimeEpoch, startTimeEpochMs, endTimeEpoch, endTimeEpochMs, totalTimeMs, totalTime]
+      required:
+      - startTimeEpoch
+      - startTimeEpochMs
+      - endTimeEpoch
+      - endTimeEpochMs
+      - totalTimeMs
+      - totalTime
       properties:
-        startTimeEpoch: {type: integer, minimum: 1, description: Unix epoch seconds.}
-        startTimeEpochMs: {type: integer, minimum: 1}
-        endTimeEpoch: {type: [integer, 'null'], minimum: 1, description: Unix epoch seconds.}
-        endTimeEpochMs: {type: [integer, 'null'], minimum: 1}
-        totalTimeMs: {type: [integer, 'null'], minimum: 0}
-        totalTime: {type: [string, 'null'], pattern: '^[0-9]+min [0-5][0-9]s$'}
+        startTimeEpoch:
+          type: integer
+          minimum: 1
+          description: Unix epoch seconds.
+        startTimeEpochMs:
+          type: integer
+          minimum: 1
+        endTimeEpoch:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+          description: Unix epoch seconds.
+        endTimeEpochMs:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+        totalTimeMs:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        totalTime:
+          type:
+          - string
+          - 'null'
+          pattern: ^[0-9]+min [0-5][0-9]s$
     SparqlFormRequest:
       type: object
       additionalProperties: false
@@ -1016,37 +1574,88 @@ components:
           type: string
           minLength: 1
         snapshotId:
-          type: [string, 'null']
+          type:
+          - string
+          - 'null'
           format: uuid
         defaultGraphUris:
           type: array
           uniqueItems: true
-          items: {type: string, format: uri}
+          items:
+            type: string
+            format: uri
         namedGraphUris:
           type: array
           uniqueItems: true
-          items: {type: string, format: uri}
+          items:
+            type: string
+            format: uri
     DirectBgpLegalityReport:
       type: object
       additionalProperties: false
-      required: [formatVersion, datasetId, snapshotId, querySha256, sparqlAlgebraSha256, activeDatasetSha256, authorizedGraphSetSha256, owlSignatureSha256, datatypePolicySha256, owlProfileQualificationSha256, owlConsistencyQualificationSha256, entailmentRegime, classifier, bgpCount, allBgpsLegal, propertyPathsOutsideDirectBgps, bgps]
+      required:
+      - formatVersion
+      - datasetId
+      - snapshotId
+      - querySha256
+      - sparqlAlgebraSha256
+      - activeDatasetSha256
+      - authorizedGraphSetSha256
+      - owlSignatureSha256
+      - datatypePolicySha256
+      - owlProfileQualificationSha256
+      - owlConsistencyQualificationSha256
+      - entailmentRegime
+      - classifier
+      - bgpCount
+      - allBgpsLegal
+      - propertyPathsOutsideDirectBgps
+      - bgps
       properties:
-        formatVersion: {const: 1}
-        datasetId: {type: string, format: uuid}
-        snapshotId: {type: string, format: uuid}
-        querySha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        sparqlAlgebraSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        activeDatasetSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        authorizedGraphSetSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        owlSignatureSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        datatypePolicySha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        owlProfileQualificationSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        owlConsistencyQualificationSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        entailmentRegime: {const: owl2-direct}
-        classifier: {const: w3c-owl2-direct-bgp-cp1-cp4-v1}
-        bgpCount: {type: integer, minimum: 0, maximum: 4096}
-        allBgpsLegal: {type: boolean}
-        propertyPathsOutsideDirectBgps: {type: boolean}
+        formatVersion:
+          const: 1
+        datasetId:
+          type: string
+          format: uuid
+        snapshotId:
+          type: string
+          format: uuid
+        querySha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        sparqlAlgebraSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        activeDatasetSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        authorizedGraphSetSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        owlSignatureSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        datatypePolicySha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        owlProfileQualificationSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        owlConsistencyQualificationSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        entailmentRegime:
+          const: owl2-direct
+        classifier:
+          const: w3c-owl2-direct-bgp-cp1-cp4-v1
+        bgpCount:
+          type: integer
+          minimum: 0
+          maximum: 4096
+        allBgpsLegal:
+          type: boolean
+        propertyPathsOutsideDirectBgps:
+          type: boolean
         bgps:
           type: array
           maxItems: 4096
@@ -1055,7 +1664,9 @@ components:
     DirectEntailmentRoutingResponse:
       type: object
       additionalProperties: false
-      required: [legality, routes]
+      required:
+      - legality
+      - routes
       properties:
         legality:
           $ref: '#/components/schemas/DirectBgpLegalityReport'
@@ -1065,52 +1676,118 @@ components:
           items:
             type: object
             additionalProperties: false
-            required: [ordinal, bgpSha256, route]
+            required:
+            - ordinal
+            - bgpSha256
+            - route
             properties:
-              ordinal: {type: integer, minimum: 0}
-              bgpSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+              ordinal:
+                type: integer
+                minimum: 0
+              bgpSha256:
+                type: string
+                pattern: ^[0-9a-f]{64}$
               route:
-                enum: [certified-semantic-index, certified-finite-closure, exact-hermit, illegal-owl-direct]
+                enum:
+                - certified-semantic-index
+                - certified-finite-closure
+                - exact-hermit
+                - illegal-owl-direct
     DirectBgpLegalityRecord:
       type: object
       additionalProperties: false
-      required: [ordinal, bgpSha256, graphScope, tripleCount, recognizedForms, variables, status, groundedOwl2dlCheckRequired]
+      required:
+      - ordinal
+      - bgpSha256
+      - graphScope
+      - tripleCount
+      - recognizedForms
+      - variables
+      - status
+      - groundedOwl2dlCheckRequired
       properties:
-        ordinal: {type: integer, minimum: 0}
-        bgpSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+        ordinal:
+          type: integer
+          minimum: 0
+        bgpSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
         graphScope:
           type: object
           description: Default, named, or named-variable active graph scope; shape is closed by the runtime contract schema.
-        tripleCount: {type: integer, minimum: 0, maximum: 65536}
+        tripleCount:
+          type: integer
+          minimum: 0
+          maximum: 65536
         recognizedForms:
           type: array
           uniqueItems: true
-          items: {type: string}
+          items:
+            type: string
         variables:
           type: array
           uniqueItems: true
-          items: {$ref: '#/components/schemas/DirectVariableTyping'}
-        status: {enum: [legal, illegal]}
-        groundedOwl2dlCheckRequired: {const: true}
+          items:
+            $ref: '#/components/schemas/DirectVariableTyping'
+        status:
+          enum:
+          - legal
+          - illegal
+        groundedOwl2dlCheckRequired:
+          const: true
         failure:
           $ref: '#/components/schemas/DirectBgpLegalityFailure'
     DirectVariableTyping:
       type: object
       additionalProperties: false
-      required: [variable, role, source]
+      required:
+      - variable
+      - role
+      - source
       properties:
-        variable: {type: string, minLength: 1}
-        role: {enum: [class, object-property, data-property, annotation-property, datatype, named-individual, literal]}
-        source: {enum: [explicit-declaration, structural-position]}
+        variable:
+          type: string
+          minLength: 1
+        role:
+          enum:
+          - class
+          - object-property
+          - data-property
+          - annotation-property
+          - datatype
+          - named-individual
+          - literal
+        source:
+          enum:
+          - explicit-declaration
+          - structural-position
     DirectBgpLegalityFailure:
       type: object
       additionalProperties: false
-      required: [code, detail]
+      required:
+      - code
+      - detail
       properties:
-        code: {enum: [conflicting-variable-type, ambiguous-variable-role, undeclared-entity-variable, unknown-predicate, invalid-structural-shape, unsupported-owl-structure, invalid-graph-scope, resource-limit-exceeded]}
-        detail: {type: string, minLength: 1, maxLength: 2048}
-        tripleOrdinal: {type: integer, minimum: 0}
-        variable: {type: string, minLength: 1}
+        code:
+          enum:
+          - conflicting-variable-type
+          - ambiguous-variable-role
+          - undeclared-entity-variable
+          - unknown-predicate
+          - invalid-structural-shape
+          - unsupported-owl-structure
+          - invalid-graph-scope
+          - resource-limit-exceeded
+        detail:
+          type: string
+          minLength: 1
+          maxLength: 2048
+        tripleOrdinal:
+          type: integer
+          minimum: 0
+        variable:
+          type: string
+          minLength: 1
     QueryRequest:
       type: object
       additionalProperties: false
@@ -1314,35 +1991,93 @@ components:
     FederationQueryEvidence:
       type: object
       additionalProperties: false
-      required: [registrySha256, serviceCallCount, responseBytes, endpointSetSha256, complete]
+      required:
+      - registrySha256
+      - serviceCallCount
+      - responseBytes
+      - endpointSetSha256
+      - complete
       properties:
-        registrySha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        serviceCallCount: {type: integer, minimum: 0}
-        responseBytes: {type: integer, minimum: 0}
-        endpointSetSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        complete: {const: true}
+        registrySha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        serviceCallCount:
+          type: integer
+          minimum: 0
+        responseBytes:
+          type: integer
+          minimum: 0
+        endpointSetSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        complete:
+          const: true
     PropertyPathExecutionEvidence:
       type: object
       additionalProperties: false
-      required: [mode, planSetSha256, pathCount, semanticPartitionCount, completedIterations, completedWorkItems, acceptedEndpointCount, endpointSetSha256s, scannedAdjacencyRows, hotSplitWorkItems, checkpointBytes, workerIds, scalarOracleEquivalenceRequired, complete]
+      required:
+      - mode
+      - planSetSha256
+      - pathCount
+      - semanticPartitionCount
+      - completedIterations
+      - completedWorkItems
+      - acceptedEndpointCount
+      - endpointSetSha256s
+      - scannedAdjacencyRows
+      - hotSplitWorkItems
+      - checkpointBytes
+      - workerIds
+      - scalarOracleEquivalenceRequired
+      - complete
       properties:
-        mode: {const: partition_native_distributed_frontier_v1}
-        planSetSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        pathCount: {type: integer, minimum: 1}
-        semanticPartitionCount: {type: integer, minimum: 2, maximum: 4294967295}
-        completedIterations: {type: integer, minimum: 0}
-        completedWorkItems: {type: integer, minimum: 0}
-        acceptedEndpointCount: {type: integer, minimum: 0}
+        mode:
+          const: partition_native_distributed_frontier_v1
+        planSetSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        pathCount:
+          type: integer
+          minimum: 1
+        semanticPartitionCount:
+          type: integer
+          minimum: 2
+          maximum: 4294967295
+        completedIterations:
+          type: integer
+          minimum: 0
+        completedWorkItems:
+          type: integer
+          minimum: 0
+        acceptedEndpointCount:
+          type: integer
+          minimum: 0
         endpointSetSha256s:
           type: array
           minItems: 1
-          items: {type: string, pattern: '^[0-9a-f]{64}$'}
-        scannedAdjacencyRows: {type: integer, minimum: 0}
-        hotSplitWorkItems: {type: integer, minimum: 0}
-        checkpointBytes: {type: integer, minimum: 0}
-        workerIds: {type: array, minItems: 2, uniqueItems: true, items: {type: string, minLength: 1}}
-        scalarOracleEquivalenceRequired: {const: true}
-        complete: {const: true}
+          items:
+            type: string
+            pattern: ^[0-9a-f]{64}$
+        scannedAdjacencyRows:
+          type: integer
+          minimum: 0
+        hotSplitWorkItems:
+          type: integer
+          minimum: 0
+        checkpointBytes:
+          type: integer
+          minimum: 0
+        workerIds:
+          type: array
+          minItems: 2
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+        scalarOracleEquivalenceRequired:
+          const: true
+        complete:
+          const: true
     ExactEntailmentEvidence:
       type: object
       additionalProperties: false
@@ -1367,37 +2102,69 @@ components:
       - distributedPropertyPathScalarEquivalenceRequired
       - complete
       properties:
-        regime: {const: owl2-direct}
-        bgpCount: {type: integer, minimum: 0}
+        regime:
+          const: owl2-direct
+        bgpCount:
+          type: integer
+          minimum: 0
         resultSha256s:
           type: array
-          items: {type: string, pattern: '^[0-9a-f]{64}$'}
+          items:
+            type: string
+            pattern: ^[0-9a-f]{64}$
         certificateSha256s:
           type: array
-          items: {type: string, pattern: '^[0-9a-f]{64}$'}
+          items:
+            type: string
+            pattern: ^[0-9a-f]{64}$
         proofManifestSha256s:
           type: array
-          items: {type: string, pattern: '^[0-9a-f]{64}$'}
+          items:
+            type: string
+            pattern: ^[0-9a-f]{64}$
         certificates:
           type: array
-          items: {type: object}
+          items:
+            type: object
         proofManifests:
           type: array
-          items: {type: object}
-        distributedAlgebraPlanSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        distributedAlgebraStageCount: {type: integer, minimum: 1}
-        distributedAlgebraWaveCount: {type: integer, minimum: 1}
-        distributedAlgebraWorkItemCount: {type: integer, minimum: 2}
-        distributedAlgebraPartitionCount: {type: integer, minimum: 2}
-        distributedAlgebraScalarEquivalenceRequired: {const: true}
-        distributedPropertyPathPlanSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        distributedPropertyPathCount: {type: integer, minimum: 0}
+          items:
+            type: object
+        distributedAlgebraPlanSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        distributedAlgebraStageCount:
+          type: integer
+          minimum: 1
+        distributedAlgebraWaveCount:
+          type: integer
+          minimum: 1
+        distributedAlgebraWorkItemCount:
+          type: integer
+          minimum: 2
+        distributedAlgebraPartitionCount:
+          type: integer
+          minimum: 2
+        distributedAlgebraScalarEquivalenceRequired:
+          const: true
+        distributedPropertyPathPlanSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        distributedPropertyPathCount:
+          type: integer
+          minimum: 0
         distributedPropertyPathAutomatonSha256s:
           type: array
-          items: {type: string, pattern: '^[0-9a-f]{64}$'}
-        distributedPropertyPathPartitionCount: {type: integer, minimum: 2}
-        distributedPropertyPathScalarEquivalenceRequired: {const: true}
-        complete: {const: true}
+          items:
+            type: string
+            pattern: ^[0-9a-f]{64}$
+        distributedPropertyPathPartitionCount:
+          type: integer
+          minimum: 2
+        distributedPropertyPathScalarEquivalenceRequired:
+          const: true
+        complete:
+          const: true
     Routing:
       type: object
       additionalProperties: false
@@ -1619,195 +2386,597 @@ components:
     ResolvedDataset:
       type: object
       additionalProperties: false
-      required: [selectionSource, defaultGraphIds, namedGraphIds, authorizedGraphIds, authorizedGraphSetSha256, activeDatasetSha256]
+      required:
+      - selectionSource
+      - defaultGraphIds
+      - namedGraphIds
+      - authorizedGraphIds
+      - authorizedGraphSetSha256
+      - activeDatasetSha256
       properties:
-        selectionSource: {enum: [service_default, query_dataset, protocol_dataset]}
-        defaultGraphIds: {type: array, uniqueItems: true, items: {type: integer, minimum: 0}}
-        namedGraphIds: {type: array, uniqueItems: true, items: {type: integer, minimum: 0}}
-        authorizedGraphIds: {type: array, uniqueItems: true, items: {type: integer, minimum: 0}}
-        authorizedGraphSetSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        activeDatasetSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+        selectionSource:
+          enum:
+          - service_default
+          - query_dataset
+          - protocol_dataset
+        defaultGraphIds:
+          type: array
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 0
+        namedGraphIds:
+          type: array
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 0
+        authorizedGraphIds:
+          type: array
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 0
+        authorizedGraphSetSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        activeDatasetSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
     NativeLeafPredicate:
       type: object
       additionalProperties: false
       properties:
-        subjectId: {type: [integer, 'null'], minimum: 0}
-        predicateId: {type: [integer, 'null'], minimum: 0}
-        objectId: {type: [integer, 'null'], minimum: 0}
-        graphId: {type: [integer, 'null'], minimum: 0}
+        subjectId:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        predicateId:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        objectId:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        graphId:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
         allowedGraphIds:
           type: array
           readOnly: true
           description: Ignored on input and replaced with worker-derived authorized graph IDs.
           uniqueItems: true
-          items: {type: integer, minimum: 0}
-        requireQueryable: {type: boolean, default: true}
+          items:
+            type: integer
+            minimum: 0
+        requireQueryable:
+          type: boolean
+          default: true
     NativeLeafScanLimits:
       type: object
       additionalProperties: false
-      required: [maxRows, maxDecodedBytes, batchRows]
+      required:
+      - maxRows
+      - maxDecodedBytes
+      - batchRows
       properties:
-        maxRows: {type: integer, minimum: 1}
-        maxDecodedBytes: {type: integer, minimum: 1}
-        batchRows: {type: integer, minimum: 1}
+        maxRows:
+          type: integer
+          minimum: 1
+        maxDecodedBytes:
+          type: integer
+          minimum: 1
+        batchRows:
+          type: integer
+          minimum: 1
+        executionMode:
+          type: string
+          enum:
+          - rust
+          - openmp
+          default: rust
+          description: Selects the memory-safe Rust predicate path or the pinned OpenMP prefilter followed by identical Rust
+            verification. OpenMP is optional and should remain disabled until the deployed image digest has passed differential
+            and performance qualification.
     NativeLeafScanRequest:
       type: object
       additionalProperties: false
-      required: [snapshotId, manifestSha256, semanticRootSha256, activeDataset, predicate, limits]
+      required:
+      - snapshotId
+      - manifestSha256
+      - semanticRootSha256
+      - activeDataset
+      - predicate
+      - limits
       properties:
-        snapshotId: {type: string, format: uuid}
-        manifestSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        semanticRootSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        activeDataset: {$ref: '#/components/schemas/ResolvedDataset'}
-        predicate: {$ref: '#/components/schemas/NativeLeafPredicate'}
-        limits: {$ref: '#/components/schemas/NativeLeafScanLimits'}
+        snapshotId:
+          type: string
+          format: uuid
+        manifestSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        semanticRootSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        activeDataset:
+          $ref: '#/components/schemas/ResolvedDataset'
+        predicate:
+          $ref: '#/components/schemas/NativeLeafPredicate'
+        limits:
+          $ref: '#/components/schemas/NativeLeafScanLimits'
     NativeEncodedFact:
       type: object
       additionalProperties: false
-      required: [subjectId, predicateId, objectKind, objectId, graphId, partitionId]
+      required:
+      - subjectId
+      - predicateId
+      - objectKind
+      - objectId
+      - graphId
+      - partitionId
       properties:
-        subjectId: {type: integer, minimum: 0}
-        predicateId: {type: integer, minimum: 0}
-        objectKind: {type: integer, minimum: 0, maximum: 255}
-        objectId: {type: integer, minimum: 0}
-        graphId: {type: integer, minimum: 0}
-        partitionId: {type: integer, minimum: 0}
-        canonicalNquad: {type: [string, 'null']}
+        subjectId:
+          type: integer
+          minimum: 0
+        predicateId:
+          type: integer
+          minimum: 0
+        objectKind:
+          type: integer
+          minimum: 0
+          maximum: 255
+        objectId:
+          type: integer
+          minimum: 0
+        graphId:
+          type: integer
+          minimum: 0
+        partitionId:
+          type: integer
+          minimum: 0
+        canonicalNquad:
+          type:
+          - string
+          - 'null'
     NativeLeafScanResponse:
       type: object
       additionalProperties: false
-      required: [datasetId, snapshotId, querySha256, partition, partitionManifestSha256, workerId, result]
+      required:
+      - datasetId
+      - snapshotId
+      - querySha256
+      - partition
+      - partitionManifestSha256
+      - workerId
+      - result
       properties:
-        datasetId: {type: string, format: uuid}
-        snapshotId: {type: string, format: uuid}
-        querySha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        partition: {type: integer, minimum: 0, maximum: 4294967295}
-        partitionManifestSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        workerId: {type: string, minLength: 1}
+        datasetId:
+          type: string
+          format: uuid
+        snapshotId:
+          type: string
+          format: uuid
+        querySha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        partition:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+        partitionManifestSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        workerId:
+          type: string
+          minLength: 1
         result:
           type: object
           additionalProperties: false
-          required: [inputSha256, outputSha256, scannedRows, matchedRows, decodedBytes, rows, complete]
+          required:
+          - inputSha256
+          - outputSha256
+          - scannedRows
+          - physicallyScannedRows
+          - prunedRowGroups
+          - prunedRows
+          - matchedRows
+          - decodedBytes
+          - rows
+          - complete
           properties:
-            inputSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-            outputSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-            scannedRows: {type: integer, minimum: 0}
-            matchedRows: {type: integer, minimum: 0}
-            decodedBytes: {type: integer, minimum: 0}
-            rows: {type: array, items: {$ref: '#/components/schemas/NativeEncodedFact'}}
-            complete: {const: true}
+            inputSha256:
+              type: string
+              pattern: ^[0-9a-f]{64}$
+            outputSha256:
+              type: string
+              pattern: ^[0-9a-f]{64}$
+            scannedRows:
+              type: integer
+              minimum: 0
+              description: Total certified rows covered, including rows excluded safely by row-group statistics.
+            physicallyScannedRows:
+              type: integer
+              minimum: 0
+              description: Rows decoded from selected Parquet row groups after statistics pruning.
+            prunedRowGroups:
+              type: integer
+              minimum: 0
+              description: Row groups proven unable to match by trusted min/max statistics.
+            prunedRows:
+              type: integer
+              minimum: 0
+              description: Certified rows skipped without decoding because their row-group statistics excluded every authorized
+                match.
+            matchedRows:
+              type: integer
+              minimum: 0
+            decodedBytes:
+              type: integer
+              minimum: 0
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/NativeEncodedFact'
+            complete:
+              const: true
     DistributedAlgebraExecutionRequest:
       type: object
       additionalProperties: false
-      required: [snapshotId, manifestSha256, originalQuery, originalQuerySha256, rewrittenQuery, rewrittenQuerySha256, activeDataset, maxSolutionRows, maxGraphTriples, maxGraphBlankNodes, ordered, replica, replicaCount]
+      required:
+      - snapshotId
+      - manifestSha256
+      - originalQuery
+      - originalQuerySha256
+      - rewrittenQuery
+      - rewrittenQuerySha256
+      - activeDataset
+      - maxSolutionRows
+      - maxGraphTriples
+      - maxGraphBlankNodes
+      - ordered
+      - replica
+      - replicaCount
       properties:
-        snapshotId: {type: string, format: uuid}
-        manifestSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        originalQuery: {type: string, minLength: 1}
-        originalQuerySha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        rewrittenQuery: {type: string, minLength: 1}
-        rewrittenQuerySha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        activeDataset: {$ref: '#/components/schemas/ResolvedDataset'}
-        maxSolutionRows: {type: integer, minimum: 1}
-        maxGraphTriples: {type: integer, minimum: 1}
-        maxGraphBlankNodes: {type: integer, minimum: 1}
-        ordered: {type: boolean}
-        replica: {type: integer, minimum: 0}
-        replicaCount: {type: integer, minimum: 2}
+        snapshotId:
+          type: string
+          format: uuid
+        manifestSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        originalQuery:
+          type: string
+          minLength: 1
+        originalQuerySha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        rewrittenQuery:
+          type: string
+          minLength: 1
+        rewrittenQuerySha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        activeDataset:
+          $ref: '#/components/schemas/ResolvedDataset'
+        maxSolutionRows:
+          type: integer
+          minimum: 1
+        maxGraphTriples:
+          type: integer
+          minimum: 1
+        maxGraphBlankNodes:
+          type: integer
+          minimum: 1
+        ordered:
+          type: boolean
+        replica:
+          type: integer
+          minimum: 0
+        replicaCount:
+          type: integer
+          minimum: 2
     DistributedAlgebraResultPayload:
       type: object
       additionalProperties: false
-      required: [queryForm, head, bindings, qualifiedEntityIris, coverageScope]
+      required:
+      - queryForm
+      - head
+      - bindings
+      - qualifiedEntityIris
+      - coverageScope
       properties:
-        queryForm: {enum: [SELECT, ASK, CONSTRUCT, DESCRIBE]}
-        head: {type: array, items: {type: string}}
-        bindings: {type: array, items: {type: object}}
-        booleanResult: {type: boolean}
-        graphNtriples: {type: array, items: {type: string}}
-        qualifiedEntityIris: {type: array, uniqueItems: true, items: {type: string, format: uri}}
-        coverageScope: {type: string, minLength: 1}
+        queryForm:
+          enum:
+          - SELECT
+          - ASK
+          - CONSTRUCT
+          - DESCRIBE
+        head:
+          type: array
+          items:
+            type: string
+        bindings:
+          type: array
+          items:
+            type: object
+        booleanResult:
+          type: boolean
+        graphNtriples:
+          type: array
+          items:
+            type: string
+        qualifiedEntityIris:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            format: uri
+        coverageScope:
+          type: string
+          minLength: 1
     DistributedAlgebraExecutionResponse:
       type: object
       additionalProperties: false
-      required: [datasetId, snapshotId, manifestSha256, originalQuerySha256, rewrittenQuerySha256, resultSha256, replica, replicaCount, workerId, complete, result]
+      required:
+      - datasetId
+      - snapshotId
+      - manifestSha256
+      - originalQuerySha256
+      - rewrittenQuerySha256
+      - resultSha256
+      - replica
+      - replicaCount
+      - workerId
+      - complete
+      - result
       properties:
-        datasetId: {type: string, format: uuid}
-        snapshotId: {type: string, format: uuid}
-        manifestSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        originalQuerySha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        rewrittenQuerySha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        resultSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        replica: {type: integer, minimum: 0}
-        replicaCount: {type: integer, minimum: 2}
-        workerId: {type: string, minLength: 1}
-        complete: {const: true}
-        result: {$ref: '#/components/schemas/DistributedAlgebraResultPayload'}
+        datasetId:
+          type: string
+          format: uuid
+        snapshotId:
+          type: string
+          format: uuid
+        manifestSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        originalQuerySha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        rewrittenQuerySha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        resultSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        replica:
+          type: integer
+          minimum: 0
+        replicaCount:
+          type: integer
+          minimum: 2
+        workerId:
+          type: string
+          minLength: 1
+        complete:
+          const: true
+        result:
+          $ref: '#/components/schemas/DistributedAlgebraResultPayload'
     PathFrontierKey:
       type: object
       additionalProperties: false
-      required: [originEntityId, entityId, automatonState, graphId]
+      required:
+      - originEntityId
+      - entityId
+      - automatonState
+      - graphId
       properties:
-        originEntityId: {type: integer, minimum: 0}
-        entityId: {type: integer, minimum: 0}
-        automatonState: {type: integer, minimum: 0, maximum: 4294967295}
-        graphId: {type: [integer, 'null'], minimum: 0}
+        originEntityId:
+          type: integer
+          minimum: 0
+        entityId:
+          type: integer
+          minimum: 0
+        automatonState:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+        graphId:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
     DistributedPropertyPathPlan:
       type: object
       additionalProperties: false
-      required: [pathId, pathOrdinal, graphScope, subjectPattern, pathSparql, objectPattern, automaton, automatonSha256, partitionCount, maxIterations, maxFrontierItems, maxVisitedItems, maxCheckpointBytes, maxSpillBytes, hotVertexDegree, maxHotVertexSplits, requireCompletePartitionSet, requireScalarEquivalence]
+      required:
+      - pathId
+      - pathOrdinal
+      - graphScope
+      - subjectPattern
+      - pathSparql
+      - objectPattern
+      - automaton
+      - automatonSha256
+      - partitionCount
+      - maxIterations
+      - maxFrontierItems
+      - maxVisitedItems
+      - maxCheckpointBytes
+      - maxSpillBytes
+      - hotVertexDegree
+      - maxHotVertexSplits
+      - requireCompletePartitionSet
+      - requireScalarEquivalence
       properties:
-        pathId: {type: string, minLength: 1, maxLength: 128}
-        pathOrdinal: {type: integer, minimum: 0, maximum: 4294967295}
-        graphScope: {type: string, minLength: 1}
-        subjectPattern: {type: string, minLength: 1}
-        pathSparql: {type: string, minLength: 1}
-        objectPattern: {type: string, minLength: 1}
-        automaton: {type: object}
-        automatonSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        partitionCount: {type: integer, minimum: 2, maximum: 4294967295}
-        maxIterations: {type: integer, minimum: 1, maximum: 4294967295}
-        maxFrontierItems: {type: integer, minimum: 1}
-        maxVisitedItems: {type: integer, minimum: 1}
-        maxCheckpointBytes: {type: integer, minimum: 1}
-        maxSpillBytes: {type: integer, minimum: 1}
-        hotVertexDegree: {type: integer, minimum: 1}
-        maxHotVertexSplits: {type: integer, minimum: 2, maximum: 4294967295}
-        requireCompletePartitionSet: {const: true}
-        requireScalarEquivalence: {const: true}
+        pathId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        pathOrdinal:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+        graphScope:
+          type: string
+          minLength: 1
+        subjectPattern:
+          type: string
+          minLength: 1
+        pathSparql:
+          type: string
+          minLength: 1
+        objectPattern:
+          type: string
+          minLength: 1
+        automaton:
+          type: object
+        automatonSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        partitionCount:
+          type: integer
+          minimum: 2
+          maximum: 4294967295
+        maxIterations:
+          type: integer
+          minimum: 1
+          maximum: 4294967295
+        maxFrontierItems:
+          type: integer
+          minimum: 1
+        maxVisitedItems:
+          type: integer
+          minimum: 1
+        maxCheckpointBytes:
+          type: integer
+          minimum: 1
+        maxSpillBytes:
+          type: integer
+          minimum: 1
+        hotVertexDegree:
+          type: integer
+          minimum: 1
+        maxHotVertexSplits:
+          type: integer
+          minimum: 2
+          maximum: 4294967295
+        requireCompletePartitionSet:
+          const: true
+        requireScalarEquivalence:
+          const: true
     PartitionPathExecutionRequest:
       type: object
       additionalProperties: false
-      required: [snapshotId, manifestSha256, semanticRootSha256, activeDataset, planSha256, plan, iteration, storagePartition, action, frontier]
+      required:
+      - snapshotId
+      - manifestSha256
+      - semanticRootSha256
+      - activeDataset
+      - planSha256
+      - plan
+      - iteration
+      - storagePartition
+      - action
+      - frontier
       properties:
-        snapshotId: {type: string, format: uuid}
-        manifestSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        semanticRootSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        activeDataset: {$ref: '#/components/schemas/ResolvedDataset'}
-        planSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        plan: {$ref: '#/components/schemas/DistributedPropertyPathPlan'}
-        iteration: {type: integer, minimum: 0, maximum: 4294967295}
-        storagePartition: {type: integer, minimum: 0, maximum: 4294967295}
-        action: {enum: [seed, expand]}
-        frontier: {type: array, items: {$ref: '#/components/schemas/PathFrontierKey'}}
+        snapshotId:
+          type: string
+          format: uuid
+        manifestSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        semanticRootSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        activeDataset:
+          $ref: '#/components/schemas/ResolvedDataset'
+        planSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        plan:
+          $ref: '#/components/schemas/DistributedPropertyPathPlan'
+        iteration:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+        storagePartition:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+        action:
+          enum:
+          - seed
+          - expand
+        frontier:
+          type: array
+          items:
+            $ref: '#/components/schemas/PathFrontierKey'
     PartitionPathExecutionResponse:
       type: object
       additionalProperties: false
-      required: [datasetId, snapshotId, semanticRootSha256, partitionManifestSha256, forwardAdjacencySha256, reverseAdjacencySha256, dictionarySha256, planSha256, storagePartition, iteration, workerId, responseSha256, batch, complete]
+      required:
+      - datasetId
+      - snapshotId
+      - semanticRootSha256
+      - partitionManifestSha256
+      - forwardAdjacencySha256
+      - reverseAdjacencySha256
+      - dictionarySha256
+      - planSha256
+      - storagePartition
+      - iteration
+      - workerId
+      - responseSha256
+      - batch
+      - complete
       properties:
-        datasetId: {type: string, format: uuid}
-        snapshotId: {type: string, format: uuid}
-        semanticRootSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        partitionManifestSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        forwardAdjacencySha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        reverseAdjacencySha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        dictionarySha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        planSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        storagePartition: {type: integer, minimum: 0, maximum: 4294967295}
-        iteration: {type: integer, minimum: 0, maximum: 4294967295}
-        workerId: {type: string, minLength: 1}
-        responseSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
-        batch: {type: object}
-        complete: {const: true}
+        datasetId:
+          type: string
+          format: uuid
+        snapshotId:
+          type: string
+          format: uuid
+        semanticRootSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        partitionManifestSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        forwardAdjacencySha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        reverseAdjacencySha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        dictionarySha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        planSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        storagePartition:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+        iteration:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+        workerId:
+          type: string
+          minLength: 1
+        responseSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        batch:
+          type: object
+        complete:
+          const: true
     HydrationResponse:
       type: object
       additionalProperties: false

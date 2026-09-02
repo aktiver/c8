@@ -28,11 +28,11 @@ def main() -> int:
     if "oracleProductionTraffic\") is True" in differential:
         raise RuntimeError("differential harness permits production oracle traffic")
     require(PHASE6 / "scripts/qualify_provider.py", "RUN_SATURATION_MATRIX", "INJECT_AND_RECOVER", '"cpuPercent": 80', "peakRssBytes", "podUid", "nodeUid", "nodeScaleFromZero")
-    require(PHASE6 / "scripts/verify_supply_chain.py", "len(images) == 12", "spdxjson", "cyclonedx", "subject-sha256", "unapprovedCritical", "unapprovedHigh")
+    require(PHASE6 / "scripts/verify_supply_chain.py", "len(images) == 13", "spdxjson", "cyclonedx", "subject-sha256", "unapprovedCritical", "unapprovedHigh")
     require(ROOT.parent / "phase3/scripts/build_supply_chain.sh", "--type spdxjson", "--type cyclonedx", "--type slsaprovenance")
     require(PHASE6 / "scripts/verify_reproducible_build.py", "distinct builders", "networkControlled", "timestampsNormalized", "rows_a == rows_b")
     issuer = require(PHASE6 / "scripts/verify_and_issue.py", "phase3-certificate.json", "phase4-live-certificate.json", "phase5-live-certificate.json", "semanticMismatchCount", "failedScenarioCount")
-    for provider in ("rke2", "eks", "aks", "gke"):
+    for provider in ("rke", "rke2", "eks", "aks", "gke"):
         if provider not in issuer:
             raise RuntimeError(f"Phase 6 issuer is missing provider: {provider}")
     require(PHASE6 / "scripts/seal_certificate.py", "cosign", "verify-blob", "sigstore-keyless")

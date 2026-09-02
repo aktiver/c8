@@ -15,12 +15,14 @@ spec:
       labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: operator}
     spec:
       serviceAccountName: ngkg-operator
+      imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
       securityContext:
         runAsNonRoot: true
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: operator
           image: '{{ required "images.operator.repository is required" .Values.images.operator.repository }}@{{ required "images.operator.digest is required" .Values.images.operator.digest }}'
+          imagePullPolicy: {{ .Values.images.operator.pullPolicy }}
           envFrom:
             - configMapRef:
                 name: '{{ .Release.Name }}-phase40-reference-ceilings-{{ toJson .Values.phase40.direct | sha256sum | trunc 12 }}'

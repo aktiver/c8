@@ -189,6 +189,7 @@ pub fn compile_sharded_locator(
 
 impl MmapLocatorIndex {
     /// Open, checksum, map read-only, and validate every fixed-width record.
+    #[allow(unsafe_code)]
     pub fn open(
         path: &Path,
         expected_binary_sha256: &str,

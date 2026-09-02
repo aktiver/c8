@@ -23,7 +23,7 @@ use k8s_openapi::{
 };
 use kube::{
     Api, Client, Resource, ResourceExt,
-    api::{DeleteParams, ObjectMeta, Patch, PatchParams, PostParams},
+    api::{DeleteParams, ObjectMeta, Patch, PatchParams, PostParams, Preconditions},
     runtime::{Controller, controller::Action, finalizer::{Event, finalizer}, watcher},
 };
 use ngkg_catalog::{CatalogError, JobState, OperationRepository};
@@ -631,16 +631,31 @@ async fn cleanup_import_runtime(
     }
     let claims: Api<PersistentVolumeClaim> =
         Api::namespaced(context.client.clone(), &context.namespace);
-    match claims.delete(&base, &DeleteParams::default()).await {
-        Ok(_) => {}
-        Err(kube::Error::Api(kube_error)) if kube_error.code == 404 => {}
-        Err(error) => return Err(error.into()),
+    if let Some(claim) = claims.get_opt(&base).await? {
+        let owned = claim.metadata.labels.as_ref().and_then(|labels| labels.get("ngkg.io/operation-id"))
+            == Some(&import.spec.operation_id.to_string())
+            && claim.spec.as_ref().and_then(|spec| spec.volume_name.as_deref()) == Some(base.as_str());
+        if !owned {
+            return Err(OperatorError::Finalization("refusing to delete an unowned source-import PVC".to_owned()));
+        }
+        let uid = claim.metadata.uid.ok_or_else(|| OperatorError::Finalization("source-import PVC has no UID".to_owned()))?;
+        let params = DeleteParams { preconditions: Some(Preconditions { uid: Some(uid), resource_version: claim.metadata.resource_version }), ..DeleteParams::default() };
+        match claims.delete(&base, &params).await {
+            Ok(_) => {}
+            Err(kube::Error::Api(kube_error)) if kube_error.code == 404 => {}
+            Err(error) => return Err(error.into()),
+        }
     }
     let volumes: Api<PersistentVolume> = Api::all(context.client.clone());
-    match volumes.delete(&base, &DeleteParams::default()).await {
-        Ok(_) => {}
-        Err(kube::Error::Api(kube_error)) if kube_error.code == 404 => {}
-        Err(error) => return Err(error.into()),
+    if let Some(volume) = volumes.get_opt(&base).await? {
+        validate_import_volume(&volume, &import, &context, &base).await?;
+        let uid = volume.metadata.uid.ok_or_else(|| OperatorError::Finalization("source-import PV has no UID".to_owned()))?;
+        let params = DeleteParams { preconditions: Some(Preconditions { uid: Some(uid), resource_version: volume.metadata.resource_version }), ..DeleteParams::default() };
+        match volumes.delete(&base, &params).await {
+            Ok(_) => {}
+            Err(kube::Error::Api(kube_error)) if kube_error.code == 404 => {}
+            Err(error) => return Err(error.into()),
+        }
     }
     Ok(Action::await_change())
 }
@@ -1356,6 +1371,10 @@ async fn ensure_import_volume(
             Err(error) => return Err(error.into()),
         }
     }
+    let existing = persistent_volumes
+        .get(name)
+        .await?;
+    validate_import_volume(&existing, import, context, name).await?;
     let claims: Api<PersistentVolumeClaim> =
         Api::namespaced(context.client.clone(), &context.namespace);
     if claims.get_opt(name).await?.is_none() {
@@ -1391,6 +1410,49 @@ async fn ensure_import_volume(
             Err(kube::Error::Api(kube_error)) if kube_error.code == 409 => {}
             Err(error) => return Err(error.into()),
         }
+    }
+    Ok(())
+}
+
+async fn validate_import_volume(
+    volume: &PersistentVolume,
+    import: &NgkgSourceImport,
+    context: &Context,
+    name: &str,
+) -> Result<(), OperatorError> {
+    let expected_owner = format!("{}/{}", context.namespace, import.name_any());
+    let annotations = volume.metadata.annotations.as_ref();
+    let labels = volume.metadata.labels.as_ref();
+    if volume.metadata.name.as_deref() != Some(name)
+        || annotations.and_then(|items| items.get("ngkg.io/source-spec-sha256")) != Some(&import_spec_hash(import))
+        || annotations.and_then(|items| items.get("ngkg.io/lifecycle-owner")) != Some(&expected_owner)
+        || labels.and_then(|items| items.get("ngkg.io/operation-id")) != Some(&import.spec.operation_id.to_string())
+    {
+        return Err(OperatorError::SpecConflict("existing source import PV ownership"));
+    }
+    let service_accounts: Api<ServiceAccount> =
+        Api::namespaced(context.client.clone(), &context.namespace);
+    let identity = service_accounts.get(&import.spec.identity_ref).await?;
+    let azure_client_id = identity.metadata.annotations.as_ref()
+        .and_then(|items| items.get("azure.workload.identity/client-id"))
+        .map(String::as_str);
+    if import.spec.provider == CloudObjectProvider::AzureBlob && azure_client_id.is_none() {
+        return Err(OperatorError::SpecConflict(
+            "Azure source identity lacks azure.workload.identity/client-id",
+        ));
+    }
+    let (driver, handle, attributes) = import_csi_contract(import, azure_client_id, &context.worker);
+    let spec = volume.spec.as_ref().ok_or(OperatorError::SpecConflict("existing source import PV spec"))?;
+    let csi = spec.csi.as_ref().ok_or(OperatorError::SpecConflict("existing source import PV CSI"))?;
+    if csi.driver != driver
+        || csi.volume_handle != handle
+        || csi.read_only != Some(true)
+        || csi.volume_attributes.as_ref() != Some(&attributes)
+        || spec.persistent_volume_reclaim_policy.as_deref() != Some("Delete")
+        || spec.claim_ref.as_ref().and_then(|claim| claim.name.as_deref()) != Some(name)
+        || spec.claim_ref.as_ref().and_then(|claim| claim.namespace.as_deref()) != Some(context.namespace.as_str())
+    {
+        return Err(OperatorError::SpecConflict("existing source import PV storage contract"));
     }
     Ok(())
 }

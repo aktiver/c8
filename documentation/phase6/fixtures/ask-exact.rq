@@ -1,3 +1,0 @@
-ASK WHERE {
-  ?subject a <https://c8-next-generation.io/vocab/ExactReasoningWitness> .
-}

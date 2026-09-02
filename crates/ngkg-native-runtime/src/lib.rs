@@ -16,10 +16,14 @@ use std::{
 
 use arrow_array::{Array, BooleanArray, RecordBatch, StringArray, UInt32Array, UInt64Array, UInt8Array};
 use ngkg_query_planner::{AlgebraExecutionLane, DistributedAlgebraPlan};
-use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
+use parquet::arrow::{ProjectionMask, arrow_reader::ParquetRecordBatchReaderBuilder};
+use parquet::file::statistics::Statistics;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
+
+pub mod hpc;
+mod openmp;
 
 /// Version of the native public-query cutover contract.
 pub const NATIVE_CUTOVER_FORMAT_VERSION: u32 = 1;
@@ -227,6 +231,22 @@ pub struct LeafScanLimits {
     pub max_rows: usize,
     pub max_decoded_bytes: u64,
     pub batch_rows: usize,
+    /// Local predicate backend. OpenMP remains opt-in until live differential
+    /// and performance evidence proves a benefit for the exact image digest.
+    #[serde(default)]
+    pub execution_mode: LeafExecutionMode,
+}
+
+/// Process-local predicate kernel selected for a bounded Parquet scan.
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum LeafExecutionMode {
+    /// Memory-safe Rust validation path and semantic reference for the native kernel.
+    #[default]
+    Rust,
+    /// Pinned OpenMP subprocess kernel followed by the same Rust checks.
+    #[serde(rename = "openmp")]
+    OpenMp,
 }
 
 /// Compact encoded RDF fact returned by a native leaf scan.
@@ -250,6 +270,9 @@ pub struct LeafScanResult {
     pub input_sha256: String,
     pub output_sha256: String,
     pub scanned_rows: u64,
+    pub physically_scanned_rows: u64,
+    pub pruned_row_groups: u64,
+    pub pruned_rows: u64,
     pub matched_rows: u64,
     pub decoded_bytes: u64,
     pub rows: Vec<EncodedFact>,
@@ -278,10 +301,16 @@ pub fn scan_verified_parquet_leaf(
         return Err(NativeRuntimeError::ArtifactMismatch);
     }
     let file = File::open(path)?;
-    let mut reader = ParquetRecordBatchReaderBuilder::try_new(file)?
+    let builder = ParquetRecordBatchReaderBuilder::try_new(file)?;
+    let projection = parquet_leaf_projection(&builder)?;
+    let (row_groups, pruned_row_groups, pruned_rows) = parquet_candidate_row_groups(&builder, &predicate)?;
+    let mut reader = builder
+        .with_projection(projection)
+        .with_row_groups(row_groups)
         .with_batch_size(limits.batch_rows)
         .build()?;
-    let mut scanned = 0_u64;
+    let mut scanned = pruned_rows;
+    let mut physically_scanned = 0_u64;
     let mut decoded = 0_u64;
     let mut rows = Vec::new();
     for batch in &mut reader {
@@ -290,8 +319,20 @@ pub fn scan_verified_parquet_leaf(
         }
         let batch = batch?;
         let columns = ScanColumns::new(&batch)?;
+        let openmp_matches = if limits.execution_mode == LeafExecutionMode::OpenMp {
+            Some(openmp::filter_batch(&columns, &predicate)?)
+        } else {
+            None
+        };
         for row in 0..batch.num_rows() {
             scanned = scanned.checked_add(1).ok_or(NativeRuntimeError::LimitExceeded)?;
+            physically_scanned = physically_scanned.checked_add(1).ok_or(NativeRuntimeError::LimitExceeded)?;
+            if openmp_matches
+                .as_ref()
+                .is_some_and(|matches| !matches[row])
+            {
+                continue;
+            }
             if columns.partition(row)? != u64::from(expected_partition) {
                 return Err(NativeRuntimeError::PartitionMismatch);
             }
@@ -338,11 +379,108 @@ pub fn scan_verified_parquet_leaf(
         input_sha256: expected_sha256.to_owned(),
         output_sha256,
         scanned_rows: scanned,
+        physically_scanned_rows: physically_scanned,
+        pruned_row_groups,
+        pruned_rows,
         matched_rows: u64::try_from(rows.len()).map_err(|_| NativeRuntimeError::LimitExceeded)?,
         decoded_bytes: decoded,
         rows,
         complete: true,
     })
+}
+
+fn parquet_candidate_row_groups(
+    builder: &ParquetRecordBatchReaderBuilder<File>,
+    predicate: &LeafPredicate,
+) -> Result<(Vec<usize>, u64, u64), NativeRuntimeError> {
+    let schema = builder.schema();
+    let subject = schema.index_of("subject_id64")?;
+    let property = schema.index_of("predicate_id64")?;
+    let object = schema
+        .index_of("object_id64")
+        .or_else(|_| schema.index_of("object_term_id64"))?;
+    let graph = schema.index_of("graph_id64")?;
+    let mut selected = Vec::new();
+    let mut pruned_groups = 0_u64;
+    let mut pruned_rows = 0_u64;
+    for (ordinal, row_group) in builder.metadata().row_groups().iter().enumerate() {
+        let excluded = predicate
+            .subject_id
+            .is_some_and(|value| statistics_exclude(row_group.column(subject).statistics(), value))
+            || predicate
+                .predicate_id
+                .is_some_and(|value| statistics_exclude(row_group.column(property).statistics(), value))
+            || predicate
+                .object_id
+                .is_some_and(|value| statistics_exclude(row_group.column(object).statistics(), value))
+            || predicate
+                .graph_id
+                .is_some_and(|value| statistics_exclude(row_group.column(graph).statistics(), value))
+            || statistics_exclude_set(
+                row_group.column(graph).statistics(),
+                &predicate.allowed_graph_ids,
+            );
+        if excluded {
+            pruned_groups = pruned_groups.checked_add(1).ok_or(NativeRuntimeError::LimitExceeded)?;
+            pruned_rows = pruned_rows
+                .checked_add(u64::try_from(row_group.num_rows()).map_err(|_| NativeRuntimeError::LimitExceeded)?)
+                .ok_or(NativeRuntimeError::LimitExceeded)?;
+        } else {
+            selected.push(ordinal);
+        }
+    }
+    Ok((selected, pruned_groups, pruned_rows))
+}
+
+fn statistics_exclude(statistics: Option<&Statistics>, value: u64) -> bool {
+    statistics_range(statistics).is_some_and(|(minimum, maximum)| value < minimum || value > maximum)
+}
+
+fn statistics_exclude_set(statistics: Option<&Statistics>, values: &BTreeSet<u64>) -> bool {
+    if values.is_empty() {
+        return true;
+    }
+    statistics_range(statistics).is_some_and(|(minimum, maximum)| {
+        values.range(minimum..=maximum).next().is_none()
+    })
+}
+
+fn statistics_range(statistics: Option<&Statistics>) -> Option<(u64, u64)> {
+    match statistics? {
+        Statistics::Int32(values) => Some((
+            u64::try_from(*values.min_opt()?).ok()?,
+            u64::try_from(*values.max_opt()?).ok()?,
+        )),
+        Statistics::Int64(values) => Some((
+            u64::try_from(*values.min_opt()?).ok()?,
+            u64::try_from(*values.max_opt()?).ok()?,
+        )),
+        _ => None,
+    }
+}
+
+fn parquet_leaf_projection(
+    builder: &ParquetRecordBatchReaderBuilder<File>,
+) -> Result<ProjectionMask, NativeRuntimeError> {
+    let schema = builder.schema();
+    let mut indices = BTreeSet::new();
+    for name in ["subject_id64", "predicate_id64", "object_kind", "graph_id64"] {
+        indices.insert(schema.index_of(name)?);
+    }
+    indices.insert(
+        schema
+            .index_of("object_id64")
+            .or_else(|_| schema.index_of("object_term_id64"))?,
+    );
+    for optional in ["partition_id", "queryable_as_rdf", "canonical_nquad"] {
+        if let Ok(index) = schema.index_of(optional) {
+            indices.insert(index);
+        }
+    }
+    Ok(ProjectionMask::leaves(
+        builder.parquet_schema(),
+        indices.into_iter(),
+    ))
 }
 
 struct ScanColumns<'a> {
@@ -584,6 +722,18 @@ pub enum NativeRuntimeError {
     ConflictingCompletion,
     #[error("stage partition set is incomplete")]
     IncompletePartitionSet,
+    #[error("invalid finite HPC run plan")]
+    InvalidHpcRunPlan,
+    #[error("MPI rank does not match the immutable run plan")]
+    InvalidHpcRank,
+    #[error("HPC rank receipt is invalid or does not match the plan")]
+    InvalidHpcReceipt,
+    #[error("HPC run is missing one or more required ranks or partitions")]
+    IncompleteHpcRun,
+    #[error("an HPC worker thread panicked before emitting a receipt")]
+    HpcWorkerPanicked,
+    #[error("OpenMP predicate kernel is unavailable, malformed, or disagrees with its contract")]
+    OpenMpKernel,
     #[error("native runtime I/O failed: {0}")]
     Io(#[from] std::io::Error),
     #[error("native runtime Parquet failed: {0}")]
@@ -608,7 +758,7 @@ mod tests {
     use sha2::{Digest, Sha256};
 
     use super::{
-        LeafPredicate, LeafScanLimits, NativeCutoverMode, NativeQueryCertificate,
+        LeafExecutionMode, LeafPredicate, LeafScanLimits, NativeCutoverMode, NativeQueryCertificate,
         PartitionCompletion, ReasoningCoverage, StageBarrier, admit_native_plan, file_sha256,
         scan_verified_parquet_leaf,
     };
@@ -734,7 +884,7 @@ mod tests {
                 require_queryable: true,
                 ..LeafPredicate::default()
             },
-            LeafScanLimits { max_rows: 10, max_decoded_bytes: 4096, batch_rows: 1 },
+            LeafScanLimits { max_rows: 10, max_decoded_bytes: 4096, batch_rows: 1, execution_mode: LeafExecutionMode::Rust },
             &AtomicBool::new(false),
         )?;
         assert!(result.complete);

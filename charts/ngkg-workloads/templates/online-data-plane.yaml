@@ -1,11 +1,17 @@
 apiVersion: v1
 kind: ServiceAccount
-metadata: {name: ngkg-query}
+metadata:
+  name: ngkg-query
+  annotations: {{- toYaml .Values.serviceAccounts.query.annotations | nindent 4 }}
+imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
 automountServiceAccountToken: false
 ---
 apiVersion: v1
 kind: ServiceAccount
-metadata: {name: ngkg-hydration}
+metadata:
+  name: ngkg-hydration
+  annotations: {{- toYaml .Values.serviceAccounts.hydration.annotations | nindent 4 }}
+imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
 automountServiceAccountToken: false
 ---
 apiVersion: v1
@@ -41,6 +47,7 @@ spec:
         ngkg.io/tenant-admission-policy-sha256: '{{ required "onlineServing.tenantAdmissionPolicySha256 is required" .Values.onlineServing.tenantAdmissionPolicySha256 }}'
     spec:
       serviceAccountName: ngkg-query
+      imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
       terminationGracePeriodSeconds: 120
       nodeSelector: {ngkg.io/workload: sparql-query-processing}
       tolerations:
@@ -54,6 +61,7 @@ spec:
       containers:
         - name: query
           image: '{{ required "images.query.repository is required" .Values.images.query.repository }}@{{ required "images.query.digest is required" .Values.images.query.digest }}'
+          imagePullPolicy: {{ .Values.images.query.pullPolicy }}
           args: [query]
           ports: [{name: http, containerPort: 32010}]
           env: &queryThreadEnvironment
@@ -276,6 +284,7 @@ spec:
         ngkg.io/tenant-admission-policy-sha256: '{{ required "onlineServing.tenantAdmissionPolicySha256 is required" .Values.onlineServing.tenantAdmissionPolicySha256 }}'
     spec:
       serviceAccountName: ngkg-query
+      imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
       terminationGracePeriodSeconds: 120
       nodeSelector: {ngkg.io/workload: sparql-fragment-processing}
       tolerations:
@@ -289,6 +298,7 @@ spec:
       containers:
         - name: fragment
           image: '{{ required "images.fragment.repository is required" .Values.images.fragment.repository }}@{{ required "images.fragment.digest is required" .Values.images.fragment.digest }}'
+          imagePullPolicy: {{ .Values.images.fragment.pullPolicy }}
           args: [fragment]
           ports: [{name: http, containerPort: 32040}]
           env:
@@ -449,6 +459,7 @@ spec:
         ngkg.io/tenant-admission-policy-sha256: '{{ required "onlineServing.tenantAdmissionPolicySha256 is required" .Values.onlineServing.tenantAdmissionPolicySha256 }}'
     spec:
       serviceAccountName: ngkg-query
+      imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
       terminationGracePeriodSeconds: 120
       nodeSelector: {ngkg.io/workload: sparql-query-processing}
       tolerations:
@@ -456,6 +467,7 @@ spec:
       containers:
         - name: locator
           image: '{{ required "images.locator.repository is required" .Values.images.locator.repository }}@{{ required "images.locator.digest is required" .Values.images.locator.digest }}'
+          imagePullPolicy: {{ .Values.images.locator.pullPolicy }}
           args: [locator]
           ports: [{name: http, containerPort: 32020}]
           env:
@@ -467,7 +479,6 @@ spec:
             - {name: NGKG_BLOCKING_IO_THREADS, value: '1'}
             - {name: NGKG_CONTROL_THREADS, value: '1'}
             - {name: NGKG_NODE_SATURATION_TARGET_PERCENT, value: '{{ .Values.hpcRuntime.nodeSaturationTargetPercent }}'}
-            - {name: NGKG_LOCATOR_MMAP_MODE, value: anonymous-read-only}
             - {name: NGKG_BIND_ADDR, value: '0.0.0.0:32020'}
             - name: NGKG_DATABASE_URL
               valueFrom: {secretKeyRef: {name: '{{ required "onlineServing.databaseSecret is required" .Values.onlineServing.databaseSecret }}', key: database-url}}
@@ -587,6 +598,7 @@ spec:
         ngkg.io/tenant-admission-policy-sha256: '{{ required "onlineServing.tenantAdmissionPolicySha256 is required" .Values.onlineServing.tenantAdmissionPolicySha256 }}'
     spec:
       serviceAccountName: ngkg-hydration
+      imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
       nodeSelector: {ngkg.io/workload: parquet-hydration}
       tolerations:
         - {key: ngkg.io/workload, operator: Equal, value: parquet-hydration, effect: NoSchedule}
@@ -599,6 +611,7 @@ spec:
       containers:
         - name: hydration
           image: '{{ required "images.hydration.repository is required" .Values.images.hydration.repository }}@{{ required "images.hydration.digest is required" .Values.images.hydration.digest }}'
+          imagePullPolicy: {{ .Values.images.hydration.pullPolicy }}
           args: [hydration]
           ports: [{name: http, containerPort: 32030}]
           env:
@@ -611,7 +624,6 @@ spec:
             - {name: NGKG_CONTROL_THREADS, value: '1'}
             - {name: NGKG_NODE_SATURATION_TARGET_PERCENT, value: '{{ .Values.hpcRuntime.nodeSaturationTargetPercent }}'}
             - {name: NGKG_HYDRATION_WORKER_THREADS, value: '{{ .Values.onlineServing.hydrationWorkerThreads }}'}
-            - {name: NGKG_LOCATOR_MMAP_MODE, value: anonymous-read-only}
             - {name: NGKG_BIND_ADDR, value: '0.0.0.0:32030'}
             - name: NGKG_DATABASE_URL
               valueFrom: {secretKeyRef: {name: '{{ required "onlineServing.databaseSecret is required" .Values.onlineServing.databaseSecret }}', key: database-url}}

@@ -1,5 +1,0 @@
-CONSTRUCT { ?subject ?predicate ?object }
-WHERE {
-  ?subject ?predicate ?object .
-  FILTER EXISTS { ?subject a <https://c8-next-generation.io/vocab/ReasonedContextRoot> }
-}

@@ -1,23 +1,34 @@
 platform:
   kubernetesDistribution: generic
+imagePullSecrets: []
 images:
   query:
     repository: ''
     digest: ''
+    pullPolicy: IfNotPresent
   fragment:
     repository: ''
     digest: ''
+    pullPolicy: IfNotPresent
   locator:
     repository: ''
     digest: ''
+    pullPolicy: IfNotPresent
   hydration:
     repository: ''
     digest: ''
+    pullPolicy: IfNotPresent
   reasoner:
     repository: ''
     digest: ''
+    pullPolicy: IfNotPresent
 tls:
   existingSecret: ''
+serviceAccounts:
+  query:
+    annotations: {}
+  hydration:
+    annotations: {}
 onlineServing:
   databaseSecret: ''
   databaseMaxConnections: '16'
@@ -291,6 +302,8 @@ networking:
   fragmentIpFamily: IPv4
   dependencyCidrs: []
   federationCidrs: []
+  queryClientNamespace: ngkg
+  metricsNamespace: monitoring
 metrics:
   cpuUtilizationTargetPercent: 80
   memoryUtilizationTargetPercent: 80

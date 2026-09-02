@@ -108,7 +108,10 @@ spareval = { path = "vendor/spareval" }
 sparopt = { path = "vendor/sparopt" }
 
 [workspace.lints.rust]
-unsafe_code = "forbid"
+# Memory mapping has two reviewed, function-scoped unsafe blocks. Keep unsafe
+# denied everywhere else while allowing those functions to document and own
+# their invariants explicitly.
+unsafe_code = "deny"
 missing_docs = "allow"
 dead_code = "allow"
 

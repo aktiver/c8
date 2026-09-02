@@ -6,7 +6,7 @@ Phase 18 turns the Phase 17 global locator and partitioned payload artifacts int
 
 1. `compile-mmap-locator` verifies the immutable Phase 17 locator checksum.
 2. The compiler converts sorted TSV rows into a fixed-width, snapshot-bound binary file.
-3. A locator replica verifies the binary checksum and source-locator checksum, copies it into a read-only anonymous memory map, validates strict sort order, and serves GUID lookups by binary search.
+3. A locator replica opens the immutable file read-only, maps it into memory, verifies the binary and source-locator checksums, validates strict sort order, and serves GUID lookups by binary search.
 4. Each result GUID resolves to one or more `(partition, row_group, row_in_group, graph_id, predicate_id)` records.
 5. Hydration groups records by partition and row group, opens only referenced Parquet shards, and processes independent groups across a bounded Rust thread pool.
 6. Every returned row must match the locator GUID, predicate, graph, and snapshot. A missing key, shard, row, version, or checksum fails closed.
@@ -14,7 +14,7 @@ Phase 18 turns the Phase 17 global locator and partitioned payload artifacts int
 
 The binary locator has a 64-byte header followed by 44-byte big-endian records. The header binds the format magic, snapshot UUID, exact Phase 17 locator SHA-256, and record count. The output file is immutable; a failed compile removes its incomplete output so a retry cannot accidentally accept a partial index.
 
-The current memory map is anonymous and read-only. This avoids unsafe application code under the workspace's `unsafe_code = "forbid"` policy: verified file bytes are read directly into `memmap2`-managed virtual memory and then made read-only. A future audited file-backed adapter may remove the copy only if its unsafe boundary is isolated, reviewed, and produces identical lookup results.
+The current memory map is file-backed and read-only. `memmap2` requires an unsafe call because another process could mutate a mapped file, so NGKG isolates that call in one `#[allow(unsafe_code)]` function under the workspace's `unsafe_code = "deny"` policy. The descriptor is read-only, the admitted object path is immutable, and the complete mapped bytes are checksum-verified before any record is exposed.
 
 ## HPC and Kubernetes behavior
 
@@ -49,4 +49,3 @@ Phase 18 also does not yet publish the distributed artifact root as the certifie
 10. CPU and memory scale targets are at most 80%, one hydration replica lands per responsibility node, and only the RKE2 `parquet-hydration` pool grows.
 11. Rust, OpenMP, BLAS, I/O, and control pools fit the assigned cpuset without nested parallelism.
 12. Cargo formatting, linting, tests, Helm rendering, RKE2 autoscaling, node-loss, and Parquet corruption tests pass in the pinned qualification environment.
-

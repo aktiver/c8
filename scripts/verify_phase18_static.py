@@ -26,8 +26,8 @@ def main() -> int:
 
     for token in (
         "compile_sharded_locator",
-        "MmapMut::map_anon",
-        "make_read_only",
+        "MmapOptions::new().len(bytes_len).map(&file)",
+        "#[allow(unsafe_code)]",
         "partition_point",
         "ChecksumMismatch",
     ):
@@ -46,7 +46,6 @@ def main() -> int:
     require(hpa, "averageUtilization: {{ .Values.metrics.memoryUtilizationTargetPercent }}", errors, "HPA")
     require(plane, "requiredDuringSchedulingIgnoredDuringExecution", errors, "online data plane")
     require(plane, "NGKG_HYDRATION_WORKER_THREADS", errors, "online data plane")
-    require(plane, "NGKG_LOCATOR_MMAP_MODE", errors, "online data plane")
 
     saturation = values["hpcRuntime"]["nodeSaturationTargetPercent"]
     cpu = values["metrics"]["cpuUtilizationTargetPercent"]
@@ -63,4 +62,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

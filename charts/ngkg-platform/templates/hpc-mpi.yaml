@@ -1,0 +1,173 @@
+{{- if .Values.hpc.enabled }}
+{{- if not .Values.hpc.sharedWorkClaim }}
+{{- fail "hpc.sharedWorkClaim must name an existing ReadWriteMany claim when hpc.enabled=true" }}
+{{- end }}
+{{- if not (regexMatch "^[0-9a-f]{64}$" .Values.hpc.runPlanSha256) }}
+{{- fail "hpc.runPlanSha256 must be a lowercase SHA-256 when hpc.enabled=true" }}
+{{- end }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.hpc.serviceAccount }}
+  labels:
+    app.kubernetes.io/name: ngkg
+    app.kubernetes.io/component: hpc-worker
+imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
+automountServiceAccountToken: false
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ngkg-hpc-gang
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ngkg
+      app.kubernetes.io/component: hpc-worker
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ngkg
+              app.kubernetes.io/component: hpc-worker
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ngkg
+              app.kubernetes.io/component: hpc-worker
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+---
+apiVersion: {{ .Values.hpc.mpiJobApiVersion }}
+kind: MPIJob
+metadata:
+  name: ngkg-hpc-parquet
+  labels:
+    app.kubernetes.io/name: ngkg
+    app.kubernetes.io/component: hpc-worker
+    kueue.x-k8s.io/queue-name: {{ .Values.hpc.localQueue }}
+spec:
+  slotsPerWorker: 1
+  runPolicy:
+    cleanPodPolicy: Running
+    activeDeadlineSeconds: {{ .Values.hpc.activeDeadlineSeconds }}
+    ttlSecondsAfterFinished: {{ .Values.hpc.ttlSecondsAfterFinished }}
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: ngkg
+            app.kubernetes.io/component: hpc-worker
+            ngkg.io/hpc-role: launcher
+        spec:
+          serviceAccountName: {{ .Values.hpc.serviceAccount }}
+          imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile: {type: RuntimeDefault}
+          containers:
+            - name: launcher
+              image: '{{ required "HPC worker repository is required" .Values.images.hpcWorker.repository }}@{{ required "HPC worker digest is required" .Values.images.hpcWorker.digest }}'
+              imagePullPolicy: {{ .Values.images.hpcWorker.pullPolicy }}
+              command: [/usr/bin/mpirun]
+              args:
+                - -np
+                - '{{ .Values.hpc.rankCount }}'
+                - --map-by
+                - ppr:1:node
+                - /usr/local/bin/ngkg-mpi-exec
+                - /usr/local/bin/ngkg-distributed-worker
+                - hpc-parquet-rank
+                - --plan
+                - {{ .Values.hpc.runPlanPath }}
+                - --plan-sha256
+                - {{ .Values.hpc.runPlanSha256 }}
+                - --receipt-directory
+                - {{ .Values.hpc.receiptDirectory }}
+              env:
+                - {name: NGKG_NODE_SATURATION_TARGET_PERCENT, value: '80'}
+                - {name: OMP_NUM_THREADS, value: '{{ .Values.hpc.ompThreads }}'}
+                - {name: OMP_DYNAMIC, value: 'FALSE'}
+                - {name: OMP_MAX_ACTIVE_LEVELS, value: '1'}
+                - {name: NGKG_OPENMP_KERNEL_TIMEOUT_MS, value: '{{ .Values.hpc.openmpKernelTimeoutMs }}'}
+                - {name: OPENBLAS_NUM_THREADS, value: '1'}
+                - {name: MKL_NUM_THREADS, value: '1'}
+              resources:
+                requests: {cpu: '1', memory: 1Gi}
+                limits: {cpu: '1', memory: 1Gi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities: {drop: [ALL]}
+                readOnlyRootFilesystem: true
+              volumeMounts:
+                - {name: hpc-work, mountPath: /hpc}
+          volumes:
+            - name: hpc-work
+              persistentVolumeClaim: {claimName: {{ .Values.hpc.sharedWorkClaim }}}
+    Worker:
+      replicas: {{ .Values.hpc.rankCount }}
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: ngkg
+            app.kubernetes.io/component: hpc-worker
+            ngkg.io/hpc-role: rank
+        spec:
+          serviceAccountName: {{ .Values.hpc.serviceAccount }}
+          imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          nodeSelector: {{- toYaml .Values.hpc.nodeSelector | nindent 12 }}
+          tolerations: {{- toYaml .Values.hpc.tolerations | nindent 12 }}
+          affinity: {{- toYaml .Values.hpc.affinity | nindent 12 }}
+          topologySpreadConstraints: {{- toYaml .Values.hpc.topologySpreadConstraints | nindent 12 }}
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile: {type: RuntimeDefault}
+          containers:
+            - name: rank
+              image: '{{ required "HPC worker repository is required" .Values.images.hpcWorker.repository }}@{{ required "HPC worker digest is required" .Values.images.hpcWorker.digest }}'
+              imagePullPolicy: {{ .Values.images.hpcWorker.pullPolicy }}
+              env:
+                - {name: NGKG_NODE_SATURATION_TARGET_PERCENT, value: '80'}
+                - {name: OMP_NUM_THREADS, value: '{{ .Values.hpc.ompThreads }}'}
+                - {name: OMP_DYNAMIC, value: 'FALSE'}
+                - {name: OMP_MAX_ACTIVE_LEVELS, value: '1'}
+                - {name: OMP_PROC_BIND, value: close}
+                - {name: OMP_PLACES, value: cores}
+                - {name: NGKG_OPENMP_KERNEL_TIMEOUT_MS, value: '{{ .Values.hpc.openmpKernelTimeoutMs }}'}
+                - {name: OPENBLAS_NUM_THREADS, value: '1'}
+                - {name: MKL_NUM_THREADS, value: '1'}
+              resources:
+                requests:
+                  cpu: {{ .Values.hpc.cpu | quote }}
+                  memory: {{ .Values.hpc.memory }}
+                  ephemeral-storage: {{ .Values.hpc.ephemeralStorage }}
+                limits:
+                  cpu: {{ .Values.hpc.cpu | quote }}
+                  memory: {{ .Values.hpc.memory }}
+                  ephemeral-storage: {{ .Values.hpc.ephemeralStorage }}
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities: {drop: [ALL]}
+                readOnlyRootFilesystem: true
+              volumeMounts:
+                - {name: hpc-work, mountPath: /hpc}
+          volumes:
+            - name: hpc-work
+              persistentVolumeClaim: {claimName: {{ .Values.hpc.sharedWorkClaim }}}
+{{- end }}

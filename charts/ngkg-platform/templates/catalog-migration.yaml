@@ -15,6 +15,7 @@ spec:
       labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: catalog-migration}
     spec:
       automountServiceAccountToken: false
+      imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
       securityContext:
         runAsNonRoot: true
         seccompProfile: {type: RuntimeDefault}
@@ -22,6 +23,7 @@ spec:
       containers:
         - name: migrator
           image: '{{ required "images.catalogMigrator.repository is required" .Values.images.catalogMigrator.repository }}@{{ required "images.catalogMigrator.digest is required" .Values.images.catalogMigrator.digest }}'
+          imagePullPolicy: {{ .Values.images.catalogMigrator.pullPolicy }}
           env:
             - name: NGKG_DATABASE_URL
               valueFrom: {secretKeyRef: {name: '{{ required "dependencies.databaseSecret is required" .Values.dependencies.databaseSecret }}', key: migration-database-url}}

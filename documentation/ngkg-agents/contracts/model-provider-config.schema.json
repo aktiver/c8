@@ -1,5 +1,0 @@
-{
-  "$schema":"https://json-schema.org/draft/2020-12/schema","title":"NGKG model provider configuration","type":"array","minItems":1,"maxItems":64,
-  "items":{"type":"object","additionalProperties":false,"required":["name","protocol","endpoint","allowedModels","maximumRequestBytes","maximumResponseBytes","maximumInFlight","connectTimeoutMilliseconds","requestTimeoutMilliseconds","allowHttp"],
-    "properties":{"name":{"type":"string","minLength":1,"maxLength":128},"protocol":{"enum":["OPEN_AI_COMPATIBLE","ANTHROPIC_MESSAGES"]},"endpoint":{"type":"string","format":"uri"},"allowedModels":{"type":"array","minItems":1,"maxItems":256,"items":{"type":"string","minLength":1,"maxLength":512}},"credentialFile":{"type":["string","null"]},"credentialFileSha256":{"type":["string","null"],"pattern":"^[0-9a-f]{64}$"},"maximumRequestBytes":{"type":"integer","minimum":1},"maximumResponseBytes":{"type":"integer","minimum":1},"maximumInFlight":{"type":"integer","minimum":1},"connectTimeoutMilliseconds":{"type":"integer","minimum":1},"requestTimeoutMilliseconds":{"type":"integer","minimum":1},"allowHttp":{"type":"boolean"}}}
-}

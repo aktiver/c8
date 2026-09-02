@@ -28,7 +28,7 @@ Ontology, policy, expected-result, and other compiler-support files belong in a 
 Install these locally:
 
 - `kubectl`
-- Helm 3
+- Helm 3 or Helm 4
 - `curl`
 - `jq`
 - `openssl`
@@ -36,7 +36,7 @@ Install these locally:
 
 You also need:
 
-- an existing Kubernetes cluster;
+- an existing Kubernetes cluster on a currently supported release (use 1.35 or newer; the charts retain 1.33+ compatibility, but 1.33 is end-of-life and 1.34 is no longer one of the three actively maintained release branches);
 - an HA PostgreSQL database reachable from the cluster;
 - an S3 or S3-compatible bucket for immutable NGKG artifacts;
 - digest-pinned NGKG container images built from this source tree; and
@@ -128,6 +128,16 @@ kubectl -n "$NGKG_NAMESPACE" create secret generic ngkg-database \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 
+If the image registry requires registry credentials, create a pull Secret in the same namespace. This is separate from the Docker login used to push images:
+
+```bash
+kubectl -n "$NGKG_NAMESPACE" create secret docker-registry ngkg-registry \
+  --docker-server="$NGKG_LOCAL_REGISTRY" \
+  --docker-username="$NGKG_LOCAL_REGISTRY_USERNAME" \
+  --docker-password="$NGKG_LOCAL_REGISTRY_PASSWORD" \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
 If the API pod receives S3 credentials from workload identity, leave `objectStoreCredentialsSecret` empty. For a development S3-compatible service that requires explicit SDK environment variables, create a restricted Secret and set its name in the values file; never commit it.
 
 ## 5. Create the minimal Helm values file
@@ -140,10 +150,15 @@ images:
   operator: {repository: <operator-image-repository>, digest: sha256:<sha256-digest>}
   distributedOperator: {repository: <distributed-operator-image-repository>, digest: sha256:<sha256-digest>}
   distributedWorker: {repository: <distributed-worker-image-repository>, digest: sha256:<sha256-digest>}
+  hpcWorker: {repository: <hpc-worker-image-repository>, digest: sha256:<sha256-digest>}
   referenceWorker: {repository: <reference-worker-image-repository>, digest: sha256:<sha256-digest>}
   catalogMigrator: {repository: <catalog-migrator-image-repository>, digest: sha256:<sha256-digest>}
   storageRecoveryOperator: {repository: <storage-recovery-operator-image-repository>, digest: sha256:<sha256-digest>}
   storageRecoveryWorker: {repository: <storage-recovery-worker-image-repository>, digest: sha256:<sha256-digest>}
+
+# Leave empty for a public registry or provider-native registry authentication.
+imagePullSecrets:
+  - name: ngkg-registry
 
 dependencies:
   databaseSecret: ngkg-database
@@ -172,6 +187,14 @@ api:
 operator:
   reference:
     reasonerAdapterSha256: <hermit-adapter-jar-sha256>
+```
+
+The local image builder writes the same image block, including pull policies, to `docker_repos/generated/platform-local-registry-values.yaml`. Supply that generated file last so its digest-pinned image coordinates override the placeholders above:
+
+```bash
+helm lint NGKG_1_0_0_GA/charts/ngkg-platform \
+  --values .ngkg/platform-values.yaml \
+  --values docker_repos/generated/platform-local-registry-values.yaml
 ```
 
 Insert the local checksum without exposing the bearer token:
@@ -215,20 +238,23 @@ Create and select the NGKG namespace, then validate the local charts after repla
 kubectl create namespace "$NGKG_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 kubectl config set-context --current --namespace="$NGKG_NAMESPACE"
 
-helm lint charts/ngkg-crds
-helm lint charts/ngkg-platform --values .ngkg/platform-values.yaml
+helm lint NGKG_1_0_0_GA/charts/ngkg-crds
+helm lint NGKG_1_0_0_GA/charts/ngkg-platform \
+  --values .ngkg/platform-values.yaml \
+  --values docker_repos/generated/platform-local-registry-values.yaml
 ```
 
 Install CRDs first, then the platform chart:
 
 ```bash
-helm upgrade --install ngkg-crds charts/ngkg-crds \
+helm upgrade --install ngkg-crds NGKG_1_0_0_GA/charts/ngkg-crds \
   --namespace "$NGKG_NAMESPACE" \
   --wait --atomic --timeout 10m
 
-helm upgrade --install ngkg-platform charts/ngkg-platform \
+helm upgrade --install ngkg-platform NGKG_1_0_0_GA/charts/ngkg-platform \
   --namespace "$NGKG_NAMESPACE" \
   --values .ngkg/platform-values.yaml \
+  --values docker_repos/generated/platform-local-registry-values.yaml \
   --wait --atomic --timeout 20m
 ```
 

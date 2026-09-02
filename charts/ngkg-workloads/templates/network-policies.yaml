@@ -101,7 +101,9 @@ spec:
   policyTypes: [Ingress]
   ingress:
     - from:
-        - namespaceSelector: {}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networking.queryClientNamespace | quote }}
           podSelector:
             matchLabels: {ngkg.io/query-client: 'true'}
       ports:
@@ -116,7 +118,9 @@ spec:
   policyTypes: [Ingress]
   ingress:
     - from:
-        - namespaceSelector: {}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networking.metricsNamespace | quote }}
           podSelector:
             matchLabels: {ngkg.io/metrics-client: 'true'}
       ports:

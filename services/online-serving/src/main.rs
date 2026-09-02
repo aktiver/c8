@@ -43,7 +43,10 @@ use ngkg_direct_reasoner::{
 };
 use ngkg_federation::{FederationQueryEvidence, FederationRegistry};
 use ngkg_grace_join::{GraceJoinEngine, GraceJoinError, GraceJoinIdentity, GraceJoinSide};
-use ngkg_hpc_runtime::{CapabilityReport, ThreadBudget, capability_report};
+use ngkg_hpc_runtime::{
+    CapabilityReport, ResourceEnvelopeReport, ThreadBudget, capability_report,
+    resource_envelope_report,
+};
 use ngkg_hydration::{
     HydratedShardRow, HydrationError, ServingRootManifest, ShardedQualifiedGuid,
     VerifiedPayloadShard, hydrate_sharded_payload_for_graphs, verify_payload_shard,
@@ -51,7 +54,7 @@ use ngkg_hydration::{
 use ngkg_identity::{IdentityError, guid_for_canonical_iri};
 use ngkg_locator::{LocatorError, MmapLocatorIndex, ShardLocatorRecord};
 use ngkg_native_runtime::{
-    LeafPredicate, LeafScanLimits, LeafScanResult, NativeCutoverMode,
+    LeafExecutionMode, LeafPredicate, LeafScanLimits, LeafScanResult, NativeCutoverMode,
     scan_verified_parquet_leaf,
 };
 use ngkg_online_reasoning::{
@@ -203,6 +206,38 @@ struct AppState {
     online_direct: Option<Arc<OnlineDirectConfig>>,
     federation: Option<Arc<FederationRegistry>>,
     query_logs: QueryLogConfig,
+    runtime_capabilities: CapabilityReport,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct HpcParquetCapabilities {
+    projected_columns: bool,
+    bounded_arrow_batches: bool,
+    deterministic_rank_receipts: bool,
+    execution_modes: Vec<&'static str>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct HpcMpiCapabilities {
+    online_query_participant: bool,
+    finite_batch_supported: bool,
+    one_rank_per_pod: bool,
+    elastic_rank_resize: bool,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct HpcCapabilitiesResponse {
+    format_version: u32,
+    role: String,
+    worker_id: String,
+    local: CapabilityReport,
+    memory: ResourceEnvelopeReport,
+    parquet: HpcParquetCapabilities,
+    mpi: HpcMpiCapabilities,
+    autoscaling_target_percent: u8,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -3620,6 +3655,7 @@ async fn async_main(
         online_direct,
         federation,
         query_logs,
+        runtime_capabilities,
     };
     validate_standards_feature_implications(state.standards_features)
         .map_err(anyhow::Error::msg)?;
@@ -3825,6 +3861,7 @@ async fn async_main(
 fn role_router(role: Role) -> Router<AppState> {
     match role {
         Role::Query => Router::new()
+            .route("/v1/hpc/capabilities", get(get_hpc_capabilities))
             .route("/v1/query_logs", get(list_query_logs))
             .route("/v1/query_logs/{query_execution_id}", get(get_query_log))
             .route("/v1/datasets/{dataset_id}/query", post(query))
@@ -3903,6 +3940,7 @@ fn role_exposes_openapi_path(role: Role, path: &str) -> bool {
                 | "/v1/datasets/{datasetId}/query"
                 | "/v1/query_logs"
                 | "/v1/query_logs/{queryExecutionId}"
+                | "/v1/hpc/capabilities"
         ),
         Role::Fragment => matches!(
             path,
@@ -3915,6 +3953,51 @@ fn role_exposes_openapi_path(role: Role, path: &str) -> bool {
         Role::Locator => path == "/v1/datasets/{datasetId}/locate",
         Role::Hydration => path == "/v1/datasets/{datasetId}/hydrate",
     }
+}
+
+async fn get_hpc_capabilities(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Result<Json<HpcCapabilitiesResponse>, OnlineError> {
+    let _identity = state.authorizer.authorize(&headers)?;
+    let memory = resource_envelope_report()
+        .map_err(|error| OnlineError::Request(error.to_string()))?;
+    let openmp_available = openmp_kernel_available();
+    let mut execution_modes = vec!["rust"];
+    if openmp_available {
+        execution_modes.push("openmp");
+    }
+    Ok(Json(HpcCapabilitiesResponse {
+        format_version: 1,
+        role: format!("{:?}", state.role).to_ascii_lowercase(),
+        worker_id: state.worker_id.clone(),
+        local: state.runtime_capabilities.clone(),
+        memory,
+        parquet: HpcParquetCapabilities {
+            projected_columns: true,
+            bounded_arrow_batches: true,
+            deterministic_rank_receipts: true,
+            execution_modes,
+        },
+        mpi: HpcMpiCapabilities {
+            online_query_participant: false,
+            finite_batch_supported: true,
+            one_rank_per_pod: true,
+            elastic_rank_resize: false,
+        },
+        autoscaling_target_percent: state.runtime_capabilities.node_saturation_target_percent,
+    }))
+}
+
+fn openmp_kernel_available() -> bool {
+    env::var("NGKG_OPENMP_FILTER_EXECUTABLE")
+        .ok()
+        .map(PathBuf::from)
+        .is_some_and(|path| {
+            path.is_absolute()
+                && fs::symlink_metadata(path)
+                    .is_ok_and(|metadata| metadata.is_file() && !metadata.file_type().is_symlink())
+        })
 }
 
 fn filtered_openapi_document(role: Role) -> Result<serde_json::Value, OnlineError> {
@@ -9122,6 +9205,8 @@ async fn execute_native_leaf_scan(
             .is_none_or(|bytes| bytes > state.max_distributed_exchange_bytes)
         || request.limits.batch_rows == 0
         || request.limits.batch_rows > state.fragment_arrow_batch_rows
+        || (request.limits.execution_mode == LeafExecutionMode::OpenMp
+            && !openmp_kernel_available())
     {
         return Err(OnlineError::GraphForbidden);
     }
@@ -13371,6 +13456,7 @@ mod tests {
             (
                 Role::Query,
                 BTreeSet::from([
+                    "/v1/hpc/capabilities",
                     "/v1/query_logs",
                     "/v1/query_logs/{queryExecutionId}",
                     "/v1/datasets/{datasetId}/sparql",

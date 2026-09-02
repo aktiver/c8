@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/hpc-rank-receipt-v1.schema.json",
+  "title": "NGKG MPI rank receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "runId", "planSha256", "snapshotManifestSha256", "semanticRootSha256", "authorizedGraphSetSha256", "rank", "rankCount", "partitions", "partitionSetSha256", "complete"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "runId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "planSha256": {"$ref": "#/$defs/sha256"},
+    "snapshotManifestSha256": {"$ref": "#/$defs/sha256"},
+    "semanticRootSha256": {"$ref": "#/$defs/sha256"},
+    "authorizedGraphSetSha256": {"$ref": "#/$defs/sha256"},
+    "rank": {"type": "integer", "minimum": 0},
+    "rankCount": {"type": "integer", "minimum": 2},
+    "partitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ordinal", "semanticPartition", "inputSha256", "outputSha256", "scannedRows", "physicallyScannedRows", "prunedRowGroups", "prunedRows", "matchedRows", "decodedBytes"],
+        "properties": {
+          "ordinal": {"type": "integer", "minimum": 0},
+          "semanticPartition": {"type": "integer", "minimum": 0},
+          "inputSha256": {"$ref": "#/$defs/sha256"},
+          "outputSha256": {"$ref": "#/$defs/sha256"},
+          "scannedRows": {"type": "integer", "minimum": 0},
+          "physicallyScannedRows": {"type": "integer", "minimum": 0},
+          "prunedRowGroups": {"type": "integer", "minimum": 0},
+          "prunedRows": {"type": "integer", "minimum": 0},
+          "matchedRows": {"type": "integer", "minimum": 0},
+          "decodedBytes": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "partitionSetSha256": {"$ref": "#/$defs/sha256"},
+    "complete": {"const": true}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

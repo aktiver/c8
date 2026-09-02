@@ -1,6 +1,0 @@
-SELECT ?patient ?therapy ?condition
-WHERE {
-  ?patient <https://c8-next-generation.io/vocab/receivesTherapy> ?therapy .
-  ?therapy <https://c8-next-generation.io/vocab/treats> ?condition .
-}
-ORDER BY ?patient ?therapy ?condition

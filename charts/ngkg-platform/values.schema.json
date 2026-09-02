@@ -4,11 +4,13 @@
   "additionalProperties": false,
   "required": [
     "images",
+    "imagePullSecrets",
     "dependencies",
     "artifactStore",
     "cloudSourceMounts",
     "service",
     "batchScheduling",
+    "hpc",
     "api",
     "phase40",
     "operator",
@@ -26,6 +28,7 @@
         "operator",
         "distributedOperator",
         "distributedWorker",
+        "hpcWorker",
         "referenceWorker",
         "catalogMigrator",
         "storageRecoveryOperator",
@@ -44,6 +47,9 @@
         "distributedWorker": {
           "$ref": "#/$defs/image"
         },
+        "hpcWorker": {
+          "$ref": "#/$defs/image"
+        },
         "referenceWorker": {
           "$ref": "#/$defs/image"
         },
@@ -57,6 +63,18 @@
           "$ref": "#/$defs/image"
         }
       }
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1, "maxLength": 253}
+        }
+      },
+      "uniqueItems": true
     },
     "dependencies": {
       "type": "object",
@@ -89,7 +107,7 @@
       "properties": {
         "baseUrl": {
           "type": "string",
-          "pattern": "^(s3|file)://.+"
+          "pattern": "^(s3|az|gs|file)://.+"
         }
       }
     },
@@ -132,6 +150,39 @@
           "maxLength": 63,
           "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$"
         }
+      }
+    },
+    "hpc": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled", "mpiJobApiVersion", "rankCount", "localQueue", "serviceAccount",
+        "sharedWorkClaim", "runPlanPath", "runPlanSha256", "receiptDirectory",
+        "cpu", "memory", "ephemeralStorage", "ompThreads", "openmpKernelTimeoutMs", "activeDeadlineSeconds",
+        "ttlSecondsAfterFinished", "nodeSelector", "tolerations", "affinity",
+        "topologySpreadConstraints"
+      ],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "mpiJobApiVersion": {"type": "string", "pattern": "^[a-z0-9.-]+/v[0-9]+(?:alpha[0-9]+|beta[0-9]+)?$"},
+        "rankCount": {"type": "integer", "minimum": 2, "maximum": 4096},
+        "localQueue": {"type": "string", "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$"},
+        "serviceAccount": {"type": "string", "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$"},
+        "sharedWorkClaim": {"type": "string", "maxLength": 253},
+        "runPlanPath": {"type": "string", "pattern": "^/hpc/[A-Za-z0-9._/-]+$"},
+        "runPlanSha256": {"type": "string", "pattern": "^$|^[0-9a-f]{64}$"},
+        "receiptDirectory": {"type": "string", "pattern": "^/hpc/[A-Za-z0-9._/-]+$"},
+        "cpu": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "memory": {"type": "string", "pattern": "^[1-9][0-9]*(Mi|Gi|Ti)$"},
+        "ephemeralStorage": {"type": "string", "pattern": "^[1-9][0-9]*(Mi|Gi|Ti)$"},
+        "ompThreads": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "openmpKernelTimeoutMs": {"type": "integer", "minimum": 1, "maximum": 120000},
+        "activeDeadlineSeconds": {"type": "integer", "minimum": 60, "maximum": 604800},
+        "ttlSecondsAfterFinished": {"type": "integer", "minimum": 60, "maximum": 2592000},
+        "nodeSelector": {"type": "object", "additionalProperties": {"type": "string"}},
+        "tolerations": {"type": "array", "items": {"type": "object"}},
+        "affinity": {"type": "object"},
+        "topologySpreadConstraints": {"type": "array", "items": {"type": "object"}}
       }
     },
     "api": {
@@ -728,10 +779,20 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "api",
+        "operator",
+        "distributedOperator",
+        "storageRecoveryOperator",
+        "storageRecoveryWorker",
         "referenceWorker",
         "distributedWorker"
       ],
       "properties": {
+        "api": {"$ref": "#/$defs/annotatedServiceAccount"},
+        "operator": {"$ref": "#/$defs/annotatedServiceAccount"},
+        "distributedOperator": {"$ref": "#/$defs/annotatedServiceAccount"},
+        "storageRecoveryOperator": {"$ref": "#/$defs/annotatedServiceAccount"},
+        "storageRecoveryWorker": {"$ref": "#/$defs/annotatedServiceAccount"},
         "referenceWorker": {
           "type": "object",
           "additionalProperties": false,
@@ -802,6 +863,17 @@
     }
   },
   "$defs": {
+    "annotatedServiceAccount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["annotations"],
+      "properties": {
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        }
+      }
+    },
     "awsS3Mount": {
       "type": "object",
       "additionalProperties": false,
@@ -837,7 +909,8 @@
       "additionalProperties": false,
       "required": [
         "repository",
-        "digest"
+        "digest",
+        "pullPolicy"
       ],
       "properties": {
         "repository": {
@@ -847,6 +920,9 @@
         "digest": {
           "type": "string",
           "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "pullPolicy": {
+          "enum": ["Always", "IfNotPresent", "Never"]
         }
       }
     },

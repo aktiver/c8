@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/hpc-run-plan-v1.schema.json",
+  "title": "NGKG finite MPI Parquet run plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "runId", "snapshotManifestSha256", "semanticRootSha256", "authorizedGraphSetSha256", "rankCount", "localBackend", "localComputeThreads", "blockingIoThreads", "estimatedRowBytes", "maximumRows", "maximumDecodedBytes", "partitions"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "runId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "snapshotManifestSha256": {"$ref": "#/$defs/sha256"},
+    "semanticRootSha256": {"$ref": "#/$defs/sha256"},
+    "authorizedGraphSetSha256": {"$ref": "#/$defs/sha256"},
+    "rankCount": {"type": "integer", "minimum": 2, "maximum": 4096},
+    "localBackend": {"enum": ["rust", "openmp"]},
+    "localComputeThreads": {"type": "integer", "minimum": 1, "maximum": 1024},
+    "blockingIoThreads": {"type": "integer", "minimum": 1, "maximum": 128},
+    "estimatedRowBytes": {"type": "integer", "minimum": 1, "maximum": 1048576},
+    "maximumRows": {"type": "integer", "minimum": 1},
+    "maximumDecodedBytes": {"type": "integer", "minimum": 1},
+    "partitions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ordinal", "semanticPartition", "factsPath", "factsSha256", "factsBytes", "predicate", "limits"],
+        "properties": {
+          "ordinal": {"type": "integer", "minimum": 0},
+          "semanticPartition": {"type": "integer", "minimum": 0},
+          "factsPath": {"type": "string", "pattern": "^/[^\\u0000]+$"},
+          "factsSha256": {"$ref": "#/$defs/sha256"},
+          "factsBytes": {"type": "integer", "minimum": 1},
+          "predicate": {"$ref": "#/$defs/predicate"},
+          "limits": {"$ref": "#/$defs/limits"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "predicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowedGraphIds", "requireQueryable"],
+      "properties": {
+        "subjectId": {"type": ["integer", "null"], "minimum": 0},
+        "predicateId": {"type": ["integer", "null"], "minimum": 0},
+        "objectId": {"type": ["integer", "null"], "minimum": 0},
+        "graphId": {"type": ["integer", "null"], "minimum": 0},
+        "allowedGraphIds": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "integer", "minimum": 0}},
+        "requireQueryable": {"type": "boolean"}
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxRows", "maxDecodedBytes", "batchRows"],
+      "properties": {
+        "maxRows": {"type": "integer", "minimum": 1},
+        "maxDecodedBytes": {"type": "integer", "minimum": 1},
+        "batchRows": {"type": "integer", "minimum": 1},
+        "executionMode": {"enum": ["rust", "openmp"], "default": "rust"}
+      }
+    }
+  }
+}

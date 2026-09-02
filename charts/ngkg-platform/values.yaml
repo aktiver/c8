@@ -2,27 +2,40 @@ images:
   api:
     repository: ''
     digest: ''
+    pullPolicy: IfNotPresent
   operator:
     repository: ''
     digest: ''
+    pullPolicy: IfNotPresent
   distributedOperator:
     repository: ''
     digest: ''
+    pullPolicy: IfNotPresent
   distributedWorker:
     repository: ''
     digest: ''
+    pullPolicy: IfNotPresent
+  hpcWorker:
+    repository: ''
+    digest: ''
+    pullPolicy: IfNotPresent
   referenceWorker:
     repository: ''
     digest: ''
+    pullPolicy: IfNotPresent
   catalogMigrator:
     repository: ''
     digest: ''
+    pullPolicy: IfNotPresent
   storageRecoveryOperator:
     repository: ''
     digest: ''
+    pullPolicy: IfNotPresent
   storageRecoveryWorker:
     repository: ''
     digest: ''
+    pullPolicy: IfNotPresent
+imagePullSecrets: []
 dependencies:
   databaseSecret: ''
   authTokensSecret: ''
@@ -48,6 +61,27 @@ service:
   apiPort: 8080
 batchScheduling:
   localQueue: ngkg-batch
+hpc:
+  enabled: false
+  mpiJobApiVersion: kubeflow.org/v2beta1
+  rankCount: 4
+  localQueue: ngkg-batch
+  serviceAccount: ngkg-hpc-worker
+  sharedWorkClaim: ''
+  runPlanPath: /hpc/plan/run-plan.json
+  runPlanSha256: ''
+  receiptDirectory: /hpc/receipts
+  cpu: '8'
+  memory: 32Gi
+  ephemeralStorage: 128Gi
+  ompThreads: '6'
+  openmpKernelTimeoutMs: 30000
+  activeDeadlineSeconds: 7200
+  ttlSecondsAfterFinished: 86400
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  topologySpreadConstraints: []
 api:
   replicas: 3
   authTokensFileSha256: ''
@@ -283,6 +317,16 @@ storageRecovery:
     multipartBufferBytes: '8388608'
     multipartConcurrency: '8'
 serviceAccounts:
+  api:
+    annotations: {}
+  operator:
+    annotations: {}
+  distributedOperator:
+    annotations: {}
+  storageRecoveryOperator:
+    annotations: {}
+  storageRecoveryWorker:
+    annotations: {}
   referenceWorker:
     annotations: {}
     automountToken: false

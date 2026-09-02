@@ -4,8 +4,10 @@
   "additionalProperties": false,
   "required": [
     "platform",
+    "imagePullSecrets",
     "images",
     "tls",
+    "serviceAccounts",
     "onlineServing",
     "phase40",
     "onlineReasoning",
@@ -41,6 +43,18 @@
           ]
         }
       }
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1, "maxLength": 253}
+        }
+      },
+      "uniqueItems": true
     },
     "images": {
       "type": "object",
@@ -81,6 +95,15 @@
           "type": "string",
           "minLength": 1
         }
+      }
+    },
+    "serviceAccounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["query", "hydration"],
+      "properties": {
+        "query": {"$ref": "#/$defs/annotatedServiceAccount"},
+        "hydration": {"$ref": "#/$defs/annotatedServiceAccount"}
       }
     },
     "onlineServing": {
@@ -828,7 +851,9 @@
         "topologyAwareRouting",
         "fragmentIpFamily",
         "dependencyCidrs",
-        "federationCidrs"
+        "federationCidrs",
+        "queryClientNamespace",
+        "metricsNamespace"
       ],
       "properties": {
         "externalApi": {
@@ -867,6 +892,14 @@
             "minLength": 1
           },
           "uniqueItems": true
+        },
+        "queryClientNamespace": {
+          "type": "string",
+          "minLength": 1
+        },
+        "metricsNamespace": {
+          "type": "string",
+          "minLength": 1
         }
       }
     },
@@ -1026,12 +1059,24 @@
     }
   },
   "$defs": {
+    "annotatedServiceAccount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["annotations"],
+      "properties": {
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        }
+      }
+    },
     "image": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "repository",
-        "digest"
+        "digest",
+        "pullPolicy"
       ],
       "properties": {
         "repository": {
@@ -1041,6 +1086,9 @@
         "digest": {
           "type": "string",
           "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "pullPolicy": {
+          "enum": ["Always", "IfNotPresent", "Never"]
         }
       }
     }

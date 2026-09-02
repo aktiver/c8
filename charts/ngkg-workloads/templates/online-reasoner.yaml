@@ -32,6 +32,7 @@ spec:
         ngkg.io/network-plane: data
     spec:
       serviceAccountName: ngkg-query
+      imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
       terminationGracePeriodSeconds: 360
       nodeSelector: {ngkg.io/workload: online-reasoning}
       tolerations:
@@ -45,6 +46,7 @@ spec:
       containers:
         - name: reasoner
           image: '{{ required "images.reasoner.repository is required" .Values.images.reasoner.repository }}@{{ required "images.reasoner.digest is required" .Values.images.reasoner.digest }}'
+          imagePullPolicy: {{ .Values.images.reasoner.pullPolicy }}
           ports: [{name: http, containerPort: 32050}]
           env:
             - {name: OMP_NUM_THREADS, value: '1'}

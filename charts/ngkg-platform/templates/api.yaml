@@ -12,6 +12,7 @@ spec:
       labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: api}
     spec:
       serviceAccountName: ngkg-api
+      imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
       securityContext:
         runAsNonRoot: true
         seccompProfile: {type: RuntimeDefault}
@@ -24,6 +25,7 @@ spec:
       containers:
         - name: api
           image: '{{ required "images.api.repository is required" .Values.images.api.repository }}@{{ required "images.api.digest is required" .Values.images.api.digest }}'
+          imagePullPolicy: {{ .Values.images.api.pullPolicy }}
           ports: [{name: http, containerPort: {{ .Values.service.apiPort }}}]
           env:
             - {name: NGKG_BIND_ADDR, value: '0.0.0.0:{{ .Values.service.apiPort }}'}

@@ -9,6 +9,7 @@ use std::{
     env,
     path::{Path, PathBuf},
     process::ExitCode,
+    sync::atomic::AtomicBool,
 };
 
 use ngkg_distributed_artifacts::{
@@ -20,6 +21,14 @@ use ngkg_distributed_build::{
     safe_scan_trig,
 };
 use ngkg_locator::compile_sharded_locator;
+use ngkg_hpc_runtime::{
+    LocalComputeBackend, plan_parallel_execution, resource_envelope_report,
+    validate_buffer_budget,
+};
+use ngkg_native_runtime::hpc::{
+    HpcRankReceipt, HpcRunPlan, execute_hpc_rank, finalize_hpc_run,
+    write_content_bound_json,
+};
 use ngkg_reference::{ProjectionPolicy, sha256_path};
 use ngkg_semantic_compiler::{
     CompilerHandoffManifest, MapLimits, ReduceLimits, finalize_dictionary, finalize_semantic_root,
@@ -91,8 +100,111 @@ async fn run() -> Result<String, String> {
                 .await
                 .map_err(|error| error.to_string())
         }
+        "hpc-parquet-rank" => hpc_parquet_rank(&options),
+        "hpc-parquet-finalize" => hpc_parquet_finalize(&options),
         _ => Err(usage()),
     }
+}
+
+fn hpc_parquet_rank(options: &BTreeMap<String, String>) -> Result<String, String> {
+    reject_unknown(options, &["plan", "plan-sha256", "receipt-directory"])?;
+    let plan_path = path(options, "plan")?;
+    verify_hash(&plan_path, &value(options, "plan-sha256")?)?;
+    let plan: HpcRunPlan = serde_json::from_slice(
+        &std::fs::read(&plan_path).map_err(|error| error.to_string())?,
+    )
+    .map_err(|error| error.to_string())?;
+    let mpi = ngkg_hpc_runtime::detect_mpi_environment().map_err(|error| error.to_string())?
+        .ok_or_else(|| "hpc-parquet-rank requires a complete MPI rank environment".to_owned())?;
+    if mpi.world_size != plan.rank_count {
+        return Err("MPI world size differs from the immutable HPC plan".to_owned());
+    }
+    let envelope = resource_envelope_report().map_err(|error| error.to_string())?;
+    let in_flight = if plan.local_backend == LocalComputeBackend::Rust {
+        plan.local_compute_threads
+    } else {
+        1
+    };
+    let maximum_batch_rows = plan
+        .partitions
+        .iter()
+        .map(|partition| partition.limits.batch_rows)
+        .max()
+        .ok_or_else(|| "HPC plan contains no partitions".to_owned())?;
+    plan_parallel_execution(
+        plan.local_backend,
+        plan.local_compute_threads,
+        plan.blocking_io_threads,
+        maximum_batch_rows,
+        in_flight,
+        plan.estimated_row_bytes,
+        &envelope,
+        Some(mpi.clone()),
+    )
+    .map_err(|error| error.to_string())?;
+    let largest_result = plan
+        .partitions
+        .iter()
+        .map(|partition| partition.limits.max_decoded_bytes)
+        .max()
+        .ok_or_else(|| "HPC plan contains no partitions".to_owned())?;
+    validate_buffer_budget(
+        usize::try_from(largest_result).map_err(|_| "HPC result ceiling exceeds usize".to_owned())?,
+        in_flight,
+        &envelope,
+    )
+    .map_err(|error| error.to_string())?;
+    let receipt = execute_hpc_rank(
+        &plan,
+        mpi.rank,
+        mpi.world_size,
+        &AtomicBool::new(false),
+    )
+    .map_err(|error| error.to_string())?;
+    let output = path(options, "receipt-directory")?.join(format!("rank-{}.json", mpi.rank));
+    let receipt_sha256 = write_content_bound_json(&output, &receipt)
+        .map_err(|error| error.to_string())?;
+    Ok(serde_json::json!({
+        "status": "hpc-rank-complete",
+        "rank": mpi.rank,
+        "rankCount": mpi.world_size,
+        "receipt": output,
+        "receiptSha256": receipt_sha256
+    })
+    .to_string())
+}
+
+fn hpc_parquet_finalize(options: &BTreeMap<String, String>) -> Result<String, String> {
+    reject_unknown(
+        options,
+        &["plan", "plan-sha256", "receipt-list", "certificate-output"],
+    )?;
+    let plan_path = path(options, "plan")?;
+    verify_hash(&plan_path, &value(options, "plan-sha256")?)?;
+    let plan: HpcRunPlan = serde_json::from_slice(
+        &std::fs::read(&plan_path).map_err(|error| error.to_string())?,
+    )
+    .map_err(|error| error.to_string())?;
+    let receipts = manifest_list(&path(options, "receipt-list")?)?
+        .into_iter()
+        .map(|receipt| {
+            serde_json::from_slice::<HpcRankReceipt>(
+                &std::fs::read(&receipt).map_err(|error| error.to_string())?,
+            )
+            .map_err(|error| error.to_string())
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let certificate = finalize_hpc_run(&plan, &receipts).map_err(|error| error.to_string())?;
+    let output = path(options, "certificate-output")?;
+    let certificate_sha256 = write_content_bound_json(&output, &certificate)
+        .map_err(|error| error.to_string())?;
+    Ok(serde_json::json!({
+        "status": "hpc-run-complete",
+        "certificate": output,
+        "certificateSha256": certificate_sha256,
+        "resultSetSha256": certificate.result_set_sha256
+    })
+    .to_string())
 }
 
 fn semantic_map(options: &BTreeMap<String, String>) -> Result<String, String> {
@@ -631,5 +743,5 @@ fn verify_hash(path: &Path, expected: &str) -> Result<(), String> {
 }
 
 fn usage() -> String {
-    "usage: ngkg-distributed-worker safe-scan|project-partition|reduce-range|finalize-reducers|compare-builds|materialize-artifact-partition|finalize-artifact-partitions|compare-artifact-roots|compile-mmap-locator|semantic-map|semantic-dictionary|semantic-partition|semantic-finalize|plan-object-store|project-object-store|reduce-object-store|finalize-object-store|prepare-serving-root-object-store with command-specific immutable options documented in docs/phases".to_owned()
+    "usage: ngkg-distributed-worker safe-scan|project-partition|reduce-range|finalize-reducers|compare-builds|materialize-artifact-partition|finalize-artifact-partitions|compare-artifact-roots|compile-mmap-locator|semantic-map|semantic-dictionary|semantic-partition|semantic-finalize|plan-object-store|project-object-store|reduce-object-store|finalize-object-store|prepare-serving-root-object-store|hpc-parquet-rank|hpc-parquet-finalize with command-specific immutable options documented in docs/phases".to_owned()
 }

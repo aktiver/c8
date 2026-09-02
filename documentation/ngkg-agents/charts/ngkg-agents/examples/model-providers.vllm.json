@@ -1,7 +1,0 @@
-[
-  {
-    "name":"vllm","protocol":"OPEN_AI_COMPATIBLE","endpoint":"http://ngkg-vllm:8000/v1/chat/completions","allowedModels":["ngkg-model"],
-    "credentialFile":null,"credentialFileSha256":null,"maximumRequestBytes":16777216,"maximumResponseBytes":1048576,"maximumInFlight":32,
-    "connectTimeoutMilliseconds":5000,"requestTimeoutMilliseconds":300000,"allowHttp":true
-  }
-]

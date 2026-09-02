@@ -1,1 +1,0 @@
-{"$schema":"https://json-schema.org/draft/2020-12/schema","title":"Semantic memory publication activation","type":"object","additionalProperties":false,"required":["ngkgOperationId","publishedSnapshotId"],"properties":{"ngkgOperationId":{"type":"string","format":"uuid"},"publishedSnapshotId":{"type":"string","format":"uuid"}}}

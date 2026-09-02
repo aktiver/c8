@@ -12,6 +12,7 @@ spec:
       labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: storage-recovery-operator}
     spec:
       serviceAccountName: ngkg-storage-recovery-operator
+      imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
       securityContext:
         runAsNonRoot: true
         seccompProfile: {type: RuntimeDefault}
@@ -24,6 +25,7 @@ spec:
       containers:
         - name: operator
           image: '{{ required "storage recovery operator repository is required" .Values.images.storageRecoveryOperator.repository }}@{{ required "storage recovery operator digest is required" .Values.images.storageRecoveryOperator.digest }}'
+          imagePullPolicy: {{ .Values.images.storageRecoveryOperator.pullPolicy }}
           env:
             - {name: NGKG_NAMESPACE, valueFrom: {fieldRef: {fieldPath: metadata.namespace}}}
             - name: NGKG_DATABASE_URL

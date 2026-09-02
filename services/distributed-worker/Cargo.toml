@@ -13,7 +13,9 @@ ngkg-catalog = { path = "../../crates/ngkg-catalog" }
 ngkg-distributed-build = { path = "../../crates/ngkg-distributed-build" }
 ngkg-distributed-artifacts = { path = "../../crates/ngkg-distributed-artifacts" }
 ngkg-hydration = { path = "../../crates/ngkg-hydration" }
+ngkg-hpc-runtime = { path = "../../crates/ngkg-hpc-runtime" }
 ngkg-locator = { path = "../../crates/ngkg-locator" }
+ngkg-native-runtime = { path = "../../crates/ngkg-native-runtime" }
 ngkg-reference = { path = "../../crates/ngkg-reference" }
 ngkg-semantic-compiler = { path = "../../crates/ngkg-semantic-compiler" }
 serde.workspace = true

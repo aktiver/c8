@@ -18,12 +18,14 @@ spec:
       labels: {app.kubernetes.io/name: ngkg, app.kubernetes.io/component: distributed-operator}
     spec:
       serviceAccountName: ngkg-distributed-operator
+      imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
       securityContext:
         runAsNonRoot: true
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: operator
           image: '{{ required "images.distributedOperator.repository is required" .Values.images.distributedOperator.repository }}@{{ required "images.distributedOperator.digest is required" .Values.images.distributedOperator.digest }}'
+          imagePullPolicy: {{ .Values.images.distributedOperator.pullPolicy }}
           envFrom:
             - configMapRef:
                 name: '{{ .Release.Name }}-phase40-reference-ceilings-{{ toJson .Values.phase40.direct | sha256sum | trunc 12 }}'

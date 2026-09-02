@@ -40,7 +40,8 @@ def main():
  template=(root/'charts/ngkg-workloads/templates/phase40-online-ceilings.yaml').read_text()
  for k,env in ENV.items():
   if f'.Values.phase40.directAdmission.{k}' not in template or env not in template: raise ValueError(f'ConfigMap mapping missing {k}')
- if online.count('configMapRef: {name: ngkg-phase40-online-ceilings}') != 4: raise ValueError('all four online-serving roles must consume the immutable Phase 40 admission ConfigMap')
+ config_ref = 'configMapRef: {name: ngkg-phase40-online-ceilings-{{ toJson .Values.phase40.directAdmission | sha256sum | trunc 12 }}}'
+ if online.count(config_ref) != 4: raise ValueError('all four online-serving roles must consume the immutable, content-addressed Phase 40 admission ConfigMap')
  report={'phase':'40.12','configured':direct,'hardCaps':HARD,'queryCpuLimit':query_cpu,'rustComputeThreads':rust_threads,'effectiveClassificationCpuLanes':effective,'onlineServingRoleConsumers':4,'status':'PASS'}
  if a.report:
   p=Path(a.report); p.parent.mkdir(parents=True,exist_ok=True); p.write_text(json.dumps(report,indent=2)+'\n')

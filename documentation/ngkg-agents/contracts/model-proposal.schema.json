@@ -1,4 +1,0 @@
-{
-  "$schema":"https://json-schema.org/draft/2020-12/schema","title":"Untrusted model RDF proposal","type":"object","additionalProperties":false,"required":["claims"],
-  "properties":{"claims":{"type":"array","minItems":1,"maxItems":10000,"items":{"type":"object","additionalProperties":false,"required":["canonicalNtriple"],"properties":{"canonicalNtriple":{"type":"string","minLength":7,"maxLength":65536}}}}}
-}
