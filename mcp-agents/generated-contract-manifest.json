@@ -1,0 +1,82 @@
+{
+  "$schema": "./contracts/generated-contract-manifest.schema.json",
+  "formatVersion": 1,
+  "generator": {
+    "mode": "reviewed-handwritten-wire-types",
+    "reason": "The compatibility gateway checks strict Rust wire types against frozen NGKG 1.0 inputs; deterministic code generation and drift snapshots remain a production-release gate."
+  },
+  "inputs": [
+    {
+      "path": "../NGKG_1_0_0_GA/api/online-openapi.yaml",
+      "sha256": "69e177ccacc3d6000f03212615a901290d926ca3908a23a7aa954a0b4300d632"
+    },
+    {
+      "path": "../NGKG_1_0_0_GA/api/openapi.yaml",
+      "sha256": "2dc44667d2e1473c0987eacc4a5997ba9e087142d38915910b7889a8fabb1cfc"
+    }
+  ],
+  "implementedPublicOperations": [
+    "GET /.well-known/oauth-protected-resource",
+    "GET /health/ready",
+    "GET /openapi.yaml",
+    "GET /swagger-ui",
+    "POST /v1/agent-inputs",
+    "PUT /v1/agent-inputs/{inputId}/parts/{ordinal}",
+    "POST /v1/agent-inputs/{inputId}/finalize",
+    "GET /v1/agent-inputs/{inputId}",
+    "GET /v1/agent-inputs/{inputId}/manifest",
+    "GET /v1/agent-inputs/{inputId}/requirements",
+    "POST /v1/qualification-workloads",
+    "GET /v1/qualification-workloads/{workloadId}",
+    "GET /v1/qualification-workloads/{workloadId}/checkpoints",
+    "POST /v1/qualification-workloads/{workloadId}/cancel",
+    "POST /v1/agent-executions",
+    "POST /v1/tool-providers",
+    "POST /v1/tool-providers/{providerId}/versions/{version}/qualify",
+    "POST /v1/tool-approvals",
+    "POST /v1/tool-calls",
+    "POST /v1/datasets/{datasetId}/query",
+    "GET /v1/datasets/{datasetId}/active-snapshot",
+    "GET /v1/query_logs/{queryExecutionId}",
+    "POST /v1/memories",
+    "POST /v1/memories/search",
+    "GET /v1/memories/{memoryId}",
+    "GET /v1/memories/{memoryId}/explain",
+    "POST /v1/memories/{memoryId}/validate",
+    "POST /v1/memories/{memoryId}/approve",
+    "POST /v1/memories/{memoryId}/publish",
+    "POST /v1/memories/{memoryId}/supersede",
+    "POST /v1/memories/{memoryId}/revoke"
+  ],
+  "implementedContextSliceOperations": [
+    "GET /health/live",
+    "GET /health/ready",
+    "GET /metrics",
+    "GET /openapi.yaml",
+    "GET /swagger-ui",
+    "POST /v1/context-slices",
+    "GET /v1/context-slices/{sliceId}",
+    "PUT /v1/context-slices/{sliceId}/chunks/{ordinal}",
+    "POST /v1/context-slices/{sliceId}/finalize",
+    "POST /v1/context-slices/{sliceId}/capabilities",
+    "GET /v1/context-slices/{sliceId}/content",
+    "POST /v1/context-slices/{sliceId}/expire"
+  ],
+  "implementedInternalInferenceOperations": [
+    "GET /health/live",
+    "GET /health/ready",
+    "GET /metrics",
+    "GET /openapi.yaml",
+    "GET /v1/status",
+    "POST /v1/chat/completions",
+    "POST /admin/drain"
+  ],
+  "forbiddenInternalRoutePrefixes": [
+    "/fragments",
+    "/shuffles",
+    "/algebra",
+    "/paths",
+    "/locate",
+    "/hydrate"
+  ]
+}

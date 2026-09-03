@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/phase3-cluster-evidence.schema.json",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["formatVersion","provider","clusterUid","kubernetesVersion","readyNodes","zones","gpuNodes","imageLockSha256","deploymentEvidenceSha256","scenarios","complete"],
+  "properties":{
+    "formatVersion":{"const":1},
+    "provider":{"enum":["rke","rke2","eks","aks","gke"]},
+    "clusterUid":{"type":"string","minLength":8},
+    "kubernetesVersion":{"type":"string","pattern":"^v?1\\.[0-9]+"},
+    "readyNodes":{"type":"integer","minimum":3},
+    "zones":{"type":"integer","minimum":3},
+    "gpuNodes":{"type":"integer","minimum":1},
+    "imageLockSha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "deploymentEvidenceSha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "scenarios":{"type":"array","minItems":12,"items":{"type":"object","additionalProperties":false,"required":["id","startedEpochMs","endedEpochMs","evidenceSha256","complete"],"properties":{"id":{"type":"string","minLength":1},"startedEpochMs":{"type":"integer","minimum":1},"endedEpochMs":{"type":"integer","minimum":1},"evidenceSha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"complete":{"const":true}}}},
+    "complete":{"const":true}
+  }
+}

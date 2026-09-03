@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/schemas/ngkg-agents/reasoned-context-envelope-v1.json",
+  "title": "NGKG reasoned context envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "datasetId", "snapshotId", "queryExecutionId", "querySha256", "servingRootSha256", "authorizedGraphSetSha256", "activeDatasetSha256", "semanticResultSha256", "semanticStatus", "queryForm", "payload", "evidence", "reasoning", "limits"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "datasetId": {"type": "string", "format": "uuid"},
+    "snapshotId": {"type": "string", "format": "uuid"},
+    "queryExecutionId": {"type": "string", "format": "uuid"},
+    "querySha256": {"$ref": "#/$defs/sha256"},
+    "servingRootSha256": {"$ref": "#/$defs/sha256"},
+    "authorizedGraphSetSha256": {"$ref": "#/$defs/sha256"},
+    "activeDatasetSha256": {"$ref": "#/$defs/sha256"},
+    "semanticResultSha256": {"$ref": "#/$defs/sha256"},
+    "semanticStatus": {"enum": ["CERTIFIED_COMPLETE", "EXACT_COMPLETE", "SPARQL_COMPLETE", "FEDERATED_VOLATILE"]},
+    "queryForm": {"enum": ["SELECT", "ASK", "CONSTRUCT", "DESCRIBE"]},
+    "payload": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["kind", "head", "bindings"], "properties": {"kind": {"const": "SELECT"}, "head": {"type": "array", "items": {"type": "string"}}, "bindings": {"type": "array", "items": {"type": "object"}}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "value"], "properties": {"kind": {"const": "ASK"}, "value": {"type": "boolean"}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "ntriples", "statementIds"], "properties": {"kind": {"const": "GRAPH"}, "ntriples": {"type": "array", "items": {"type": "string"}}, "statementIds": {"type": "array", "items": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}}}}
+      ]
+    },
+    "evidence": {"type": "object", "additionalProperties": false, "required": ["routingMode", "executionMode", "planSha256", "exactResultSha256s", "certificateSha256s", "proofManifestSha256s", "proofIds", "propertyPathPlanSetSha256", "federationRegistrySha256", "federationEndpointSetSha256"], "properties": {"routingMode": {"type": "string", "minLength": 1}, "executionMode": {"type": "string", "minLength": 1}, "planSha256": {"$ref": "#/$defs/nullableSha256"}, "exactResultSha256s": {"$ref": "#/$defs/sha256Array"}, "certificateSha256s": {"$ref": "#/$defs/sha256Array"}, "proofManifestSha256s": {"$ref": "#/$defs/sha256Array"}, "proofIds": {"type": "array", "items": {"type": "string", "minLength": 1}}, "propertyPathPlanSetSha256": {"$ref": "#/$defs/nullableSha256"}, "federationRegistrySha256": {"$ref": "#/$defs/nullableSha256"}, "federationEndpointSetSha256": {"$ref": "#/$defs/nullableSha256"}}},
+    "reasoning": {"type": "object", "additionalProperties": false, "required": ["profile", "executionMode", "complete", "unknownIsFalse", "federated"], "properties": {"profile": {"const": "OWL_2_DL"}, "executionMode": {"type": "string", "minLength": 1}, "complete": {"const": true}, "unknownIsFalse": {"const": false}, "federated": {"type": "boolean"}}},
+    "limits": {"type": "object", "additionalProperties": false, "required": ["maximumRows", "maximumTriples", "maximumPayloadBytes", "truncated"], "properties": {"maximumRows": {"type": "integer", "minimum": 1}, "maximumTriples": {"type": "integer", "minimum": 1}, "maximumPayloadBytes": {"type": "integer", "minimum": 1}, "truncated": {"const": false}}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullableSha256": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+    "sha256Array": {"type": "array", "items": {"$ref": "#/$defs/sha256"}}
+  }
+}

@@ -1,0 +1,142 @@
+openapi: 3.1.0
+info:
+  title: NGKG Inference Admission Gateway
+  version: 0.9.0
+  description: Internal CPU admission API that safely queues model calls while GPU capacity scales from zero.
+paths:
+  /health/live:
+    get:
+      operationId: inferenceLive
+      responses:
+        '204':
+          description: Process is live
+      summary: inference Live
+      description: This operation implements the documented "inference Live" API capability. Use it when Kubernetes probes
+        and operators need to decide whether this exact process should receive traffic. The operation takes no request body;
+        success returns process is live. This operational endpoint returns only the documented non-sensitive contract and
+        never dataset contents or credentials.
+  /health/ready:
+    get:
+      operationId: inferenceReady
+      responses:
+        '204':
+          description: Admission gateway accepts bounded requests
+        '503':
+          description: Gateway is draining
+      summary: inference Ready
+      description: This operation implements the documented "inference Ready" API capability. Use it when Kubernetes probes
+        and operators need to decide whether this exact process should receive traffic. The operation takes no request body;
+        success returns admission gateway accepts bounded requests. This operational endpoint returns only the documented
+        non-sensitive contract and never dataset contents or credentials.
+  /v1/status:
+    get:
+      operationId: inferenceInstanceStatus
+      responses:
+        '200':
+          description: Instance-local queue and backend readiness state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InferenceStatus'
+      summary: inference Instance Status
+      description: This operation implements the documented "inference Instance Status" API capability. Use it when an API
+        client needs this capability through the supported contract instead of coupling to an internal service. The operation
+        takes no request body; success returns instance-local queue and backend readiness state. This operational endpoint
+        returns only the documented non-sensitive contract and never dataset contents or credentials.
+  /v1/chat/completions:
+    post:
+      operationId: createVllmChatCompletion
+      description: Queues a bounded OpenAI-compatible request until a ready GPU backend exists, then submits it exactly once.
+        Use it when an API client needs this capability through the supported contract instead of coupling to an internal
+        service. The request body uses application/json and the schema shown below; success returns openai-compatible completion.
+        This operational endpoint returns only the documented non-sensitive contract and never dataset contents or credentials.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OpenAI-compatible completion
+          content:
+            application/json:
+              schema:
+                type: object
+        '429':
+          description: Admission queue exhausted
+        '503':
+          description: Gateway draining
+        '504':
+          description: GPU cold-start or admission deadline exceeded
+      summary: create Vllm Chat Completion
+  /metrics:
+    get:
+      operationId: inferenceMetrics
+      responses:
+        '200':
+          description: Prometheus metrics
+      summary: inference Metrics
+      description: This operation implements the documented "inference Metrics" API capability. Use it when Prometheus and
+        platform operators need bounded operational measurements for alerting and autoscaling. The operation takes no request
+        body; success returns prometheus metrics. This operational endpoint returns only the documented non-sensitive contract
+        and never dataset contents or credentials.
+  /openapi.yaml:
+    get:
+      operationId: inferenceOpenApi
+      responses:
+        '200':
+          description: This immutable contract
+      summary: inference Open Api
+      description: This operation implements the documented "inference Open Api" API capability. Use it when client developers
+        need the exact running contract for code generation, testing or interactive requests. The operation takes no request
+        body; success returns this immutable contract. This operational endpoint returns only the documented non-sensitive
+        contract and never dataset contents or credentials.
+components:
+  schemas:
+    InferenceStatus:
+      type: object
+      additionalProperties: false
+      required:
+      - scope
+      - ready
+      - draining
+      - backendReady
+      - waitingRequests
+      - inFlightRequests
+      - admittedTotal
+      - rejectedTotal
+      - failedTotal
+      - servedModel
+      - observedAtEpochMs
+      properties:
+        scope:
+          type: string
+          const: INSTANCE
+        ready:
+          type: boolean
+        draining:
+          type: boolean
+        backendReady:
+          type: boolean
+        waitingRequests:
+          type: integer
+          minimum: 0
+        inFlightRequests:
+          type: integer
+          minimum: 0
+        admittedTotal:
+          type: integer
+          minimum: 0
+        rejectedTotal:
+          type: integer
+          minimum: 0
+        failedTotal:
+          type: integer
+          minimum: 0
+        servedModel:
+          type: string
+          minLength: 1
+        observedAtEpochMs:
+          type: integer
+          minimum: 0

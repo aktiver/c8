@@ -1,0 +1,25 @@
+{{- if .Values.vllm.enabled -}}
+{{- $gpuRequest := required "vllm.resources.requests[nvidia.com/gpu] is required" (index .Values.vllm.resources.requests "nvidia.com/gpu") -}}
+{{- $gpuLimit := required "vllm.resources.limits[nvidia.com/gpu] is required" (index .Values.vllm.resources.limits "nvidia.com/gpu") -}}
+{{- if ne (int $gpuRequest) (int $gpuLimit) -}}
+{{- fail "vLLM GPU request and limit must be identical for Guaranteed device allocation" -}}
+{{- end -}}
+{{- if ne (int $gpuLimit) (int .Values.vllm.tensorParallelSize) -}}
+{{- fail "vllm.tensorParallelSize must equal the nvidia.com/gpu request and limit" -}}
+{{- end -}}
+{{- if and (eq (int .Values.vllm.autoscaling.minReplicas) 0) (not .Values.vllm.autoscaling.enabled) -}}
+{{- fail "vLLM minReplicas=0 requires KEDA autoscaling" -}}
+{{- end -}}
+{{- if and .Values.vllm.autoscaling.enabled (not .Values.serviceMonitor.enabled) -}}
+{{- fail "vLLM KEDA autoscaling requires serviceMonitor.enabled=true so the activation gauge is collected" -}}
+{{- end -}}
+{{- if le (int .Values.vllm.terminationGracePeriodSeconds) (int .Values.vllm.drainTimeoutSeconds) -}}
+{{- fail "vllm.terminationGracePeriodSeconds must exceed drainTimeoutSeconds" -}}
+{{- end -}}
+{{- if or (eq (int .Values.vllm.enginePort) (int .Values.vllm.podAgentPort)) (eq (int .Values.vllm.enginePort) (int .Values.vllm.podAgentAdminPort)) (eq (int .Values.vllm.podAgentPort) (int .Values.vllm.podAgentAdminPort)) -}}
+{{- fail "vLLM engine, pod-agent, and admin ports must be distinct" -}}
+{{- end -}}
+{{- if lt (int .Values.inferenceGateway.replicaCount) 2 -}}
+{{- fail "inferenceGateway.replicaCount must be at least two" -}}
+{{- end -}}
+{{- end -}}

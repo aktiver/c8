@@ -1,0 +1,51 @@
+{{- if and .Values.contextSlice.enabled .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-context-slice-default-deny}
+spec:
+  podSelector:
+    matchExpressions: [{key: app.kubernetes.io/component, operator: In, values: [context-slice-broker, context-slice-gc]}]
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-context-slice-allow}
+spec:
+  podSelector:
+    matchExpressions: [{key: app.kubernetes.io/component, operator: In, values: [context-slice-broker, context-slice-gc]}]
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+{{ toYaml .Values.networkPolicy.ingressNamespaceSelector | nindent 12 }}
+          podSelector:
+{{ toYaml .Values.networkPolicy.ingressPodSelector | nindent 12 }}
+        - podSelector:
+            matchExpressions: [{key: app.kubernetes.io/component, operator: In, values: [mcp-gateway, orchestrator, memory]}]
+      ports: [{protocol: TCP, port: {{ .Values.contextSlice.port }}}]
+  egress:
+    - to:
+        - namespaceSelector:
+{{ toYaml .Values.networkPolicy.dnsNamespaceSelector | nindent 12 }}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    - to:
+        - podSelector:
+            matchLabels:
+{{ toYaml .Values.database.podSelector | nindent 14 }}
+        {{- range .Values.database.ipBlocks }}
+        - ipBlock: {cidr: {{ . | quote }}}
+        {{- end }}
+      ports: [{protocol: TCP, port: {{ .Values.database.port }}}]
+    {{- if or (ne .Values.contextSlice.storage.provider "local-test") (eq .Values.auth.mode "delegation") }}
+    - to:
+        {{- range .Values.contextSlice.storage.egressIpBlocks }}
+        - ipBlock: {cidr: {{ . | quote }}}
+        {{- end }}
+        {{- if eq .Values.auth.mode "delegation" }}
+        {{- range .Values.auth.delegation.egressIpBlocks }}
+        - ipBlock: {cidr: {{ . | quote }}}
+        {{- end }}
+        {{- end }}
+      ports: [{protocol: TCP, port: 443}]
+    {{- end }}
+{{- end }}

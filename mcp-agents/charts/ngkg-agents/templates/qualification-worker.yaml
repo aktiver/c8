@@ -1,0 +1,96 @@
+{{- if .Values.qualificationWorker.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ngkg-qualification-worker
+  labels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: qualification-worker}
+  annotations: {{- toYaml .Values.inputStorage.serviceAccountAnnotations | nindent 4 }}
+imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
+automountServiceAccountToken: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ngkg-qualification-worker
+  labels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: qualification-worker}
+spec:
+  replicas: {{ .Values.qualificationWorker.replicaCount }}
+  revisionHistoryLimit: 3
+  strategy: {type: RollingUpdate, rollingUpdate: {maxUnavailable: 0, maxSurge: 1}}
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: qualification-worker}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: qualification-worker}
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: 'false'
+    spec:
+      serviceAccountName: ngkg-qualification-worker
+      imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
+      terminationGracePeriodSeconds: 360
+      securityContext: {runAsNonRoot: true, runAsUser: 65532, runAsGroup: 65532, fsGroup: 65532, seccompProfile: {type: RuntimeDefault}}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: {{ .Values.scheduling.topologyKey | quote }}
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: qualification-worker}}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: qualification-worker}}
+      nodeSelector: {{- toYaml .Values.qualificationWorker.scheduling.nodeSelector | nindent 8 }}
+      tolerations: {{- toYaml .Values.qualificationWorker.scheduling.tolerations | nindent 8 }}
+      containers:
+        - name: worker
+          image: '{{ required "image.repository is required" .Values.image.repository }}@{{ required "image.digest is required" .Values.image.digest }}'
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: [/usr/local/bin/ngkg-qualification-worker]
+          env:
+            - name: NGKG_AGENT_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: {{ .Values.database.runtimeSecret | quote }}, key: {{ .Values.database.runtimeSecretKey | quote }}}}
+            - {name: NGKG_AGENT_DATABASE_MAX_CONNECTIONS, value: {{ .Values.database.maximumConnections | quote }}}
+            - {name: NGKG_AGENT_DATABASE_ACQUIRE_TIMEOUT_MS, value: {{ .Values.database.acquireTimeoutMilliseconds | quote }}}
+            - {name: NGKG_QUALIFICATION_WORKER_ID, valueFrom: {fieldRef: {fieldPath: metadata.uid}}}
+            - {name: NGKG_QUALIFICATION_LEASE_MS, value: {{ .Values.qualificationWorker.leaseMilliseconds | quote }}}
+            - {name: NGKG_QUALIFICATION_IDLE_POLL_MS, value: {{ .Values.qualificationWorker.idlePollMilliseconds | quote }}}
+            - {name: NGKG_QUALIFICATION_MEMORY_FRACTION_PERCENT, value: {{ .Values.qualificationWorker.memoryFractionPercent | quote }}}
+            - {name: NGKG_QUALIFICATION_MAX_SPILL_BYTES, value: {{ .Values.qualificationWorker.maximumSpillBytes | quote }}}
+            - {name: NGKG_QUALIFICATION_SPILL_ROOT, value: /var/lib/ngkg-qualification-spill}
+            - {name: NGKG_INPUT_OBJECT_STORE, value: {{ .Values.inputStorage.provider | quote }}}
+            {{- if eq .Values.inputStorage.provider "s3" }}
+            - {name: NGKG_INPUT_S3_BUCKET, value: {{ required "inputStorage.s3.bucket is required" .Values.inputStorage.s3.bucket | quote }}}
+            - {name: AWS_DEFAULT_REGION, value: {{ required "inputStorage.s3.region is required" .Values.inputStorage.s3.region | quote }}}
+            {{- if .Values.inputStorage.s3.endpoint }}
+            - {name: AWS_ENDPOINT, value: {{ .Values.inputStorage.s3.endpoint | quote }}}
+            {{- end }}
+            {{- else if eq .Values.inputStorage.provider "azure" }}
+            - {name: NGKG_INPUT_AZURE_CONTAINER, value: {{ required "inputStorage.azure.container is required" .Values.inputStorage.azure.container | quote }}}
+            - {name: AZURE_STORAGE_ACCOUNT_NAME, value: {{ required "inputStorage.azure.account is required" .Values.inputStorage.azure.account | quote }}}
+            {{- else if eq .Values.inputStorage.provider "gcs" }}
+            - {name: NGKG_INPUT_GCS_BUCKET, value: {{ required "inputStorage.gcs.bucket is required" .Values.inputStorage.gcs.bucket | quote }}}
+            {{- else }}
+            - {name: NGKG_INPUT_LOCAL_ROOT, value: {{ .Values.inputStorage.localTest.root | quote }}}
+            {{- end }}
+            - {name: OMP_NUM_THREADS, value: '1'}
+            - {name: OPENBLAS_NUM_THREADS, value: '1'}
+            - {name: MKL_NUM_THREADS, value: '1'}
+          resources: {{- toYaml .Values.qualificationWorker.resources | nindent 12 }}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, runAsNonRoot: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: spill, mountPath: /var/lib/ngkg-qualification-spill}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: spill
+          emptyDir: {sizeLimit: {{ .Values.qualificationWorker.spillSizeLimit | quote }}}
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: ngkg-qualification-worker}
+spec:
+  maxUnavailable: 1
+  selector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: qualification-worker}}
+{{- end }}

@@ -1,0 +1,121 @@
+openapi: 3.1.0
+info:
+  title: NGKG Qualified User Tool API
+  version: 0.6.0
+paths:
+  /v1/tool-providers:
+    post:
+      operationId: registerToolProvider
+      security:
+      - bearerAuth:
+        - tools:providers:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./tool-provider.schema.json
+      responses:
+        '201':
+          description: Immutable pending provider version
+        '400':
+          description: Invalid provider
+        '403':
+          description: Scope denied
+      summary: register Tool Provider
+      description: This operation implements the documented "register Tool Provider" API capability. Use it when an agent
+        workflow needs a qualified external tool under tenant policy, bounded transport and audit controls. The request body
+        uses application/json and the schema shown below; success returns immutable pending provider version. Authentication,
+        tenant authorization, resource ceilings and documented failure responses are enforced before a result is accepted.
+  /v1/tool-providers/{providerId}/versions/{version}/qualify:
+    post:
+      operationId: qualifyToolProvider
+      security:
+      - bearerAuth:
+        - tools:providers:write
+      parameters:
+      - in: path
+        name: providerId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - in: path
+        name: version
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      responses:
+        '200':
+          description: Live initialized and checksum-bound catalog
+          content:
+            application/json:
+              schema:
+                $ref: ./qualified-tool-catalog.schema.json
+        '422':
+          description: Protocol
+          schema: null
+          network-safety or qualification failure: null
+      summary: qualify Tool Provider
+      description: This operation implements the documented "qualify Tool Provider" API capability. Use it when an agent workflow
+        needs a qualified external tool under tenant policy, bounded transport and audit controls. Inputs use the documented
+        path, query and header parameters; success returns live initialized and checksum-bound catalog. Authentication, tenant
+        authorization, resource ceilings and documented failure responses are enforced before a result is accepted.
+  /v1/tool-approvals:
+    post:
+      operationId: recordToolApproval
+      security:
+      - bearerAuth:
+        - tools:approve
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./tool-approval.schema.json
+      responses:
+        '201':
+          description: Immutable approval or denial
+        '403':
+          description: Scope or profile denied
+      summary: record Tool Approval
+      description: This operation implements the documented "record Tool Approval" API capability. Use it when an agent workflow
+        needs a qualified external tool under tenant policy, bounded transport and audit controls. The request body uses application/json
+        and the schema shown below; success returns immutable approval or denial. Authentication, tenant authorization, resource
+        ceilings and documented failure responses are enforced before a result is accepted.
+  /v1/tool-calls:
+    post:
+      operationId: invokeQualifiedTool
+      security:
+      - bearerAuth:
+        - tools:execute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./tool-call.schema.json
+      responses:
+        '200':
+          description: Bounded external result classified UNTRUSTED_EXTERNAL_TOOL
+        '403':
+          description: Provider
+          profile: null
+          catalog or approval denied: null
+        '409':
+          description: Approval required
+        '422':
+          description: Execution certificate or qualification evidence mismatch
+        '502':
+          description: Bounded MCP dependency failure
+      summary: invoke Qualified Tool
+      description: This operation implements the documented "invoke Qualified Tool" API capability. Use it when an agent workflow
+        needs a qualified external tool under tenant policy, bounded transport and audit controls. The request body uses application/json
+        and the schema shown below; success returns bounded external result classified untrusted_external_tool. Authentication,
+        tenant authorization, resource ceilings and documented failure responses are enforced before a result is accepted.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

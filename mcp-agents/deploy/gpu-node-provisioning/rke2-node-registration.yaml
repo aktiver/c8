@@ -1,0 +1,7 @@
+# Merge this into the RKE2 GPU node's /etc/rancher/rke2/config.yaml.
+# The infrastructure autoscaler or Rancher machine pool must create/remove nodes;
+# this file only establishes the scheduling contract used by the Helm profile.
+node-label:
+  - ngkg.io/accelerator=nvidia-gpu
+node-taint:
+  - ngkg.io/gpu=true:NoSchedule

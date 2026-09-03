@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "images": [
+    {"name":"ngkg-api","kind":"build","context":".","dockerfile":"docker_repos/ngkg-api/Dockerfile"},
+    {"name":"ngkg-catalog-migrator","kind":"build","context":".","dockerfile":"docker_repos/ngkg-catalog-migrator/Dockerfile"},
+    {"name":"ngkg-distributed-operator","kind":"build","context":".","dockerfile":"docker_repos/ngkg-distributed-operator/Dockerfile"},
+    {"name":"ngkg-distributed-worker","kind":"build","context":".","dockerfile":"docker_repos/ngkg-distributed-worker/Dockerfile"},
+    {"name":"ngkg-hpc-worker","kind":"build","context":".","dockerfile":"docker_repos/ngkg-hpc-worker/Dockerfile"},
+    {"name":"ngkg-operator","kind":"build","context":".","dockerfile":"docker_repos/ngkg-operator/Dockerfile"},
+    {"name":"ngkg-storage-recovery-operator","kind":"build","context":".","dockerfile":"docker_repos/ngkg-storage-recovery-operator/Dockerfile"},
+    {"name":"ngkg-storage-recovery-worker","kind":"build","context":".","dockerfile":"docker_repos/ngkg-storage-recovery-worker/Dockerfile"},
+    {"name":"ngkg-direct-reasoner-worker","kind":"build","context":".","dockerfile":"docker_repos/ngkg-direct-reasoner-worker/Dockerfile"},
+    {"name":"ngkg-reference-worker","kind":"build","context":".","dockerfile":"docker_repos/ngkg-reference-worker/Dockerfile"},
+    {"name":"ngkg-online-serving","kind":"build","context":".","dockerfile":"docker_repos/ngkg-online-serving/Dockerfile"},
+    {"name":"ngkg-agents","kind":"build","context":".","dockerfile":"docker_repos/ngkg-agents/Dockerfile"},
+    {"name":"ngkg-vllm","kind":"build","context":".","dockerfile":"docker_repos/ngkg-vllm/Dockerfile","sourceEnvironment":"NGKG_VLLM_SOURCE_IMAGE"}
+  ]
+}

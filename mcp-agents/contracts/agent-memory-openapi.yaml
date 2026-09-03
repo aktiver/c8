@@ -1,0 +1,243 @@
+openapi: 3.1.0
+info:
+  title: NGKG Evidence-Bound Agent Memory API
+  version: 0.7.0
+  description: Models propose memories; authenticated policy, NGKG OWL entailment, approval and published-snapshot revalidation
+    control promotion.
+paths:
+  /v1/memories:
+    post:
+      operationId: proposeMemory
+      security:
+      - bearerAuth:
+        - memory:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./memory-proposal.schema.json
+      responses:
+        '201':
+          description: Immutable proposed memory
+          content:
+            application/json:
+              schema:
+                $ref: ./memory-view.schema.json
+        '422':
+          description: Poisoning or evidence rejected
+      summary: propose Memory
+      description: This operation implements the documented "propose Memory" API capability. Use it when an agent workflow
+        needs durable, evidence-bound memory without allowing a model to write authoritative facts directly. The request body
+        uses application/json and the schema shown below; success returns immutable proposed memory. Authentication, tenant
+        authorization, resource ceilings and documented failure responses are enforced before a result is accepted.
+  /v1/memories/search:
+    post:
+      operationId: searchMemories
+      security:
+      - bearerAuth:
+        - memory:read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./memory-search.schema.json
+      responses:
+        '200':
+          description: Authorized current memories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: ./memory-view.schema.json
+      summary: search Memories
+      description: This operation implements the documented "search Memories" API capability. Use it when an API client needs
+        this capability through the supported contract instead of coupling to an internal service. The request body uses application/json
+        and the schema shown below; success returns authorized current memories. Authentication, tenant authorization, resource
+        ceilings and documented failure responses are enforced before a result is accepted.
+  /v1/memories/{memoryId}:
+    get:
+      operationId: getMemory
+      security:
+      - bearerAuth:
+        - memory:read
+      parameters:
+      - $ref: '#/components/parameters/memoryId'
+      responses:
+        '200':
+          description: Exact memory
+          content:
+            application/json:
+              schema:
+                $ref: ./memory-view.schema.json
+        '403':
+          description: Owner-only memory denied
+      summary: get Memory
+      description: This operation implements the documented "get Memory" API capability. Use it when an agent workflow needs
+        durable, evidence-bound memory without allowing a model to write authoritative facts directly. Inputs use the documented
+        path, query and header parameters; success returns exact memory. Authentication, tenant authorization, resource ceilings
+        and documented failure responses are enforced before a result is accepted.
+  /v1/memories/{memoryId}/explain:
+    get:
+      operationId: explainMemory
+      security:
+      - bearerAuth:
+        - memory:read
+      parameters:
+      - $ref: '#/components/parameters/memoryId'
+      responses:
+        '200':
+          description: Memory
+          transitions: null
+          edges and inclusion rule: null
+      summary: explain Memory
+      description: This operation implements the documented "explain Memory" API capability. Use it when an agent workflow
+        needs durable, evidence-bound memory without allowing a model to write authoritative facts directly. Inputs use the
+        documented path, query and header parameters; success returns memory. Authentication, tenant authorization, resource
+        ceilings and documented failure responses are enforced before a result is accepted.
+  /v1/memories/{memoryId}/validate:
+    post:
+      operationId: validateMemory
+      security:
+      - bearerAuth:
+        - memory:validate
+      parameters:
+      - $ref: '#/components/parameters/memoryId'
+      responses:
+        '200':
+          description: Structural or OWL entailment evidence
+        '422':
+          description: Unknown
+          mismatched or volatile evidence: null
+      summary: validate Memory
+      description: This operation implements the documented "validate Memory" API capability. Use it when an agent workflow
+        needs durable, evidence-bound memory without allowing a model to write authoritative facts directly. Inputs use the
+        documented path, query and header parameters; success returns structural or owl entailment evidence. Authentication,
+        tenant authorization, resource ceilings and documented failure responses are enforced before a result is accepted.
+  /v1/memories/{memoryId}/approve:
+    post:
+      operationId: approveMemory
+      security:
+      - bearerAuth:
+        - memory:approve
+      parameters:
+      - $ref: '#/components/parameters/memoryId'
+      requestBody:
+        $ref: '#/components/requestBodies/reason'
+      responses:
+        '200':
+          description: Approved immutable lifecycle transition
+      summary: approve Memory
+      description: This operation implements the documented "approve Memory" API capability. Use it when an agent workflow
+        needs durable, evidence-bound memory without allowing a model to write authoritative facts directly. The request body
+        uses the documented media type and the schema shown below; success returns approved immutable lifecycle transition.
+        Authentication, tenant authorization, resource ceilings and documented failure responses are enforced before a result
+        is accepted.
+  /v1/memories/{memoryId}/publish:
+    post:
+      operationId: publishMemory
+      security:
+      - bearerAuth:
+        - memory:publish
+      parameters:
+      - $ref: '#/components/parameters/memoryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./memory-publication.schema.json
+      responses:
+        '200':
+          description: Activated only after published-snapshot re-entailment
+        '422':
+          description: Not entailed; no publication
+      summary: publish Memory
+      description: This operation implements the documented "publish Memory" API capability. Use it when an agent workflow
+        needs durable, evidence-bound memory without allowing a model to write authoritative facts directly. The request body
+        uses application/json and the schema shown below; success returns activated only after published-snapshot re-entailment.
+        Authentication, tenant authorization, resource ceilings and documented failure responses are enforced before a result
+        is accepted.
+  /v1/memories/{memoryId}/supersede:
+    post:
+      operationId: supersedeMemory
+      security:
+      - bearerAuth:
+        - memory:write
+      parameters:
+      - $ref: '#/components/parameters/memoryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+              - supersedingMemoryId
+              - reasonCode
+              properties:
+                supersedingMemoryId:
+                  type: string
+                  format: uuid
+                reasonCode:
+                  $ref: '#/components/schemas/reasonCode'
+      responses:
+        '200':
+          description: Superseded memory; immutable edge recorded
+      summary: supersede Memory
+      description: This operation implements the documented "supersede Memory" API capability. Use it when an agent workflow
+        needs durable, evidence-bound memory without allowing a model to write authoritative facts directly. The request body
+        uses application/json and the schema shown below; success returns superseded memory; immutable edge recorded. Authentication,
+        tenant authorization, resource ceilings and documented failure responses are enforced before a result is accepted.
+  /v1/memories/{memoryId}/revoke:
+    post:
+      operationId: revokeMemory
+      security:
+      - bearerAuth:
+        - memory:write
+      parameters:
+      - $ref: '#/components/parameters/memoryId'
+      requestBody:
+        $ref: '#/components/requestBodies/reason'
+      responses:
+        '200':
+          description: Revoked memory excluded from retrieval
+      summary: revoke Memory
+      description: This operation implements the documented "revoke Memory" API capability. Use it when an agent workflow
+        needs durable, evidence-bound memory without allowing a model to write authoritative facts directly. The request body
+        uses the documented media type and the schema shown below; success returns revoked memory excluded from retrieval.
+        Authentication, tenant authorization, resource ceilings and documented failure responses are enforced before a result
+        is accepted.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    memoryId:
+      in: path
+      name: memoryId
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    reasonCode:
+      type: string
+      pattern: ^[A-Z0-9_]{1,128}$
+  requestBodies:
+    reason:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required:
+            - reasonCode
+            properties:
+              reasonCode:
+                $ref: '#/components/schemas/reasonCode'

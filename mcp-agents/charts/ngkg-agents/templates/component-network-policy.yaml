@@ -1,0 +1,92 @@
+{{- if .Values.networkPolicy.enabled }}
+{{- $root := . -}}
+{{- range $name, $component := .Values.components }}
+{{- if $component.enabled }}
+{{- $role := kebabcase $name }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-{{ $role }}-default-deny}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ngkg-agents
+      app.kubernetes.io/component: {{ $role }}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ngkg-{{ $role }}-allow}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ngkg-agents
+      app.kubernetes.io/component: {{ $role }}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $root.Release.Namespace | quote }}
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ngkg-agents
+      ports: [{protocol: TCP, port: {{ $root.Values.service.port }}}]
+  egress:
+    - to:
+        - namespaceSelector:
+{{ toYaml $root.Values.networkPolicy.dnsNamespaceSelector | nindent 12 }}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    - to:
+        - podSelector:
+            matchLabels:
+{{ toYaml $root.Values.database.podSelector | nindent 14 }}
+        {{- range $root.Values.database.ipBlocks }}
+        - ipBlock: {cidr: {{ . | quote }}}
+        {{- end }}
+      ports: [{protocol: TCP, port: {{ $root.Values.database.port }}}]
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ngkg
+              app.kubernetes.io/component: query-shard
+      ports: [{protocol: TCP, port: 32010}]
+    {{- if eq $root.Values.auth.mode "delegation" }}
+    - to:
+        {{- range $root.Values.auth.delegation.egressIpBlocks }}
+        - ipBlock: {cidr: {{ . | quote }}}
+        {{- end }}
+      ports: [{protocol: TCP, port: 443}]
+    {{- end }}
+    {{- if $root.Values.inputStorage.egressIpBlocks }}
+    - to:
+        {{- range $root.Values.inputStorage.egressIpBlocks }}
+        - ipBlock: {cidr: {{ . | quote }}}
+        {{- end }}
+      ports: [{protocol: TCP, port: 443}]
+    {{- end }}
+    {{- if and (eq $role "orchestrator") $root.Values.vllm.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ngkg-agents
+              app.kubernetes.io/component: inference-gateway
+      ports: [{protocol: TCP, port: {{ $root.Values.inferenceGateway.port }}}]
+    {{- end }}
+    {{- if and (eq $role "orchestrator") $root.Values.managedAgents.providerEgressIpBlocks }}
+    - to:
+        {{- range $root.Values.managedAgents.providerEgressIpBlocks }}
+        - ipBlock: {cidr: {{ . | quote }}}
+        {{- end }}
+      ports: [{protocol: TCP, port: 443}]
+    {{- end }}
+    {{- if and (eq $role "tool-broker") $root.Values.toolBroker.externalEgressIpBlocks }}
+    - to:
+        {{- range $root.Values.toolBroker.externalEgressIpBlocks }}
+        - ipBlock: {cidr: {{ . | quote }}}
+        {{- end }}
+      ports: [{protocol: TCP, port: 443}]
+    {{- end }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

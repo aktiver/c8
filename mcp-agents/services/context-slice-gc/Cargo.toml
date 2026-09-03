@@ -1,0 +1,20 @@
+[package]
+name = "ngkg-context-slice-gc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+hex.workspace = true
+ngkg-context-slice = { path = "../../crates/ngkg-context-slice" }
+ngkg-hpc-runtime = { path = "../../crates/ngkg-hpc-runtime" }
+sha2.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

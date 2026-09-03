@@ -1,0 +1,91 @@
+openapi: 3.1.0
+info:
+  title: NGKG vLLM Pod Agent
+  version: 0.9.0
+  description: Cluster-internal GPU-pod readiness, exact-model verification, bounded proxy, metrics and loopback-only drain
+    control.
+paths:
+  /health/live:
+    get:
+      operationId: vllmPodLive
+      responses:
+        '204':
+          description: Pod agent is live
+      summary: vllm Pod Live
+      description: This operation implements the documented "vllm Pod Live" API capability. Use it when Kubernetes probes
+        and operators need to decide whether this exact process should receive traffic. The operation takes no request body;
+        success returns pod agent is live. This operational endpoint returns only the documented non-sensitive contract and
+        never dataset contents or credentials.
+  /health/ready:
+    get:
+      operationId: vllmPodReady
+      responses:
+        '204':
+          description: Expected vLLM model is loaded and the pod is accepting work
+        '503':
+          description: Model is loading
+          unhealthy: null
+          or draining: null
+      summary: vllm Pod Ready
+      description: This operation implements the documented "vllm Pod Ready" API capability. Use it when Kubernetes probes
+        and operators need to decide whether this exact process should receive traffic. The operation takes no request body;
+        success returns expected vllm model is loaded and the pod is accepting work. This operational endpoint returns only
+        the documented non-sensitive contract and never dataset contents or credentials.
+  /v1/chat/completions:
+    post:
+      operationId: proxyVllmChatCompletion
+      description: Forwards an admitted request to the loopback-only vLLM engine exactly once. Use it when an API client needs
+        this capability through the supported contract instead of coupling to an internal service. The request body uses application/json
+        and the schema shown below; success returns openai-compatible completion. This operational endpoint returns only the
+        documented non-sensitive contract and never dataset contents or credentials.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OpenAI-compatible completion
+        '429':
+          description: Per-pod concurrency exhausted
+        '503':
+          description: Pod is not ready or is draining
+      summary: proxy Vllm Chat Completion
+  /metrics:
+    get:
+      operationId: vllmPodMetrics
+      responses:
+        '200':
+          description: Prometheus metrics
+      summary: vllm Pod Metrics
+      description: This operation implements the documented "vllm Pod Metrics" API capability. Use it when Prometheus and
+        platform operators need bounded operational measurements for alerting and autoscaling. The operation takes no request
+        body; success returns prometheus metrics. This operational endpoint returns only the documented non-sensitive contract
+        and never dataset contents or credentials.
+  /openapi.yaml:
+    get:
+      operationId: vllmPodOpenApi
+      responses:
+        '200':
+          description: This immutable contract
+      summary: vllm Pod Open Api
+      description: This operation implements the documented "vllm Pod Open Api" API capability. Use it when client developers
+        need the exact running contract for code generation, testing or interactive requests. The operation takes no request
+        body; success returns this immutable contract. This operational endpoint returns only the documented non-sensitive
+        contract and never dataset contents or credentials.
+  /admin/drain:
+    post:
+      operationId: drainVllmPod
+      description: Loopback-only lifecycle operation that removes readiness and waits for admitted calls. It is unreachable
+        through the Kubernetes Service. The operation uses the documented request contract; success returns drain completed
+        with no in-flight calls. This operational endpoint returns only the documented non-sensitive contract and never dataset
+        contents or credentials.
+      servers:
+      - url: http://127.0.0.1:8082
+      responses:
+        '204':
+          description: Drain completed with no in-flight calls
+        '408':
+          description: Bounded drain deadline expired
+      summary: drain Vllm Pod

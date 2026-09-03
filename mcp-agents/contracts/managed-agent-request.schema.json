@@ -1,0 +1,5 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema","title":"Managed agent execution request","type":"object","additionalProperties":false,
+  "required":["datasetId","inputId","profileId","profileVersion","provider","modelId","contextQuery"],
+  "properties":{"datasetId":{"type":"string","format":"uuid"},"inputId":{"type":"string","format":"uuid"},"profileId":{"type":"string","format":"uuid"},"profileVersion":{"type":"integer","minimum":1},"provider":{"type":"string","minLength":1,"maxLength":128},"modelId":{"type":"string","minLength":1,"maxLength":512},"contextQuery":{"type":"string","minLength":1,"maxLength":1048576,"description":"Server executes only a CONSTRUCT or DESCRIBE query through the public NGKG API."},"maximumOutputTokens":{"type":"integer","minimum":1,"maximum":8192,"default":2048},"temperatureMilli":{"type":"integer","minimum":0,"maximum":1000,"default":0}}
+}

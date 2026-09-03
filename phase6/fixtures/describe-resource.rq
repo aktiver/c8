@@ -1,0 +1,5 @@
+DESCRIBE ?resource
+WHERE {
+  ?resource a <https://c8-next-generation.io/vocab/CrossDomainResource> .
+}
+LIMIT 100

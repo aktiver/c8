@@ -1,0 +1,92 @@
+{{- if .Values.vllm.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: ngkg-vllm
+  labels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: inference-gateway}
+spec:
+  selector: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: inference-gateway}
+  ports: [{name: http, port: {{ .Values.vllm.port }}, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ngkg-inference-gateway
+  labels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: inference-gateway}
+spec:
+  replicas: {{ .Values.inferenceGateway.replicaCount }}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: inference-gateway}
+  strategy: {type: RollingUpdate, rollingUpdate: {maxUnavailable: 1, maxSurge: 1}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: inference-gateway}
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: {{ .Values.inferenceGateway.port | quote }}
+    spec:
+      automountServiceAccountToken: false
+      imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
+      terminationGracePeriodSeconds: 120
+      securityContext: {runAsNonRoot: true, runAsUser: 65532, runAsGroup: 65532, fsGroup: 65532, seccompProfile: {type: RuntimeDefault}}
+      nodeSelector: {{- toYaml .Values.inferenceGateway.scheduling.nodeSelector | nindent 8 }}
+      tolerations: {{- toYaml .Values.inferenceGateway.scheduling.tolerations | nindent 8 }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: inference-gateway}}
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: inference-gateway}}
+      containers:
+        - name: inference-gateway
+          image: '{{ required "image.repository is required" .Values.image.repository }}@{{ required "image.digest is required" .Values.image.digest }}'
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: [/usr/local/bin/ngkg-inference-gateway]
+          ports: [{name: http, containerPort: {{ .Values.inferenceGateway.port }}}]
+          env:
+            - {name: NGKG_INFERENCE_BIND, value: '0.0.0.0:{{ .Values.inferenceGateway.port }}'}
+            - {name: NGKG_INFERENCE_BACKEND_URL, value: 'http://ngkg-vllm-backend:{{ .Values.vllm.podAgentPort }}/'}
+            - {name: NGKG_INFERENCE_SERVED_MODEL, value: {{ .Values.vllm.servedModelName | quote }} }
+            - {name: NGKG_INFERENCE_MAX_REQUEST_BYTES, value: {{ .Values.inferenceGateway.maximumRequestBytes | quote }} }
+            - {name: NGKG_INFERENCE_MAX_RESPONSE_BYTES, value: {{ .Values.inferenceGateway.maximumResponseBytes | quote }} }
+            - {name: NGKG_INFERENCE_MAX_WAITING, value: {{ .Values.inferenceGateway.maximumWaiting | quote }} }
+            - {name: NGKG_INFERENCE_MAX_IN_FLIGHT, value: {{ .Values.inferenceGateway.maximumInFlight | quote }} }
+            - {name: NGKG_INFERENCE_COLD_START_TIMEOUT_MS, value: {{ .Values.inferenceGateway.coldStartTimeoutMilliseconds | quote }} }
+            - {name: NGKG_INFERENCE_READINESS_POLL_MS, value: {{ .Values.inferenceGateway.readinessPollMilliseconds | quote }} }
+            - {name: NGKG_INFERENCE_CONNECT_TIMEOUT_MS, value: {{ .Values.inferenceGateway.connectTimeoutMilliseconds | quote }} }
+            - {name: NGKG_INFERENCE_UPSTREAM_TIMEOUT_MS, value: {{ .Values.inferenceGateway.upstreamTimeoutMilliseconds | quote }} }
+          resources: {{- toYaml .Values.inferenceGateway.resources | nindent 12 }}
+          startupProbe: {httpGet: {path: /health/live, port: http}, periodSeconds: 2, failureThreshold: 30}
+          readinessProbe: {httpGet: {path: /health/ready, port: http}, periodSeconds: 2, timeoutSeconds: 1, failureThreshold: 2}
+          livenessProbe: {httpGet: {path: /health/live, port: http}, periodSeconds: 15, timeoutSeconds: 2, failureThreshold: 4}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, runAsNonRoot: true, capabilities: {drop: [ALL]}}
+          volumeMounts: [{name: tmp, mountPath: /tmp}]
+      volumes: [{name: tmp, emptyDir: {sizeLimit: 64Mi}}]
+---
+{{- if .Values.inferenceGateway.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: {name: ngkg-inference-gateway}
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: ngkg-inference-gateway}
+  minReplicas: {{ .Values.inferenceGateway.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.inferenceGateway.autoscaling.maxReplicas }}
+  behavior:
+    scaleUp: {selectPolicy: Max, stabilizationWindowSeconds: 0, policies: [{type: Percent, value: 100, periodSeconds: 60}, {type: Pods, value: 8, periodSeconds: 60}]}
+    scaleDown: {stabilizationWindowSeconds: 600, policies: [{type: Percent, value: 25, periodSeconds: 120}]}
+  metrics:
+    - {type: Resource, resource: {name: cpu, target: {type: Utilization, averageUtilization: {{ .Values.inferenceGateway.autoscaling.cpuTargetPercent }}}}}
+    - {type: Resource, resource: {name: memory, target: {type: Utilization, averageUtilization: {{ .Values.inferenceGateway.autoscaling.memoryTargetPercent }}}}}
+---
+{{- end }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: ngkg-inference-gateway}
+spec:
+  maxUnavailable: 1
+  selector: {matchLabels: {app.kubernetes.io/name: ngkg-agents, app.kubernetes.io/component: inference-gateway}}
+{{- end }}

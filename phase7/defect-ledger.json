@@ -1,0 +1,27 @@
+{
+  "formatVersion": 1,
+  "planId": "NGKG-ENTERPRISE-REMEDIATION-2026-09-01",
+  "complete": true,
+  "defects": [
+    {"id":"AUD-001","severity":"critical","sourceStatus":"IMPLEMENTED","qualificationStatus":"PENDING_LIVE","releaseBlocking":true},
+    {"id":"AUD-002","severity":"critical","sourceStatus":"IMPLEMENTED","qualificationStatus":"PENDING_LIVE","releaseBlocking":true},
+    {"id":"AUD-003","severity":"critical","sourceStatus":"IMPLEMENTED","qualificationStatus":"PENDING_LIVE","releaseBlocking":true},
+    {"id":"AUD-004","severity":"critical","sourceStatus":"IMPLEMENTED","qualificationStatus":"PENDING_LIVE","releaseBlocking":true},
+    {"id":"AUD-005","severity":"critical","sourceStatus":"PARTIAL_COMPATIBILITY_REVIEW_REQUIRED","qualificationStatus":"BLOCKED","releaseBlocking":true},
+    {"id":"AUD-006","severity":"high","sourceStatus":"IMPLEMENTED","qualificationStatus":"PENDING_LIVE","releaseBlocking":true},
+    {"id":"AUD-007","severity":"high","sourceStatus":"IMPLEMENTED","qualificationStatus":"PENDING_STRESS","releaseBlocking":true},
+    {"id":"AUD-008","severity":"high","sourceStatus":"IMPLEMENTED","qualificationStatus":"PENDING_LIVE","releaseBlocking":true},
+    {"id":"AUD-009","severity":"high","sourceStatus":"IMPLEMENTED","qualificationStatus":"PENDING_GPU_AND_TENANT_LIVE","releaseBlocking":true},
+    {"id":"AUD-010","severity":"high","sourceStatus":"IMPLEMENTED","qualificationStatus":"PENDING_CONTROLLED_RUNNER","releaseBlocking":true},
+    {"id":"AUD-011","severity":"high","sourceStatus":"IMPLEMENTED_PROVIDER_PATH","qualificationStatus":"PENDING_CRASH_RESUME","releaseBlocking":true},
+    {"id":"AUD-012","severity":"high","sourceStatus":"IMPLEMENTED","qualificationStatus":"PENDING_LIVE","releaseBlocking":true},
+    {"id":"AUD-013","severity":"high","sourceStatus":"IMPLEMENTED","qualificationStatus":"PENDING_SITE_DRIVERS","releaseBlocking":true},
+    {"id":"AUD-014","severity":"medium","sourceStatus":"IMPLEMENTED","qualificationStatus":"PENDING_LIVE_CONTROL_LOOP","releaseBlocking":true},
+    {"id":"AUD-015","severity":"medium","sourceStatus":"IMPLEMENTED","qualificationStatus":"PENDING_DRAIN_TEST","releaseBlocking":true},
+    {"id":"AUD-016","severity":"medium","sourceStatus":"IMPLEMENTED","qualificationStatus":"PENDING_ADOPTION_NEGATIVE_TEST","releaseBlocking":true},
+    {"id":"AUD-017","severity":"medium","sourceStatus":"IMPLEMENTED","qualificationStatus":"PENDING_RKE_LIVE","releaseBlocking":true},
+    {"id":"AUD-018","severity":"medium","sourceStatus":"PARTIAL_OBSOLETE_GATES_REMAIN","qualificationStatus":"BLOCKED","releaseBlocking":true},
+    {"id":"AUD-019","severity":"medium","sourceStatus":"IMPLEMENTED","qualificationStatus":"PENDING_CGROUP_V1_NODE","releaseBlocking":true},
+    {"id":"AUD-020","severity":"low","sourceStatus":"IMPLEMENTED","qualificationStatus":"PENDING_SEEDED_SECRET_TEST","releaseBlocking":true}
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "buildContext": "..",
+  "images": [
+    {"name":"ngkg-api","dockerfile":"ngkg-api/Dockerfile","helm":[["platform","images.api"]]},
+    {"name":"ngkg-catalog-migrator","dockerfile":"ngkg-catalog-migrator/Dockerfile","helm":[["platform","images.catalogMigrator"]]},
+    {"name":"ngkg-distributed-operator","dockerfile":"ngkg-distributed-operator/Dockerfile","helm":[["platform","images.distributedOperator"]]},
+    {"name":"ngkg-distributed-worker","dockerfile":"ngkg-distributed-worker/Dockerfile","helm":[["platform","images.distributedWorker"]]},
+    {"name":"ngkg-hpc-worker","dockerfile":"ngkg-hpc-worker/Dockerfile","helm":[["platform","images.hpcWorker"]]},
+    {"name":"ngkg-operator","dockerfile":"ngkg-operator/Dockerfile","helm":[["platform","images.operator"]]},
+    {"name":"ngkg-storage-recovery-operator","dockerfile":"ngkg-storage-recovery-operator/Dockerfile","helm":[["platform","images.storageRecoveryOperator"]]},
+    {"name":"ngkg-storage-recovery-worker","dockerfile":"ngkg-storage-recovery-worker/Dockerfile","helm":[["platform","images.storageRecoveryWorker"]]},
+    {"name":"ngkg-direct-reasoner-worker","dockerfile":"ngkg-direct-reasoner-worker/Dockerfile","helm":[["workloads","images.reasoner"]]},
+    {"name":"ngkg-reference-worker","dockerfile":"ngkg-reference-worker/Dockerfile","helm":[["platform","images.referenceWorker"]]},
+    {"name":"ngkg-online-serving","dockerfile":"ngkg-online-serving/Dockerfile","helm":[["workloads","images.query"],["workloads","images.fragment"],["workloads","images.locator"],["workloads","images.hydration"]]},
+    {"name":"ngkg-agents","dockerfile":"ngkg-agents/Dockerfile","helm":[["agents","image"]]},
+    {"name":"ngkg-vllm","dockerfile":"ngkg-vllm/Dockerfile","helm":[["agents","vllm.image"]]}
+  ]
+}

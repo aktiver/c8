@@ -1,0 +1,84 @@
+{{- if .Values.catalogMigration.enabled }}
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ngkg-agent-catalog-migrator-egress
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: '-20'
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ngkg-agents
+      app.kubernetes.io/component: catalog-migrator
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    - to:
+        - namespaceSelector: {{- toYaml .Values.networkPolicy.dnsNamespaceSelector | nindent 12 }}
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+    - to:
+        - podSelector:
+            matchLabels: {{- toYaml .Values.database.podSelector | nindent 14 }}
+        {{- range .Values.database.ipBlocks }}
+        - ipBlock: {cidr: {{ . | quote }}}
+        {{- end }}
+      ports: [{protocol: TCP, port: {{ .Values.database.port }}}]
+---
+{{- end }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ngkg-agent-catalog-migration
+  labels:
+    app.kubernetes.io/name: ngkg-agents
+    app.kubernetes.io/component: catalog-migrator
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: '-10'
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: {{ .Values.catalogMigration.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.catalogMigration.activeDeadlineSeconds }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ngkg-agents
+        app.kubernetes.io/component: catalog-migrator
+    spec:
+      restartPolicy: OnFailure
+      imagePullSecrets: {{ toJson .Values.imagePullSecrets }}
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: migrator
+          image: '{{ required "image.repository is required" .Values.image.repository }}@{{ required "image.digest is required" .Values.image.digest }}'
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: [/usr/local/bin/ngkg-agent-catalog-migrator]
+          env:
+            - name: NGKG_AGENT_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.migrationSecret | quote }}
+                  key: {{ .Values.database.migrationSecretKey | quote }}
+            - {name: NGKG_AGENT_DATABASE_MAX_CONNECTIONS, value: '2'}
+            - {name: NGKG_AGENT_DATABASE_ACQUIRE_TIMEOUT_MS, value: {{ .Values.database.acquireTimeoutMilliseconds | quote }}}
+            - {name: NGKG_AGENT_DATABASE_ALLOW_INSECURE_LOOPBACK, value: {{ .Values.database.allowInsecureLoopback | quote }}}
+            - {name: NGKG_AGENT_RUNTIME_DATABASE_ROLE, value: {{ .Values.database.runtimeRole | quote }}}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: {drop: [ALL]}
+{{- end }}

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/schemas/ngkg-agents/query-tool-request-v1.json",
+  "title": "NGKG MCP query tool request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["datasetId", "query"],
+  "properties": {
+    "datasetId": {"type": "string", "format": "uuid"},
+    "query": {"type": "string", "minLength": 1, "maxLength": 1048576},
+    "snapshotId": {"type": ["string", "null"], "format": "uuid"},
+    "hydrate": {"type": "boolean", "default": false},
+    "defaultGraphUris": {"type": "array", "maxItems": 4096, "items": {"type": "string", "format": "uri", "maxLength": 8192}},
+    "namedGraphUris": {"type": "array", "maxItems": 4096, "items": {"type": "string", "format": "uri", "maxLength": 8192}}
+  }
+}

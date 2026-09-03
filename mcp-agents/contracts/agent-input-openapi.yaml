@@ -1,0 +1,271 @@
+openapi: 3.1.0
+info:
+  title: NGKG Agent Input API
+  version: 0.4.0
+servers:
+- url: https://ngkg-agents.example/v1
+security:
+- oauth2:
+  - agent-inputs:read
+  - agent-inputs:write
+paths:
+  /agent-inputs:
+    post:
+      operationId: createAgentInput
+      summary: Create a tenant-scoped resumable input session
+      security:
+      - oauth2:
+        - agent-inputs:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: ./prompt-manifest.schema.json
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      description: This operation implements the documented "Create a tenant-scoped resumable input session" API capability.
+        Use it when a client needs to ingest or inspect a large immutable agent input and its permanent constraint ledger.
+        The request body uses application/json and the schema shown below; success returns created. Authentication, tenant
+        authorization, resource ceilings and documented failure responses are enforced before a result is accepted.
+  /agent-inputs/{inputId}/parts/{ordinal}:
+    put:
+      operationId: putAgentInputPart
+      summary: Idempotently store one checksum-bound source part
+      security:
+      - oauth2:
+        - agent-inputs:write
+      parameters:
+      - $ref: '#/components/parameters/InputId'
+      - name: ordinal
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 0
+      - name: x-ngkg-content-sha256
+        in: header
+        required: true
+        schema:
+          $ref: '#/components/schemas/Sha256'
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              contentEncoding: binary
+          text/*:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Idempotent part receipt
+        '409':
+          description: Ordinal already contains different content
+        '422':
+          description: Checksum mismatch
+      description: This operation implements the documented "Idempotently store one checksum-bound source part" API capability.
+        Use it when a client needs to ingest or inspect a large immutable agent input and its permanent constraint ledger.
+        The request body uses application/octet-stream, text/* and the schema shown below; success returns idempotent part
+        receipt. Authentication, tenant authorization, resource ceilings and documented failure responses are enforced before
+        a result is accepted.
+  /agent-inputs/{inputId}/finalize:
+    post:
+      operationId: finalizeAgentInput
+      summary: Freeze the exact source manifest and enqueue compilation shards
+      security:
+      - oauth2:
+        - agent-inputs:write
+      parameters:
+      - $ref: '#/components/parameters/InputId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinalizeInput'
+      responses:
+        '202':
+          description: Compilation accepted
+          content:
+            application/json:
+              schema:
+                $ref: ./prompt-manifest.schema.json
+        '409':
+          description: Parts or root do not match
+      description: This operation implements the documented "Freeze the exact source manifest and enqueue compilation shards"
+        API capability. Use it when a client needs to ingest or inspect a large immutable agent input and its permanent constraint
+        ledger. The request body uses application/json and the schema shown below; success returns compilation accepted. Authentication,
+        tenant authorization, resource ceilings and documented failure responses are enforced before a result is accepted.
+  /agent-inputs/{inputId}:
+    get:
+      operationId: getAgentInputStatus
+      summary: Get upload or compilation progress
+      security:
+      - oauth2:
+        - agent-inputs:read
+      parameters:
+      - $ref: '#/components/parameters/InputId'
+      responses:
+        '200':
+          description: Status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputStatus'
+      description: This operation implements the documented "Get upload or compilation progress" API capability. Use it when
+        a client needs to ingest or inspect a large immutable agent input and its permanent constraint ledger. Inputs use
+        the documented path, query and header parameters; success returns status. Authentication, tenant authorization, resource
+        ceilings and documented failure responses are enforced before a result is accepted.
+  /agent-inputs/{inputId}/manifest:
+    get:
+      operationId: getAgentInputManifest
+      summary: Get the frozen source and derived-root manifest; storage references are redacted
+      security:
+      - oauth2:
+        - agent-inputs:read
+      parameters:
+      - $ref: '#/components/parameters/InputId'
+      responses:
+        '200':
+          description: Manifest
+          content:
+            application/json:
+              schema:
+                $ref: ./prompt-manifest.schema.json
+      description: This operation implements the documented "Get the frozen source and derived-root manifest; storage references
+        are redacted" API capability. Use it when a client needs to ingest or inspect a large immutable agent input and its
+        permanent constraint ledger. Inputs use the documented path, query and header parameters; success returns manifest.
+        Authentication, tenant authorization, resource ceilings and documented failure responses are enforced before a result
+        is accepted.
+  /agent-inputs/{inputId}/requirements:
+    get:
+      operationId: listAgentInputRequirements
+      summary: List the permanent constraint ledger in source order
+      security:
+      - oauth2:
+        - agent-inputs:read
+      parameters:
+      - $ref: '#/components/parameters/InputId'
+      responses:
+        '200':
+          description: Constraint ledger
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: ./prompt-requirement.schema.json
+      description: This operation implements the documented "List the permanent constraint ledger in source order" API capability.
+        Use it when a client needs to ingest or inspect a large immutable agent input and its permanent constraint ledger.
+        Inputs use the documented path, query and header parameters; success returns constraint ledger. Authentication, tenant
+        authorization, resource ceilings and documented failure responses are enforced before a result is accepted.
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://authorization.example/oauth/token
+          scopes:
+            agent-inputs:read: Read compiled inputs
+            agent-inputs:write: Upload and finalize inputs
+  parameters:
+    InputId:
+      name: inputId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    Sha256:
+      type: string
+      pattern: ^[0-9a-f]{64}$
+    CreateInput:
+      type: object
+      additionalProperties: false
+      required:
+      - sourceName
+      - mediaType
+      properties:
+        sourceName:
+          type: string
+          minLength: 1
+          maxLength: 1024
+        mediaType:
+          type: string
+          minLength: 1
+          maxLength: 256
+        maximumParts:
+          type: integer
+          minimum: 1
+          maximum: 100000
+        maximumBytes:
+          type: integer
+          minimum: 1
+          maximum: 1099511627776
+    FinalizeInput:
+      type: object
+      additionalProperties: false
+      required:
+      - expectedParts
+      - expectedBytes
+      - sourceRootSha256
+      properties:
+        expectedParts:
+          type: integer
+          minimum: 1
+        expectedBytes:
+          type: integer
+          minimum: 1
+        sourceRootSha256:
+          $ref: '#/components/schemas/Sha256'
+    InputStatus:
+      type: object
+      additionalProperties: false
+      required:
+      - inputId
+      - state
+      - stateVersion
+      - completedShards
+      - totalShards
+      properties:
+        inputId:
+          type: string
+          format: uuid
+        state:
+          enum:
+          - UPLOADING
+          - COMPILING
+          - COMPILED
+          - FAILED
+          - CANCELLED
+        stateVersion:
+          type: integer
+          minimum: 0
+        completedShards:
+          type: integer
+          minimum: 0
+        totalShards:
+          type: integer
+          minimum: 0
+        failureCode:
+          type:
+          - string
+          - 'null'
+  responses:
+    Unauthenticated:
+      description: Valid bearer authentication is required
+    Forbidden:
+      description: Required tenant scope is missing

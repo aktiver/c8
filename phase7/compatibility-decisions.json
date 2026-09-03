@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "releaseLine": "1.0",
+  "targetPatchVersion": "1.0.1",
+  "reviewStatus": "PENDING_ENTERPRISE_COMPATIBILITY_APPROVAL",
+  "historicalMigrationsRestored": {
+    "migrations/0002_atomic_compilation.sql": "97a14756bf6a4c042ff2ffb407d529ad7890c1c168284b457f8d4c9c5fdf9c0d",
+    "migrations/0006_named_datasets.sql": "076d7c5199bab29f32b92c8511dc064bd64b5a8f6c0269615bde2add536adda2"
+  },
+  "forwardOnlyMigration": "migrations/0011_forward_only_contract_repairs.sql",
+  "decisions": [
+    {"surface":"OpenAPI","disposition":"retain as backward-compatible patch only after contract review","releaseBlocking":true},
+    {"surface":"authentication token schema","disposition":"retain only after negative compatibility and upgrade tests","releaseBlocking":true},
+    {"surface":"Helm values and templates","disposition":"retain security/correctness additions in 1.0.1 after rendered-upgrade tests","releaseBlocking":true},
+    {"surface":"environment variables","disposition":"new variables require defaults or explicit migration documentation","releaseBlocking":true},
+    {"surface":"database migrations","disposition":"historical bytes restored; all repairs are forward-only","releaseBlocking":false}
+  ],
+  "complete": false
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c8-next-generation.io/contracts/ngkg-delegation-claims-v1.schema.json",
+  "title": "NGKG internal delegation claims v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["iss", "aud", "sub", "exp", "nbf", "iat", "jti", "tokenUse", "ngkg"],
+  "properties": {
+    "iss": {"type": "string", "format": "uri", "pattern": "^https://"},
+    "aud": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}]},
+    "sub": {"type": "string", "minLength": 1, "maxLength": 256},
+    "exp": {"type": "integer", "minimum": 1},
+    "nbf": {"type": "integer", "minimum": 0},
+    "iat": {"type": "integer", "minimum": 0},
+    "jti": {"type": "string", "minLength": 1, "maxLength": 256},
+    "client_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "tokenUse": {"const": "ngkg-delegation"},
+    "ngkg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tenantId", "scopes", "graphAuthorizationLabels", "policyVersionSha256"],
+      "properties": {
+        "tenantId": {"type": "string", "format": "uuid", "not": {"const": "00000000-0000-0000-0000-000000000000"}},
+        "actor": {"type": ["string", "null"], "minLength": 1, "maxLength": 256},
+        "scopes": {"type": "array", "minItems": 1, "uniqueItems": true, "contains": {"const": "queries:execute"}, "items": {"type": "string", "minLength": 1, "maxLength": 128}},
+        "graphAuthorizationLabels": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 256}},
+        "policyVersionSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "agentExecutionId": {"type": ["string", "null"], "format": "uuid"}
+      }
+    }
+  }
+}
